@@ -7,3 +7,5 @@
 *.rej
 *.swp
 .DS_Store
+
+/bazel-*
