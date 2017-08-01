@@ -9,7 +9,12 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
-      - run: bazel test //examples/...
+      - run: bazel build //examples/...
+      - run: bazel test --test_arg=--gtest_output=xml:/tmp/test_results/ //examples/...
+      - store_test_results:
+          path: /tmp/test_results
+      - store_artifacts:
+          path: /tmp/test_results
     branches:
       only:
         - master
