@@ -14,6 +14,7 @@ cc_library(
   copts = [
     "-DNO_FRAME_POINTER",
     "-Ithird_party/glog/glog_build/k8/src",
+    "-Wno-sign-compare",
   ],
   srcs = [
     "upstream/src/demangle.cc",
@@ -88,6 +89,9 @@ cc_test(
   ],
   srcs = [
     "upstream/src/logging_unittest.cc",
+  ],
+  copts = [
+    "-Wno-deprecated-declarations",
   ],
   data = [
     "upstream/src/logging_unittest.err",
