@@ -31,5 +31,5 @@ $ bazel-bin/examples/minimal_main
 How to test:
 
 ```
-$ bazel test //examples:minimal_test
+$ bazel test //examples:minimal_lib_test
 ```

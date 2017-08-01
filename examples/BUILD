@@ -4,17 +4,29 @@ cc_binary(
     "minimal_main.cc",
   ],
   deps = [
+    ":minimal_lib",
     "//third_party/gflags",
     "//third_party/glog",
   ],
 )
 
-cc_test(
-  name = "minimal_test",
+cc_library(
+  name = "minimal_lib",
   srcs = [
-    "minimal_test.cc",
+    "minimal_lib.cc",
+  ],
+  hdrs = [
+    "minimal_lib.h",
+  ],
+)
+
+cc_test(
+  name = "minimal_lib_test",
+  srcs = [
+    "minimal_lib_test.cc",
   ],
   deps = [
+    ":minimal_lib",
     "//third_party/gtest",
     "//third_party/gtest:gtest_main",
   ],
