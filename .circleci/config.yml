@@ -1,0 +1,15 @@
+# https://circleci.com/docs/2.0/configuration-reference/
+
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: nya3jp/elekiter-ci:v1
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run: bazel test //examples/...
+    branches:
+      only:
+        - master
