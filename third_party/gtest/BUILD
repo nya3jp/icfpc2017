@@ -60,6 +60,9 @@ cc_library(
   hdrs = [
     "github/googletest/include/gtest/gtest_prod.h",
   ],
+  includes = [
+    "github/googletest/include",
+  ],
 )
 
 cc_library(

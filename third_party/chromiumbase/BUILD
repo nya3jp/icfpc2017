@@ -259,6 +259,7 @@ cc_library(
   ],
   deps = [
     "//third_party/glog",
+    "//third_party/gtest:gtest_prod",
     "//third_party/libevent",
   ],
   visibility = ["//visibility:public"],
