@@ -87,7 +87,7 @@ def main():
 
     # TODO: Set up logging.
     logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.WRANING)
+        level=logging.DEBUG if args.verbose else logging.WARNING)
     sock = _connect(args.host, args.port)
     _run(sock, args.name, args.command)
 
