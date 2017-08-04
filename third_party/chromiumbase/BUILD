@@ -182,6 +182,7 @@ cc_library(
     "base/numerics/safe_math.h",
     "base/numerics/safe_math_impl.h",
     "base/observer_list.h",
+    "base/optional.h",
     "base/path_service.h",
     "base/pending_task.h",
     "base/pickle.h",
@@ -264,3 +265,4 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
