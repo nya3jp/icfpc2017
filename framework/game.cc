@@ -250,6 +250,11 @@ void Game::Run() {
 
     base::DictionaryValue output;
     output.SetInteger("ready", punter_id);
+    bool is_futures = false;
+    if (input->GetBoolean("settings.futures", &is_futures) &&
+        is_futures) {
+      output.Set("futures", framework::ToJson(punter_->GetFutures()));
+    }
     output.Set("state", punter_->GetState());
     WriteContent(stdout, output);
   } else if (input->HasKey("stop")) {
