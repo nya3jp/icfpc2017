@@ -18,12 +18,10 @@ namespace internal {
 
 namespace {
 
-#if DCHECK_IS_ON()
 // Delays larger than this are often bogus, and a warning should be emitted in
 // debug builds to warn developers.  http://crbug.com/450045
 const int kTaskDelayWarningThresholdInSeconds =
     14 * 24 * 60 * 60;  // 14 days.
-#endif
 
 // Returns true if MessagePump::ScheduleWork() must be called one
 // time for every task that is added to the MessageLoop incoming queue.
