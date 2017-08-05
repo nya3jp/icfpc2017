@@ -146,14 +146,17 @@ class Arena():
         for i in range(self._num_punters):
             player = self._get_current_client()['player']
             player.prompt_setup(
-                {'punter': self._turn % self._num_punters,
+                {'punter': i,
                  'punters': self._num_punters,
                  'map': map_data})
 
             self._turn += 1
+
         self._turn = 0
+
         while True:
             self._debug('Turn #%d / %d' % (self._turn, self._num_rivers))
+
             if self._turn == self._num_rivers:
                 self._info('Game over')
 
@@ -165,21 +168,16 @@ class Arena():
                     except IndexError:
                         break
 
-                sys.stdout.write(json.dumps({'moves': moves}))
-                sys.stdout.write('\n')
-                sys.stdout.flush()
-
                 result = 'Final rivers\n'
                 rivers = self._map.rivers
                 for river in rivers:
                     result += ('  %r\n' % (river,))
                 self._debug(result)
 
-                #rivers[1] = (rivers[1][0], rivers[1][1], 1)
-
-                sys.stdout.write(json.dumps(calculate_score(
-                    self._num_punters, self._map.sites, self._map.mines, self._map.rivers)))
+                sys.stdout.write(json.dumps({'moves': moves, 'scores': calculate_score(
+                    self._num_punters, self._map.sites, self._map.mines, self._map.rivers)}))
                 sys.stdout.write('\n')
+                sys.stdout.flush()
 
                 return
 
@@ -192,6 +190,7 @@ class Arena():
             client['player'].prompt_move(
                 {'move': {'moves': moves},
                  'state': client['state']})
+
             self._turn += 1
 
     def ready(self, state):
@@ -215,7 +214,7 @@ class Arena():
                 river = rivers[i]
                 if river[0] == source and river[1] == target:
                     if river[2] is not None:
-                        self._debug('Conflict')
+                        self._debug('Conflict: %r' % river[2])
                         self._moves.append({'pass': {'punter': punter_id}})
                         return
                     else:
@@ -231,12 +230,6 @@ class PlayerHost():
     def __init__(self):
         self._setup_timeout_handle = None
         self._move_timeout_handle = None
-
-    def _timeout(self):
-        if self._setup_timeout_handle is not None:
-            self._arena.setup_timeout()
-        elif self._move_timeout_handle is not None:
-            self._arena.move_timeout()
 
     def _handle_error(self, s):
         self._arena.handle_error(s)
@@ -270,6 +263,7 @@ class PlayerHost():
                 if pass_desc is None:
                     self._handle_error('Bad move: %r' % message)
                     return
+
                 punter_id = pass_desc.get('punter')
                 if punter_id is None or punter_id != self._punter_id:
                     self._handle_error('Bad move (wrong id): %r' % message)
