@@ -7,16 +7,8 @@ configurations:
     map: boston-sparse
     num_punters: 2
     num_games: 1
-  - name: boston.2p
-    map: boston
-    num_punters: 2
-    num_games: 1
   - name: circle.2p
     map: circle
-    num_punters: 2
-    num_games: 1
-  - name: edinburgh.2p
-    map: edinburgh
     num_punters: 2
     num_games: 1
   - name: edinburgh-scaled.2p
@@ -55,20 +47,12 @@ configurations:
     map: lambda
     num_punters: 2
     num_games: 1
-  - name: nara.2p
-    map: nara
-    num_punters: 2
-    num_games: 1
   - name: nara-scaled.2p
     map: nara-scaled
     num_punters: 2
     num_games: 1
   - name: nara-sparse.2p
     map: nara-sparse
-    num_punters: 2
-    num_games: 1
-  - name: oxford2.2p
-    map: oxford2
     num_punters: 2
     num_games: 1
   - name: oxford2-scaled.2p
@@ -87,16 +71,8 @@ configurations:
     map: oxford-3000-nodes
     num_punters: 2
     num_games: 1
-  - name: oxford-center.2p
-    map: oxford-center
-    num_punters: 2
-    num_games: 1
   - name: oxford-center-sparse.2p
     map: oxford-center-sparse
-    num_punters: 2
-    num_games: 1
-  - name: oxford.2p
-    map: oxford
     num_punters: 2
     num_games: 1
   - name: oxford-sparse2.2p

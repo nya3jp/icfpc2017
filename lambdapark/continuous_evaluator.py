@@ -19,7 +19,7 @@ import yaml
 
 FLAGS = gflags.FLAGS
 
-gflags.DEFINE_bool('stadium', False, 'Use stadium instead of arena')
+gflags.DEFINE_bool('arena', False, 'Use arena instead of stadium')
 gflags.DEFINE_bool('auto_restart', False, 'Enable auto restart')
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -140,15 +140,16 @@ def run_stadium(map_name, punter_shells, output_prefix):
         'bazel-bin/stadium/stadium',
         '--logtostderr',
         '--map=%s' % map_path,
+        '--result_json=/dev/stdout',
     ] + punter_shells
     return run_common(args, output_prefix)
 
 
 def run(config, punters, output_prefix):
     punter_shells = [p['shell'] for p in punters]
-    if FLAGS.stadium:
-        return run_stadium(config['map'], punter_shells, output_prefix)
-    return run_arena(config['map'], punter_shells, output_prefix)
+    if FLAGS.arena:
+        return run_arena(config['map'], punter_shells, output_prefix)
+    return run_stadium(config['map'], punter_shells, output_prefix)
 
 
 def decide_next_punters(config, punters):
