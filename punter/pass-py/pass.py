@@ -2,6 +2,7 @@
 
 import json
 import sys
+import optparse
 
 
 def read_message():
@@ -41,7 +42,11 @@ def on_stop(last_moves, scores, state):
 
 
 def main():
-    write_message({'me': 'pass'})
+    parser = optparse.OptionParser()
+    parser.add_option('--bot', default=None, dest='bot')
+    options, args = parser.parse_args(sys.argv[1:])
+
+    write_message({'me': options.bot})
     read_message()
 
     request = read_message()

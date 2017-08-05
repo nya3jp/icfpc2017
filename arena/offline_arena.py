@@ -154,6 +154,7 @@ class PlayerHost():
                 self._setup_timeout_handle.cancel()
             self._setup_timeout_handle = None
 
+            self._debug('+Setup')
             ready = message.get(u'ready')
             if ready is None or ready != self._punter_id:
                 self._handle_error('Bad ready: %r' % message)
@@ -162,12 +163,12 @@ class PlayerHost():
             self._arena.ready(state)
 
             self._debug('-Setup')
-            self._debug('+Move')
         elif self._move_timeout_handle is not None:
             if self._move_timeout_handle is not True:
                 self._move_timeout_handle.cancel()
             self._move_timeout_handle = None
 
+            self._debug('+Move')
             new_state = message.get(u'state')
             claim = message.get(u'claim')
             if claim is None:
@@ -212,12 +213,9 @@ class PlayerHost():
                 self._handle_error('Bad handshake: %r' % message)
                 return
 
-            self._debug('hoge')
-
             self._write({'you': self._name})
 
             self._debug('-Hanshake')
-            self._debug('+Setup')
         else:
             self._handle_error('Out of turn message: %r' % message)
             return
@@ -349,7 +347,6 @@ class FileEndpoint():
             message_end = self._colon_pos + self._next_length
             try:
                 message_str = self._buffer[message_start:message_end]
-                self._debug(message_str)
                 message = json.loads(message_str)
             except json.JSONDecodeError as e:
                 self._handle_error('Bad message: %s' % message_str)
@@ -561,11 +558,11 @@ if __name__ == '__main__':
     server_thread.start()
 
     options.commands = json.dumps([
-        ['/usr/bin/python3', 'offline_arena.py', '--bot', 'a'],
-        ['/usr/bin/python3', 'offline_arena.py', '--bot', 'b'],
-        ['/usr/bin/python3', 'offline_arena.py', '--bot', 'c'],
-        ['/usr/bin/python3', 'offline_arena.py', '--bot', 'd'],
-        ['/usr/bin/python3', 'offline_arena.py', '--bot', 'e'],
+        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'a'],
+        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'b'],
+        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'c'],
+        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'd'],
+        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'e'],
     ])
     if options.commands is not None:
         commands = json.loads(options.commands)
