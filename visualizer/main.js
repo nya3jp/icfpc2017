@@ -2,21 +2,25 @@ const INF = Math.pow(10, 18);
 let gGameMap;
 let gPrecomputedData;
 let gHistory;
-let gScreen;
+let gViewer;
+let gController;
 let gState;
 
 // Static map data
-function GameMap(sites, rivers, mines) {
+function GameMap() {
   this.sites = [];
   this.rivers = [];
   this.mines = [];
   this.distance = [];  // distance[i][j]: distance from i-th mine to j-th site.
   this.siteId2Index_ = new Map();
   this.siteIndex2Id_ = new Map();
-  this.initialize(sites, rivers, mines);
 };
 
 GameMap.prototype = {
+  load: function(map) {
+    this.initialize(map.sites, map.rivers, map.mines || []);
+  },
+
   initialize: function(sites, rivers, mines) {
     // Keep map for siteId <=> siteIndex
     for (let i = 0; i < sites.length; i++) {
@@ -52,7 +56,6 @@ GameMap.prototype = {
 function PrecomputedData(gameMap) {
   this.adjacent = [];
   this.distance = [];
-  this.precompute(gameMap);
 };
 
 PrecomputedData.prototype = {
@@ -101,23 +104,21 @@ PrecomputedData.prototype = {
   },
 };
 
-function History(moves, gameMap) {
-  console.log('History move', moves);
-  this.moves = moves;
-  for (let i = 0; i < this.moves.length; i++) {
-    if (this.moves[i].claim) {
-      this.moves[i].claim.source =
-          gameMap.getSiteIndex(this.moves[i].claim.source);
-      this.moves[i].claim.target =
-          gameMap.getSiteIndex(this.moves[i].claim.target);
-    }
-  }
-  console.log('this.moves', this.moves);
+function History() {
+  this.moves = [];
 };
 
 History.prototype = {
-  getPlayerSize: function() {
-    
+  load: function(moves, gameMap) {
+    this.moves = moves;
+    for (let i = 0; i < this.moves.length; i++) {
+      if (this.moves[i].claim) {
+        this.moves[i].claim.source =
+            gameMap.getSiteIndex(this.moves[i].claim.source);
+        this.moves[i].claim.target =
+            gameMap.getSiteIndex(this.moves[i].claim.target);
+      }
+    }
   },
 };
 
@@ -131,17 +132,22 @@ State.prototype = {
   },
 };
 
-function Screen(canvas, scoreLabelContainer, prevButton, nextButton, movesInput) {
+function Viewer(canvas, scoreLabelContainer, prevButton, nextButton, autoPlayButton, movesInput) {
   this.prevButton = prevButton;
   this.nextButton = nextButton;
+  this.autoPlayButton = autoPlayButton;
   this.canvas_ = canvas;
   this.scoreLabelContainer_ = scoreLabelContainer;
   this.movesInput_ = movesInput;
 }
 
-Screen.prototype = {
-  display: function(gameMap, history, state) {
+Viewer.prototype = {
+  display: function(gameMap, history, state, precomputedData) {
+    // Disable/enable elements based on available data.
     this.movesInput_.disabled = !gameMap;
+    this.prevButton.disabled = !history || !(state.step > 0);
+    this.nextButton.disabled = !history || !(state.step < history.moves.length);
+
     if (!gameMap)
       return;
 
@@ -240,14 +246,7 @@ Screen.prototype = {
       ctx.fill();
     }
 
-    console.log('history', history);
-    console.log('state', state);
-
     if (history) {
-      // Update buttons
-      this.prevButton.disabled = !(state.step > 0);
-      this.nextButton.disabled = !(state.step < history.moves.length);
-      console.log('state', state);
 
       // Update score
 
@@ -271,7 +270,7 @@ Screen.prototype = {
 
         scores[p] = 0;
         for (let i = 0; i < mines.length; i++)
-          scores[p] += computeScore(i, edges, punter, sites.length, mines);
+          scores[p] += computeScore(i, edges, punter, sites.length, mines, precomputedData);
         console.log('Punter ' + p + ' = ' + scores[p]);
       }
       this.scoreLabelContainer_.textContent = '';
@@ -290,6 +289,99 @@ Screen.prototype = {
 
   convertY_: function(y, minY, maxY, canvasHeight) {
     return (y - minY) * (canvasHeight * 0.9) / (maxY - minY) + canvasHeight * 0.05;
+  },
+};
+
+function Controller(prevButton, playButton, nextButton, inputMap, inputMoves, viewer) {
+  this.playing = false;
+  this.prevButton_ = prevButton;
+  this.playButton_ = playButton;
+  this.nextButton_ = nextButton;
+  this.inputMap_ = inputMap;
+  this.inputMoves_ = inputMoves;
+  this.viewer_ = viewer;
+  this.gameMap_ = new GameMap();
+  this.history_ = new History();
+  this.state_ = new State();
+  this.precomputedData_ = new PrecomputedData();
+
+  // temporary
+  this.playButton_.disabled = false;
+
+  this.timerId_ = -1;
+  this.prevButton_.addEventListener('click', this.onPrevClicked_.bind(this));
+  this.playButton_.addEventListener('click', this.onPlayClicked_.bind(this));
+  this.nextButton_.addEventListener('click', this.onNextClicked_.bind(this));
+  this.inputMap_.addEventListener('change', this.onInputMapChange_.bind(this));
+  this.inputMoves_.addEventListener('change', this.onInputMovesChange_.bind(this));
+}
+
+Controller.prototype = {
+  reset: function() {
+    this.playing = false;
+  },
+
+  startPlay_: function() {
+    if (this.timerId_ != -1)
+      clearInterval(this.timerId_);
+    if (this.state_.step == this.history_.moves.length)
+      this.state_.step = 0;
+    this.timerId_ = setInterval(this.onInterval_.bind(this), 200);
+    this.playButton_.querySelector('i').textContent = 'pause';
+  },
+
+  stopPlay_: function() {
+    if (this.timerId_ != -1) {
+      clearInterval(this.timerId_);
+      this.timerId_ = -1;
+    }
+    this.playButton_.querySelector('i').textContent = 'play_arrow';
+  },
+
+  onPlayClicked_: function(event) {
+    if (this.playing)
+      this.stopPlay_();
+    this.playing = !this.playing;
+    if (this.playing)
+      this.startPlay_();
+  },
+
+  onInterval_: function() {
+    console.log('timer');
+    this.onNextClicked_();
+    if (this.state_.step == this.history_.moves.length)
+      this.stopPlay_();
+  },
+
+  onPrevClicked_: function() {
+    this.state_.step = Math.max(this.state_.step - 1, 0);
+    this.viewer_.display(this.gameMap_, this.history_, this.state_, this.precomputedData_);
+  },
+
+  onNextClicked_: function() {
+    this.state_.step = Math.min(this.state_.step + 1, this.history_.moves.length);
+    this.viewer_.display(this.gameMap_, this.history_, this.state_, this.precomputedData_);
+  },
+
+  onInputMapChange_: function(event) {
+    const reader = new FileReader();
+    reader.readAsText(event.target.files[0]);
+    reader.onload = function(event) {
+      const map = JSON.parse(event.target.result);
+      this.gameMap_.load(map);
+      this.precomputedData_.precompute(this.gameMap_);
+      this.viewer_.display(this.gameMap_, this.history_, this.state_, this.precomputedData_);
+    }.bind(this);
+  },
+
+  onInputMovesChange_: function(event) {
+    const reader = new FileReader();
+    reader.readAsText(event.target.files[0]);
+    reader.onload = function(event) {
+      const moves = JSON.parse(event.target.result);
+      this.history_.load(moves.moves, this.gameMap_);
+      this.viewer_.display(this.gameMap_, this.history_, this.state_, this.precomputedData_);
+    }.bind(this);
   },
 };
 
@@ -315,31 +407,20 @@ function hslToRgb(h, s, l){
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-function readMap(map) {
-  gGameMap = new GameMap(map.sites, map.rivers, map.mines);
-  gPrecomputedData = new PrecomputedData(gGameMap);
-  gScreen.display(gGameMap, gHistory, gState);
-}
-
-function readMoves(moves) {
-  gHistory = new History(moves.moves, gGameMap);
-  gScreen.display(gGameMap, gHistory, gState);
-}
-
-function computeScoreRec(v, mineIndex, adj, depth, visited, mines) {
+function computeScoreRec(v, mineIndex, adj, depth, visited, mines, precomputedData) {
   if (visited[v])
     return 0;
   
   visited[v] = true;
-  score = gPrecomputedData.distance[mineIndex][v] * gPrecomputedData.distance[mineIndex][v];
+  score = precomputedData.distance[mineIndex][v] * precomputedData.distance[mineIndex][v];
   for (let i = 0; i < adj[v].length; i++) {
     const v2 = adj[v][i];
-    score += computeScoreRec(v2, mineIndex, adj, depth, visited, mines);
+    score += computeScoreRec(v2, mineIndex, adj, depth, visited, mines, precomputedData);
   }
   return score;
 }
 
-function computeScore(mineIndex, edges, punter, V, mines) {
+function computeScore(mineIndex, edges, punter, V, mines, precomputedData) {
   const visited = new Array(V);
   const adj = new Array(V);
   for (let i = 0; i < adj.length; i++)
@@ -351,48 +432,35 @@ function computeScore(mineIndex, edges, punter, V, mines) {
     adj[src].push(dst);
     adj[dst].push(src);
   }
-  return computeScoreRec(mines[mineIndex], mineIndex, adj, 0, visited, mines);
+  return computeScoreRec(mines[mineIndex], mineIndex, adj, 0, visited, mines, precomputedData);
 }
 
 function onPrev() {
   gState.step = Math.max(gState.step - 1, 0);
-  gScreen.display(gGameMap, gHistory, gState);
+  gViewer.display(gGameMap, gHistory, gState);
 }
 
 function onNext() {
   gState.step = Math.min(gState.step + 1, gHistory.moves.length);
-  gScreen.display(gGameMap, gHistory, gState);
+  gViewer.display(gGameMap, gHistory, gState);
 }
 
 document.addEventListener('DOMContentLoaded', function(event) {
-  gScreen = new Screen(document.getElementById('canvas'),
-                       document.getElementById('scores'),
-                       document.getElementById('prev'),
-                       document.getElementById('next'),
-                       document.getElementById('moves'));
+  let $ = function( id ) { return document.getElementById( id ); };
+  let btn_play = $('btn_play');
+  btn_play.addEventListener('click', function() {
+    let el = btn_play.querySelector('i');
+    console.log(el);
+    el.textContent = 'pause';
+  });
+  
+  gViewer = new Viewer($('canvas'),
+                       $('scores'),
+                       $('prev'),
+                       $('next'),
+                       $('autoplay'),
+                       $('moves'));
   gState = new State();
-
-  const inputMap = document.getElementById('map');
-  inputMap.addEventListener('change', function(event) {
-    const reader = new FileReader();
-    reader.readAsText(event.target.files[0]);
-    reader.onload = function(event) {
-      const map = JSON.parse(event.target.result);
-      readMap(map);
-    };
-  });
-
-  const inputMoves = document.getElementById('moves');
-  inputMoves.addEventListener('change', function(event) {
-    gState.init();
-    const reader = new FileReader();
-    reader.readAsText(event.target.files[0]);
-    reader.onload = function(event) {
-      const moves = JSON.parse(event.target.result);
-      readMoves(moves);
-    };
-  });
-
-  gScreen.prevButton.addEventListener('click', onPrev);
-  gScreen.nextButton.addEventListener('click', onNext);
+  gController = new Controller($('prev'), $('btn_play'), $('next'), 
+      $('map'), $('moves'), gViewer);
 });

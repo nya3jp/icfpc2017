@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
     #wrapper {
       width: 90%;
@@ -14,6 +15,9 @@
       margin: 5px 20px;
     }
     </style>
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.brown-blue.min.css" />
+    <script src="./material.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <script src="main.js"></script>
   </head>
   <body>
@@ -32,9 +36,15 @@
     <div id="wrapper">
       <canvas id="canvas"></canvas>
     </div>
-    <div id="buttons">
-      <button id="prev" disabled>Prev</button>
-      <button id="next" disabled>Next</button>
-    </div>
+    <!-- Icon button -->
+    <button id="prev" class="mdl-button mdl-js-button mdl-button--icon" disabled>
+      <i class="material-icons">skip_previous</i>
+    </button>
+    <button id="btn_play" class="mdl-button mdl-js-button mdl-button--icon mdl-button--fab mdl-button--colored" disabled>
+      <i class="material-icons">play_arrow</i>
+    </button>
+    <button id="next" class="mdl-button mdl-js-button mdl-button--icon" disabled>
+      <i class="material-icons">skip_next</i>
+    </button>
   </body>
 </html>
