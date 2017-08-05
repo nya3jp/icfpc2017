@@ -6,6 +6,7 @@
 
 #include "base/macros.h"
 #include "base/values.h"
+#include "stadium/popen.h"
 #include "stadium/punter.h"
 
 namespace stadium {
@@ -29,6 +30,7 @@ class LocalPunter : public Punter {
 
   int punter_id_;
   std::unique_ptr<base::Value> state_;
+  std::unique_ptr<Popen> subprocess_;
 
   DISALLOW_COPY_AND_ASSIGN(LocalPunter);
 };
