@@ -4,15 +4,93 @@
 
 #include <memory>
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+
 #include "base/files/scoped_file.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/memory/ptr_util.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/posix/eintr_wrapper.h"
 
 namespace stadium {
 
 namespace {
+
+std::pair<base::ScopedFD, base::ScopedFD> CreatePipe(int flags = 0) {
+  int fds[2];
+  PCHECK(pipe2(fds, flags) == 0);
+  return {base::ScopedFD(fds[0]), base::ScopedFD(fds[1])};
+}
+
+class Popen {
+ public:
+  explicit Popen(const std::string& shell) {
+    base::ScopedFD stdin_read, stdin_write;
+    std::tie(stdin_read, stdin_write) = CreatePipe();
+    base::ScopedFD stdout_read, stdout_write;
+    std::tie(stdout_read, stdout_write) = CreatePipe();
+
+    pid_t pid = fork();
+    PCHECK(pid >= 0);
+    if (pid == 0) {
+      int max_fd = sysconf(_SC_OPEN_MAX);
+
+      PCHECK(HANDLE_EINTR(dup2(stdin_read.get(), 0)) >= 0);
+      stdin_read.reset();
+      stdin_write.reset();
+
+      PCHECK(HANDLE_EINTR(dup2(stdout_write.get(), 1)) >= 0);
+      stdout_read.reset();
+      stdout_write.reset();
+
+      // Close all FDs other than stdin, stdout, stderr.
+      for (int i = 3; i < max_fd; ++i) {
+        close(i);
+      }
+
+      // Child.
+      char* const commands [] = {
+        const_cast<char*>("/bin/bash"),
+        const_cast<char*>("-c"),
+        const_cast<char*>(shell.c_str()),
+        nullptr,
+      };
+
+      execv(commands[0], commands);
+      PCHECK(false) << "EXEC is failed.";
+    }
+
+    // Parent
+    stdin_read.reset();
+    stdout_write.reset();
+
+    pid_ = pid;
+    stdin_write_.reset(fdopen(stdin_write.release(), "w"));
+    CHECK(stdin_write_);
+    stdout_read_.reset(fdopen(stdout_read.release(), "r"));
+    CHECK(stdout_read_);
+  }
+
+  ~Popen() { Wait(); }
+
+  FILE* stdin_write() const { return stdin_write_.get(); }
+  FILE* stdout_read() const { return stdout_read_.get(); }
+
+  void Wait() {
+    // Maybe we need to kill all decendants?
+    kill(pid_, SIGKILL);
+    int status = -1;
+    CHECK_EQ(pid_, waitpid(pid_, &status, 0));
+  }
+
+ private:
+  pid_t pid_;
+  base::ScopedFILE stdin_write_;
+  base::ScopedFILE stdout_read_;
+};
 
 void WriteMessage(const base::Value& value, FILE* fp) {
   std::string text;
@@ -27,7 +105,8 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp) {
   {
     char buf[16];
     for (int i = 0; i < 10; ++i) {
-      CHECK_EQ(1, fread(&buf[i], sizeof(char), 1, fp));
+      size_t result = fread(&buf[i], sizeof(char), 1, fp);
+      PCHECK(result == 1) << "fread";
       if (buf[i] == ':') {
         buf[i] = '\0';
         CHECK(base::StringToInt(buf, &size));
@@ -40,7 +119,7 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp) {
   std::vector<char> buf(size, 'x');
   CHECK_EQ(static_cast<size_t>(size),
            fread(buf.data(), sizeof(char), size, fp));
-  return base::JSONReader::Read(buf.data());
+  return base::JSONReader::Read(base::StringPiece(buf.data(), buf.size()));
 }
 
 }  // namespace
@@ -113,7 +192,7 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
     return Move::MakePass(punter_id);
   } else if (response->HasKey("claim")) {
     base::DictionaryValue* action_dict;
-    CHECK(response->GetDictionary("cliam", &action_dict));
+    CHECK(response->GetDictionary("claim", &action_dict));
     int punter_id, source, target;
     CHECK(action_dict->GetInteger("punter", &punter_id));
     CHECK(action_dict->GetInteger("source", &source));
@@ -130,26 +209,24 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
 std::unique_ptr<base::Value> LocalPunter::RunProcess(
     const base::DictionaryValue& request,
     std::string* name) {
-  base::ScopedFILE fp(popen(shell_.c_str(), "w"));
-  CHECK(fp);
+  Popen process(shell_);
 
-  std::unique_ptr<base::DictionaryValue> ping =
-      base::DictionaryValue::From(ReadMessage(fp.get()));
+  auto ping = base::DictionaryValue::From(ReadMessage(process.stdout_read()));
   CHECK(ping) << "Invalid greeting message";
 
   std::string tmp_name;
-  CHECK(ping->GetString("name", &tmp_name)) << "Invalid greeting message";
+  CHECK(ping->GetString("me", &tmp_name)) << "Invalid greeting message";
 
   if (name) {
     *name = tmp_name;
   }
 
   auto pong = base::MakeUnique<base::DictionaryValue>();
-  pong->SetString("name", tmp_name);
-  WriteMessage(*pong, fp.get());
+  pong->SetString("you", tmp_name);
+  WriteMessage(*pong, process.stdin_write());
 
-  WriteMessage(request, fp.get());
-  return ReadMessage(fp.get());
+  WriteMessage(request, process.stdin_write());
+  return ReadMessage(process.stdout_read());
 }
 
 }  // namespace stadium
