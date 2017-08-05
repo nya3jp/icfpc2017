@@ -9,10 +9,10 @@ PassPunter::PassPunter() = default;
 PassPunter::~PassPunter() = default;
 
 GameMove PassPunter::Run(const std::vector<GameMove>& moves) {
-  return {GameMove::Type::PASS, punter_id_};
+  return GameMove::Pass(punter_id_);
 }
 
-void PassPunter::Initialize(
+void PassPunter::SetUp(
     int punter_id, int num_punters, const GameMap& game_map) {
   punter_id_ = punter_id;
 }

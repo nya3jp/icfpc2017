@@ -111,6 +111,15 @@ std::vector<GameMove> ParseMoves(const base::ListValue& value) {
 
 }  // namespace
 
+
+GameMove GameMove::Pass(int punter_id) {
+  return {GameMove::Type::PASS, punter_id};
+}
+
+GameMove GameMove::Claim(int punter_id, int source, int target) {
+  return {GameMove::Type::CLAIM, punter_id, source, target};
+}
+
 Game::Game(std::unique_ptr<Punter> punter)
     : punter_(std::move(punter)) {}
 Game::~Game() = default;
@@ -129,7 +138,7 @@ void Game::Run() {
     const base::DictionaryValue* game_map_value;
     CHECK(input->GetDictionary("map", &game_map_value));
     GameMap game_map = ParseGameMap(*game_map_value);
-    punter_->Initialize(punter_id, num_punters, game_map);
+    punter_->SetUp(punter_id, num_punters, game_map);
 
     base::DictionaryValue output;
     output.SetInteger("ready", punter_id);

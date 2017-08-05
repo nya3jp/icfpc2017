@@ -7,16 +7,17 @@ namespace stadium {
 Referee::Referee() = default;
 Referee::~Referee() = default;
 
-void Referee::Initialize(int num_punters, const Map& map) {
-  NOTIMPLEMENTED();
+void Referee::Setup(const std::vector<std::string>& names, const Map* map) {
+  names_ = names;
 }
 
-void Referee::OnMove(const Move& move) {
-  NOTIMPLEMENTED();
+Move Referee::HandleMove(const Move& move, int punter_id) {
+  LOG(ERROR) << "NOT IMPLEMENTED";
+  return move;
 }
 
 void Referee::Finish() {
-  NOTIMPLEMENTED();
+  LOG(ERROR) << "NOT IMPLEMENTED";
 }
 
 }  // namespace stadium

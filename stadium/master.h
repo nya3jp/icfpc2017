@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "base/macros.h"
-#include "stadium/game_states.h"
+#include "stadium/game_data.h"
 #include "stadium/punter.h"
 #include "stadium/referee.h"
 
@@ -17,11 +17,13 @@ class Master {
   ~Master();
 
   void AddPunter(std::unique_ptr<Punter> punter);
-  void RunGame(const Map& map);
+  void RunGame(Map map);
 
  private:
-  void Initialize(const Map& map);
+  void Initialize(Map map);
+  void DoRunGame();
 
+  Map map_;
   std::unique_ptr<Referee> referee_;
   std::vector<std::unique_ptr<Punter>> punters_;
   std::vector<Move> last_moves_;

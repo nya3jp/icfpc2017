@@ -11,12 +11,15 @@ class RemotePunter : public Punter {
   explicit RemotePunter(int port);
   ~RemotePunter() override;
 
-  std::string Initialize(int punter_id,
-                         int num_punters,
-                         const Map& map) override;
+  std::string Setup(int punter_id,
+                    int num_punters,
+                    const Map* map) override;
   Move OnTurn(const std::vector<Move>& moves) override;
 
  private:
+  const int port_;
+  int punter_id_;
+
   DISALLOW_COPY_AND_ASSIGN(RemotePunter);
 };
 

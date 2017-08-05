@@ -1,4 +1,4 @@
-#include "stadium/game_states.h"
+#include "stadium/game_data.h"
 
 #include <memory>
 #include <set>
@@ -6,14 +6,13 @@
 
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "base/json/json_reader.h"
 #include "base/logging.h"
 
 namespace stadium {
 namespace {
 
-Map ParseMap(const base::DictionaryValue* map_dict) {
-  CHECK(map_dict);
-
+Map ParseMap(std::unique_ptr<base::DictionaryValue> map_dict) {
   Map map;
 
   std::set<int> mines;
@@ -43,14 +42,16 @@ Map ParseMap(const base::DictionaryValue* map_dict) {
     const base::ListValue* rivers_list;
     CHECK(map_dict->GetList("rivers", &rivers_list));
     for (int i = 0; i < rivers_list->GetSize(); ++i) {
-      const base::DictionaryValue* rive_dict;
+      const base::DictionaryValue* river_dict;
       CHECK(rivers_list->GetDictionary(i, &river_dict));
       int source, target;
-      CHECK(site_dict->GetInteger("source", &source));
-      CHECK(site_dict->GetInteger("target", &target));
-      map.rivers.emplace_back(River(source, target));
+      CHECK(river_dict->GetInteger("source", &source));
+      CHECK(river_dict->GetInteger("target", &target));
+      map.rivers.emplace_back(River{source, target});
     }
   }
+
+  map.raw_value = std::move(map_dict);
 
   return map;
 }
@@ -63,7 +64,7 @@ Map Map::ReadFromFileOrDie(const std::string& path) {
   CHECK(base::ReadFileToString(base::FilePath(path), &map_content));
   auto map_dict = base::DictionaryValue::From(base::JSONReader::Read(map_content));
   CHECK(map_dict);
-  return ParseMap(map_dict.get());
+  return ParseMap(std::move(map_dict));
 }
 
 }  // namespace stadium

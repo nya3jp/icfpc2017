@@ -11,9 +11,8 @@ class PassPunter : public Punter {
   PassPunter();
   ~PassPunter() override;
 
+  void SetUp(int punter_id, int num_punters, const GameMap& game_map) override;
   GameMove Run(const std::vector<GameMove>& moves) override;
-  void Initialize(int punter_id, int num_punters, const GameMap& game_map)
-      override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 
