@@ -9,9 +9,12 @@
     canvas {
       background: rgb(245, 245, 245);
     }
+    #scores span {
+      font-size: 160%;
+      margin: 5px 20px;
+    }
     </style>
     <script src="main.js"></script>
-
   </head>
   <body>
     <label for="map">
@@ -22,10 +25,15 @@
       Import Moves
       <input type="file" id="moves">
     </label>
-    <button id="prev" disabled>Prev</button>
-    <button id="next" disabled>Next</button>
+    <br>
+    <div id="scores">
+    </div>
     <div id="wrapper">
       <canvas id="canvas"></canvas>
+    </div>
+    <div id="buttons">
+      <button id="prev" disabled>Prev</button>
+      <button id="next" disabled>Next</button>
     </div>
   </body>
 </html>

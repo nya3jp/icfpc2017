@@ -36,26 +36,29 @@ void SimplePunter::SetUp(
   }
   mines_ = game_map.mines;
 
+  GenerateAdjacencyList();
   ComputeDistanceToMine();
 }
 
-void SimplePunter::ComputeDistanceToMine() {
-  size_t num_sites = sites_.size();
-  size_t num_mines = mines_.size();
-  edges_.resize(num_sites);
-  dist_to_mine_.resize(num_sites, std::vector<int>(num_mines, -1));
-
+void SimplePunter::GenerateAdjacencyList() {
+  edges_.resize(sites_.size());
   for (const RiverWithPunter& river : rivers_) {
     int a = river.source;
     int b = river.target;
     edges_[a].push_back(b);
     edges_[b].push_back(a);
   }
-  for (size_t i = 0; i < num_sites; ++i) {
+  for (size_t i = 0; i < sites_.size(); ++i) {
     std::sort(edges_[i].begin(), edges_[i].end());
     edges_[i].erase(std::unique(edges_[i].begin(), edges_[i].end()),
                     edges_[i].end());
   }
+}
+
+void SimplePunter::ComputeDistanceToMine() {
+  size_t num_sites = sites_.size();
+  size_t num_mines = mines_.size();
+  dist_to_mine_.resize(num_sites, std::vector<int>(num_mines, -1));
 
   for (size_t i = 0; i < num_mines; ++i) {
     int mine = mines_[i];
@@ -109,6 +112,18 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   for (size_t i = 0; i < mines->GetSize(); i++) {
     CHECK(mines->GetInteger(i, &mines_[i]));
   }
+
+  base::ListValue* dist_to_mine;
+  CHECK(state->GetList("dist_to_mine", &dist_to_mine));
+  dist_to_mine_.resize(sites_.size(), std::vector<int>(mines_.size()));
+  for (size_t i = 0; i < sites_.size(); ++i) {
+    for (size_t k = 0; k < mines_.size(); ++k) {
+      dist_to_mine->GetInteger(i * mines_.size() + k,
+                               &dist_to_mine_[i][k]);
+    }
+  }
+
+  GenerateAdjacencyList();
 }
 
 std::unique_ptr<base::Value> SimplePunter::GetState() {
@@ -140,6 +155,15 @@ std::unique_ptr<base::Value> SimplePunter::GetState() {
     mines->AppendInteger(mine);
   }
   value->Set("mines", std::move(mines));
+
+  auto dist_to_mine = base::MakeUnique<base::ListValue>();
+  dist_to_mine->Reserve(sites_.size() * mines_.size());
+  for (size_t i = 0; i < sites_.size(); ++i) {
+    for (size_t k = 0; k < mines_.size(); ++k) {
+      dist_to_mine->AppendInteger(dist_to_mine_[i][k]);
+    }
+  }
+  value->Set("dist_to_mine", std::move(dist_to_mine));
 
   return std::move(value);
 }
