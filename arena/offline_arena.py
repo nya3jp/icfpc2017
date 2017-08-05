@@ -39,7 +39,7 @@ class Arena():
     def __init__(self, map_data, logger):
         self._logger = logger
 
-        self._cap = 5
+        self._cap = None
 
         self._next_id = 0
         self._clients = {}
@@ -62,10 +62,6 @@ class Arena():
         return new_id
 
     def join(self, player):
-        if len(self._clients) == self._cap:
-            self._debug('Too many players')
-            return None
-
         client_id = self._generate_id()
         assert(client_id not in self._clients)
         self._clients[client_id] = {
@@ -79,14 +75,14 @@ class Arena():
         return client_id
 
     def run(self):
-        for i in range(self._cap):
+        for i in range(len(self._clients)):
             self._debug('prompt_setup')
             player = self._get_current_client()['player']
-            player.prompt_setup_soon({'punter': self._turn % self._cap, 'punters': self._cap, 'map': map_data})
+            player.prompt_setup_soon({'punter': self._turn % len(self._clients), 'punters': len(self._clients), 'map': map_data})
 
             self._turn += 1
         while True:
-            if self._turn == self._cap + len(self._map.rivers):
+            if self._turn == len(self._clients) + len(self._map.rivers):
                 self._info('Game over')
 
                 rivers = self._map.rivers
@@ -96,7 +92,7 @@ class Arena():
                 return
 
             moves = []
-            if len(self._moves) == self._cap:
+            if len(self._moves) == len(self._clients):
                 start = 1
             else:
                 start = 0
@@ -124,11 +120,11 @@ class Arena():
                         pass
                     rivers[i] = (river[0], river[1], punter_id)
             self._moves.append(message)
-            if len(self._moves) > self._cap:
+            if len(self._moves) > len(self._clients):
                 self._moves.popleft()
 
     def _get_current_client(self):
-        return self._clients[self._turn % self._cap]
+        return self._clients[self._turn % len(self._clients)]
 
     def handle_error(self, s):
         self._debug(s)
@@ -527,12 +523,9 @@ class Bot(FileEndpoint):
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
-    parser.add_option('--server_host', dest='server_host')
-    parser.add_option('--port', type='int', dest='port')
     parser.add_option('--map', dest='map_file')
     parser.add_option('--commands', type='string', dest='commands', default=None)
     parser.add_option('--bot', default=None, dest='bot')
-    parser.add_option('--fake_clients', type='int', default='-1', dest='fake_clients')
     parser.add_option('--log-level', '--log_level', type='choice',
                       dest='log_level', default='debug',
                       choices=['debug', 'info', 'warning', 'error',
@@ -546,30 +539,22 @@ if __name__ == '__main__':
 
     if options.bot is not None:
         Bot(options.bot, logger)
+    else:
+        map_file = open(options.map_file, 'r')
+        map_data = json.loads(map_file.read())
 
-    map_file = open(options.map_file, 'r')
-    map_data = json.loads(map_file.read())
+        arena = Arena(map_data, logger)
 
-    arena = Arena(map_data, logger)
+        if options.commands is None:
+            options.commands = json.dumps([
+                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'a'],
+                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'b'],
+                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'c'],
+                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'd'],
+                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'e'],
+            ])
 
-    options.commands = json.dumps([
-        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'a'],
-        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'b'],
-        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'c'],
-        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'd'],
-        ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'e'],
-    ])
-    if options.commands is not None:
         commands = json.loads(options.commands)
         for command in commands:
             player = OfflinePlayerHost(command, arena, logger)
         arena.run()
-
-    if options.fake_clients != -1:
-        for i in range(options.fake_clients):
-            client = Client('%d' % i, options, logger)
-            client_thread = threading.Thread(target=client.run)
-            client_thread.daemon = True
-            client_thread.start()
-
-    server_thread.join()
