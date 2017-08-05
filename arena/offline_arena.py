@@ -1,14 +1,9 @@
-import asyncio
 import collections
-import functools
 import json
 import logging
 import optparse
-import socket
-import socketserver
 import subprocess
 import sys
-import threading
 
 
 def serialize(o):
@@ -101,72 +96,53 @@ class Arena():
     def __init__(self, map_data, logger):
         self._logger = logger
 
-        self._cap = None
-
         self._next_id = 0
+
         self._punters = {}
 
         self._map = Map(map_data)
         self._num_rivers = len(self._map.rivers)
 
-        self._turn = 0
-
-        self._moves = collections.deque()
-
     def _debug(self, s):
-        self._logger.debug('A: %s' % s)
+        self._logger.debug('Arena: %s' % s)
 
     def _info(self, s):
-        self._logger.info('A: %s' % s)
+        self._logger.info('Arena: %s' % s)
 
-    def _generate_id(self):
-        new_id = self._next_id
+    def join(self, punter):
+        punter_id = self._next_id
         self._next_id += 1
-        return new_id
 
-    def join(self, player):
-        punter_id = self._generate_id()
-        assert(punter_id not in self._punters)
-        self._punters[punter_id] = {
-            'player': player,
-            'is_zombie': False,
-            'state': None,
-        }
-
-        self._info('New player: %d' % punter_id)
+        self._punters[punter_id] = punter
 
         return punter_id
 
-    def _get_current_client(self):
-        return self._punters[self._turn % self._num_punters]
+    def _get_current_punter(self):
+        return self._punters[self._step % self._num_punters]
 
     def run(self):
         self._num_punters = len(self._punters)
 
+        self._all_moves = []
+
         for i in range(self._num_punters):
-            player = self._get_current_client()['player']
-            player.prompt_setup(
+            punter = self._punters[i]
+            punter.prompt_setup(
                 {'punter': i,
                  'punters': self._num_punters,
                  'map': map_data})
 
-            self._turn += 1
+        self._step = 0
 
-        self._turn = 0
+        self._moves = collections.deque()
+        for i in range(self._num_punters):
+            self._moves.append({'pass': {'punter': i}})
 
         while True:
-            self._debug('Turn #%d / %d' % (self._turn, self._num_rivers))
+            self._debug('step #%d / %d' % (self._step, self._num_rivers))
 
-            if self._turn == self._num_rivers:
+            if self._step == self._num_rivers:
                 self._info('Game over')
-
-                moves = []
-                while True:
-                    try:
-                        move = self._moves.popleft()
-                        moves.append(move)
-                    except IndexError:
-                        break
 
                 result = 'Final rivers\n'
                 rivers = self._map.rivers
@@ -174,37 +150,22 @@ class Arena():
                     result += ('  %r\n' % (river,))
                 self._debug(result)
 
-                sys.stdout.write(json.dumps({'moves': moves, 'scores': calculate_score(
-                    self._num_punters, self._map.sites, self._map.mines, self._map.rivers)}))
+                sys.stdout.write(
+                    json.dumps(
+                        {'moves': self._all_moves,
+                         'scores': calculate_score(
+                            self._num_punters, self._map.sites, self._map.mines, self._map.rivers)}))
                 sys.stdout.write('\n')
                 sys.stdout.flush()
 
                 return
 
-            moves = []
-            start = len(self._moves) - min(len(self._moves), self._num_punters)
-            for i in range(start, len(self._moves)):
-                moves.append(self._moves[i])
-            self._debug(moves)
-            client = self._get_current_client()
-            #self._debug('Sending state along with move %r: ' % client['state'])
-            client['player'].prompt_move(
-                {'move': {'moves': moves},
-                 'state': client['state']})
+            punter = self._get_current_punter()
+            punter.prompt_move({'move': {'moves': list(self._moves)}})
 
-            self._turn += 1
-
-    def ready(self, state):
-        client = self._get_current_client()
-        client['state'] = state
+            self._step += 1
 
     def done_move(self, message, punter_id, is_move, source, target):
-        new_state = message.get('state')
-        #self._debug('New state %r: ' % new_state)
-        del message['state']
-
-        client = self._get_current_client()
-        client['state'] = new_state
         if is_move:
             if source > target:
                 tmp = source
@@ -217,86 +178,101 @@ class Arena():
                 if river[0] == source and river[1] == target:
                     if river[2] is not None:
                         self._debug('Conflict: %r' % river[2])
-                        self._moves.append({'pass': {'punter': punter_id}})
+                        move = {'pass': {'punter': punter_id}}
+                        self._moves.append(move)
+                        self._moves.popleft()
+                        self._all_moves.append(move)
                         return
                     else:
                         rivers[i] = (river[0], river[1], punter_id)
                         break
         self._moves.append(message)
+        self._moves.popleft()
+        self._all_moves.append(message)
 
-    def handle_error(self, s):
-        self._debug(s)
 
-
-class PlayerHost():
+class FileEndpoint():
     def __init__(self):
-        self._setup_timeout_handle = None
-        self._move_timeout_handle = None
+        self._message_length = None
+        self._buffer = ''
 
-    def _handle_error(self, s):
-        self._arena.handle_error(s)
+    def _read(self, in_file):
+        while True:
+            if self._message_length is None:
+                data = in_file.read(1).decode('utf-8')
+                if len(data) == 0:
+                    self._debug('EOF')
+                    return
+
+                if data != ':':
+                    self._buffer += data
+                    continue
+
+                if len(self._buffer) == 0:
+                    self._debug('Empty length')
+                    return
+
+                length_str = self._buffer
+                self._message_length = int(length_str)
+                if str(self._message_length) != length_str:
+                    self._debug('Bad length: %s' % length_str)
+                    return
+                self._buffer = ''
+
+            data = in_file.read(self._message_length - len(self._buffer)).decode('utf-8')
+            if len(data) == 0:
+                self._debug('EOF')
+                return
+
+            self._buffer += data
+
+            if len(self._buffer) < self._message_length:
+                continue
+
+            try:
+                message = json.loads(self._buffer)
+            except json.JSONDecodeError as e:
+                self._handle_error('Bad message: %s' % message_str)
+                return
+
+            self._message_length = None
+            self._buffer = ''
+
+            self._handle_message(message)
+            return
+
+
+class OfflinePunterHost(FileEndpoint):
+    def __init__(self, command, arena, logger):
+        self._logger = logger
+
+        self._arena = arena
+
+        self._command = command
+
+        FileEndpoint.__init__(self)
+
+        self._handling_handshake = False
+
+        self._handling_setup = False
+        self._handling_move = False
+
+        self._name = None
+
+        self._punter_id = arena.join(self)
+
+        self._debug('%d: Constructed' % self._punter_id)
+
+    def _debug(self, s):
+        self._logger.debug('%s: %s' % (self._name, s))
+
+    def _write(self, data):
+        self._process.stdin.write(serialize(data))
+        self._process.stdin.flush()
 
     def _handle_message(self, message):
-        if self._setup_timeout_handle is not None:
-            if self._setup_timeout_handle is not True:
-                self._setup_timeout_handle.cancel()
-            self._setup_timeout_handle = None
-
-            self._debug('+Setup')
-
-            ready = message.get('ready')
-            if ready is None or ready != self._punter_id:
-                self._handle_error('Bad ready: %r' % message)
-                return
-            state = message.get('state')
-            self._arena.ready(state)
-
-            self._debug('-Setup')
-        elif self._move_timeout_handle is not None:
-            if self._move_timeout_handle is not True:
-                self._move_timeout_handle.cancel()
-            self._move_timeout_handle = None
-
-            #self._debug('+Move')
-
-            claim = message.get('claim')
-            if claim is None:
-                pass_desc = message.get('pass')
-                if pass_desc is None:
-                    self._handle_error('Bad move: %r' % message)
-                    return
-
-                punter_id = pass_desc.get('punter')
-                if punter_id is None or punter_id != self._punter_id:
-                    self._handle_error('Bad move (wrong id): %r' % message)
-                    return
-
-                self._debug('  Pass')
-
-                self._arena.done_move(message, punter_id, False, None, None)
-            else:
-                punter_id = claim.get('punter')
-                if punter_id is None or punter_id != self._punter_id:
-                    self._handle_error('Bad move: %r' % message)
-                    return
-                source = claim.get('source')
-                if source is None:
-                    self._handle_error('Bad move: %r' % message)
-                    return
-                target = claim.get('target')
-                if target is None:
-                    self._handle_error('Bad move: %r' % message)
-                    return
-
-                self._debug('  Claim %d -> %d' % (source, target))
-
-                self._arena.done_move(message, punter_id, True, source, target)
-
-            #self._debug('-Move')
-        elif not self._received_handshake:
-            #self._debug('+Handshake')
-
-            self._received_handshake = True
+        if self._handling_handshake:
+            self._handling_handshake = False
 
             self._name = message.get('me')
             if self._name is None:
@@ -304,217 +280,91 @@ class PlayerHost():
                 return
 
             self._write({'you': self._name})
+        elif self._handling_setup:
+            self._handling_setup = False
 
-            #self._debug('-Hanshake')
-        else:
-            self._handle_error('Out of turn message: %r' % message)
-            return
-
-
-class FileEndpoint():
-    def __init__(self, decode, logger):
-        self._logger = logger
-        self._decode = not decode
-        if decode:
-            self._buffer = ''
-        else:
-            self._buffer = ''
-        self._colon_pos = None
-        self._next_length = None
-
-    def _debug(self, s):
-        self._logger.debug(s)
-
-    def _read(self, in_fd):
-        while True:
-            if self._next_length is None:
-                if len(self._buffer) == 0:
-                    data = in_fd.read(5)
-                else:
-                    data = in_fd.read(1)
-                if len(data) == 0:
-                    self._debug('broken')
-                    return
-            else:
-                data = in_fd.read(self._next_length + 1 + self._colon_pos - len(self._buffer))
-            if not self._decode:
-                data = data.decode('utf-8')
-            prev_buffer_len = len(self._buffer)
-            self._buffer += data
-            if self._next_length is None:
-                for i in range(len(data)):
-                    if data[i] == ':':
-                        self._colon_pos = i + prev_buffer_len
-                        break
-                if self._colon_pos is None:
-                    continue
-                if self._colon_pos == 0:
-                    self._handle_error('Empty length from %r' % self._name)
-                    return
-                length_str = self._buffer[0:self._colon_pos]
-                self._next_length = int(length_str)
-                if str(self._next_length) != length_str:
-                    self._handle_error('Bad length from %r: %s' % (self._name, length_str))
-                    return
-
-            if len(self._buffer) < self._colon_pos + 1 + self._next_length:
-                continue
-
-            message_start = self._colon_pos + 1
-            message_end = self._colon_pos + 1 + self._next_length
-            try:
-                message_str = self._buffer[message_start:message_end]
-                message = json.loads(message_str)
-            except json.JSONDecodeError as e:
-                self._handle_error('Bad message: %s' % message_str)
+            ready = message.get('ready')
+            if ready is None or ready != self._punter_id:
+                self._handle_error('Bad ready: %r' % message)
                 return
 
-            self._buffer = self._buffer[message_end:]
-            self._colon_pos = None
-            self._next_length = None
+            self._game_state = message.get('state')
+        elif self._handling_move:
+            self._handling_move = False
 
-            self._handle_message(message)
-            return
+            claim = message.get('claim')
+            if claim is None:
+                pass_desc = message.get('pass')
+                if pass_desc is None:
+                    self._handle_error('Bad message: %r' % message)
+                    return
 
+                punter_id = pass_desc.get('punter')
+                if punter_id is None or punter_id != self._punter_id:
+                    self._handle_error(
+                        'Bad move (punter id missing or wrong): %r' % message)
+                    return
 
-class OfflinePlayerHost(PlayerHost, FileEndpoint):
-    def __init__(self, command, arena, logger):
-        self._logger = logger
-        self._arena = arena
+                self._debug('pass')
 
-        FileEndpoint.__init__(self, True, logger)
-        PlayerHost.__init__(self)
+                self._game_state = message.get('state')
 
-        self._command = command
+                self._arena.done_move(message, punter_id, False, None, None)
+            else:
+                punter_id = claim.get('punter')
+                if punter_id is None or punter_id != self._punter_id:
+                    self._handle_error('Bad move (punter id missing or wrong): %r' % message)
+                    return
+                source = claim.get('source')
+                if source is None:
+                    self._handle_error('Bad move (source missing): %r' % message)
+                    return
+                target = claim.get('target')
+                if target is None:
+                    self._handle_error('Bad move (target missing): %r' % message)
+                    return
 
-        self._name = None
+                self._debug('claim %d -> %d' % (source, target))
 
-        self._punter_id = arena.join(self)
+                self._arena.done_move(message, punter_id, True, source, target)
 
-    def _debug(self, s):
-        self._logger.debug('S %s: %s' % (self._name, s))
+                self._game_state = message.get('state')
+        else:
+            self._debug('Unsolicited message: %r' % message)
 
-    def _write(self, data):
-        self._process.stdin.write(serialize(data))
-        self._process.stdin.flush()
-
-    def prompt_setup(self, setup):
+    def _launch(self):
         self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
-        self._received_handshake = False
+        self._handling_handshake = True
         self._read(self._process.stdout)
 
-        self._setup_timeout_handle = True
+    def _kill(self):
+        self._process.kill()
+        self._process = None
+
+    def prompt_setup(self, setup):
+        self._launch()
+
+        self._handling_setup = True
         self._write(setup)
         self._read(self._process.stdout)
 
-        self._process.kill()
-        self._process = None
+        self._kill()
 
     def prompt_move(self, moves):
-        self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self._launch()
 
-        self._received_handshake = False
-        self._read(self._process.stdout)
-
-        self._move_timeout_handle = True
+        self._handling_move= True
+        moves['state'] = self._game_state
         self._write(moves)
         self._read(self._process.stdout)
 
-        self._process.kill()
-        self._process = None
-
-
-class Bot(FileEndpoint):
-    def __init__(self, name, logger):
-        FileEndpoint.__init__(self, False, logger)
-
-        self._logger = logger
-
-        self._name = name
-
-        #self._debug('Created')
-
-        self._done_handshake = False
-
-        self._punter_id = None
-        self._punters = None
-        self._map = None
-
-        self._write({'me': self._name})
-        self._read(sys.stdin)
-
-        self._read(sys.stdin)
-
-    def _write(self, data):
-        sys.stdout.write(serialize(data).decode('utf-8'))
-        sys.stdout.flush()
-
-    def _debug(self, s):
-        self._logger.debug('C %s: %s' % (self._name, s))
-
-    def _handle_message(self, message):
-        if not self._done_handshake:
-            #self._debug('+Handshake')
-            #self._debug('-Handshake')
-            self._done_handshake = True
-        elif message.get('punter') is not None:
-            self._debug('+Setup')
-
-            self._punter_id = message['punter']
-            self._punters = message['punters']
-            self._map = Map(message['map'])
-
-            self._debug('  punter: %d, punters: %d, num_sites: %d, num_mines: %d, num_rivers: %d' %
-                        (self._punter_id, self._punters, len(self._map.sites), len(self._map.mines), len(self._map.rivers)))
-            self._write({'ready': self._punter_id, 'state': {'punter': self._punter_id}})
-
-            self._debug('-Setup')
-        else:
-            self._debug('+Move')
-            #self._debug('%r received' % message)
-            state = message.get('state')
-            #self._write({'pass': {'punter': state['punter']}, 'state': state})
-            self._write({'claim': {'punter': state['punter'], 'source': 0, 'target': 1}, 'state': state})
-            return
-            rivers = self._map.rivers
-            for move in message['move']['moves']:
-                claim = move.get('claim')
-                if claim is not None:
-                    punter_id = claim['punter']
-                    source = claim['source']
-                    target = claim['target']
-                    if source > target:
-                        tmp = target
-                        target = source
-                        source = tmp
-                    i = 0
-                    while i < len(rivers):
-                        river = rivers[i]
-                        if river[0] == source and river[1] == target:
-                            rivers[i] = (source, target, punter_id)
-                        i += 1
-            i = 0
-            while i < len(rivers):
-                river = rivers[i]
-                if river[2] is None:
-                    rivers[i] = (river[0], river[1], self._punter_id)
-                    self._write(
-                        {'claim': {'punter': self._punter_id,
-                                   'source': river[0],
-                                   'target': river[1]}})
-                    self._debug('  Claim %d -> %d' % (river[0], river[1]))
-
-                    #self._debug('-Move')
-                    return
-                i += 1
+        self._kill()
 
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--map', dest='map_file')
     parser.add_option('--commands', type='string', dest='commands', default=None)
-    parser.add_option('--bot', default=None, dest='bot')
     parser.add_option('--log-level', '--log_level', type='choice',
                       dest='log_level', default='debug',
                       choices=['debug', 'info', 'warning', 'error',
@@ -526,27 +376,21 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     logger.setLevel(logging.getLevelName(options.log_level.upper()))
 
-    if options.bot is not None:
-        Bot(options.bot, logger)
+    map_file = open(options.map_file, 'r')
+    map_data = json.loads(map_file.read())
+
+    arena = Arena(map_data, logger)
+
+    if options.commands is None:
+        commands = [
+            #['framework/game_main', '--name', 'fooz', '--punter', 'GreedyPunter'],
+             ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
+             ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'baz'],
+        ]
     else:
-        map_file = open(options.map_file, 'r')
-        map_data = json.loads(map_file.read())
+        commands = json.loads(options.commands)
 
-        arena = Arena(map_data, logger)
+    for command in commands:
+        punter = OfflinePunterHost(command, arena, logger)
 
-        if options.commands is None:
-            commands = [
-                ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'foo'],
-                ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'bar'],
-                ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'baz'],
-                #['framework/game_main', '--name', 'fooz', '--punter', 'GreedyPunter'],
-                 ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
-                # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'baz'],
-            ]
-        else:
-            commands = json.loads(options.commands)
-
-        for command in commands:
-            player = OfflinePlayerHost(command, arena, logger)
-
-        arena.run()
+    arena.run()
