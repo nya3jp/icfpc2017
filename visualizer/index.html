@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+    #wrapper {
+      width: 90%;
+      height: 80%;
+    }
+    canvas {
+      background: rgb(245, 245, 245);
+    }
+    </style>
+    <script src="main.js"></script>
+
+  </head>
+  <body>
+    <label for="map">
+      Import Map
+      <input type="file" id="map">
+    </label>
+    <label for="moves">
+      Import Moves
+      <input type="file" id="moves">
+    </label>
+    <button id="prev" disabled>Prev</button>
+    <button id="next" disabled>Next</button>
+    <div id="wrapper">
+      <canvas id="canvas"></canvas>
+    </div>
+  </body>
+</html>
