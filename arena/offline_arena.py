@@ -58,14 +58,14 @@ def calculate_score(num_punters, sites, mines, rivers):
         visited = {}
         visited[mine] = True
         distances[mine][mine] = 0
-        queue = [(mine, 0)]
+        queue = collections.deque([(mine, 0)])
         while len(queue) > 0:
-            v, d = queue.pop()
+            v, d = queue.popleft()
             for j in adj[v]:
-                distances[mine][j] = min(distances[mine][j], d + 1)
                 if visited.get(j) is not None:
                     continue
                 visited[j] = True
+                distances[mine][j] = d + 1
                 queue.append((j, d + 1))
 
     scores = []
