@@ -1,7 +1,9 @@
 #ifndef STADIUM_STUB_PUNTER_H_
 #define STADIUM_STUB_PUNTER_H_
 
+#include <set>
 #include <string>
+#include <utility>
 
 #include "base/macros.h"
 #include "stadium/punter.h"
@@ -20,6 +22,7 @@ class StubPunter : public Punter {
 
  private:
   int punter_id_;
+  std::set<std::pair<int, int>> unclaimed_rivers_;
 
   DISALLOW_COPY_AND_ASSIGN(StubPunter);
 };

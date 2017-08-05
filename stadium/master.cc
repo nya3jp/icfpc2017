@@ -44,7 +44,7 @@ void Master::DoRunGame() {
   for (int turn_id = 0; turn_id < map_.rivers.size(); ++turn_id) {
     int punter_id = turn_id % punters_.size();
     Move move = punters_[punter_id]->OnTurn(last_moves_);
-    Move actual_move = referee_->HandleMove(move, punter_id);
+    Move actual_move = referee_->HandleMove(turn_id, punter_id, move);
     CHECK_EQ(actual_move.punter_id, punter_id);
     last_moves_[punter_id] = actual_move;
   }
