@@ -257,12 +257,15 @@ class FileEndpoint():
 
 
 class OfflinePunterHost(FileEndpoint):
-    def __init__(self, command, arena, logger):
+    def __init__(self, command, arena, options, logger):
         self._logger = logger
+
+        self._options = options
 
         self._arena = arena
 
         self._command = command
+        self._process = None
 
         FileEndpoint.__init__(self)
 
@@ -347,13 +350,17 @@ class OfflinePunterHost(FileEndpoint):
             self._debug('Unsolicited message: %r' % message)
 
     def _launch(self):
-        self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        if self._process is None:
+            if self._options.persistent:
+                self._command += ['--persistent']
+            self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self._handling_handshake = True
         self._read(self._process.stdout)
 
     def _kill(self):
-        self._process.kill()
-        self._process = None
+        if not self._options.persistent:
+            self._process.kill()
+            self._process = None
 
     def prompt_setup(self, setup):
         self._launch()
@@ -383,6 +390,7 @@ if __name__ == '__main__':
     parser.add_option('--include_state', action='store_true', dest='include_state')
     # Include the original move in the move history when conflict happens.
     parser.add_option('--include_cause', action='store_true', dest='include_cause')
+    parser.add_option('--persistent', action='store_true', dest='persistent')
     parser.add_option('--log-level', '--log_level', type='choice',
                       dest='log_level', default='debug',
                       choices=['debug', 'info', 'warning', 'error',
@@ -409,6 +417,6 @@ if __name__ == '__main__':
         commands = json.loads(options.commands)
 
     for command in commands:
-        punter = OfflinePunterHost(command, arena, logger)
+        punter = OfflinePunterHost(command, arena, options, logger)
 
     arena.run()
