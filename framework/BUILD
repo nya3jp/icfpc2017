@@ -27,6 +27,22 @@ cc_library(
   ]
 )
 
+cc_library(
+  name = "simple_punter",
+  srcs = [
+    "simple_punter.cc",
+  ],
+  hdrs = [
+    "simple_punter.h",
+  ],
+
+  deps = [
+    "//third_party/chromiumbase",
+    ":game",
+  ],
+  visibility = ["//visibility:public"]
+)
+
 cc_binary(
   name = "game_main",
   srcs = [
@@ -37,5 +53,7 @@ cc_binary(
     "//third_party/chromiumbase",
     ":game",
     ":pass_punter",
+    ":simple_punter",
+    "//punter:random_punter",
   ],
 )
