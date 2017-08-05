@@ -68,7 +68,6 @@ def calculate_score(num_punters, sites, mines, rivers):
                 visited[j] = True
                 queue.append((j, d + 1))
 
-    print(distances)
     scores = []
     for punter in range(num_punters):
         scores.append(calculate_score_for_punter(punter, sites, mines, rivers, distances))
