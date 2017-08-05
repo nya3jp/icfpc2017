@@ -82,6 +82,15 @@ std::vector<GameMove> ParseMoves(const base::ListValue& value) {
 
 }  // namespace
 
+
+GameMove GameMove::Pass(int punter_id) {
+  return {GameMove::Type::PASS, punter_id};
+}
+
+GameMove GameMove::Claim(int punter_id, int source, int target) {
+  return {GameMove::Type::CLAIM, punter_id, source, target};
+}
+
 Game::Game(std::unique_ptr<Punter> punter)
     : punter_(std::move(punter)) {}
 Game::~Game() = default;

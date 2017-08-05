@@ -9,7 +9,7 @@ PassPunter::PassPunter() = default;
 PassPunter::~PassPunter() = default;
 
 GameMove PassPunter::Run(const std::vector<GameMove>& moves) {
-  return {GameMove::Type::PASS, punter_id_};
+  return GameMove::Pass(punter_id_);
 }
 
 void PassPunter::SetUp(

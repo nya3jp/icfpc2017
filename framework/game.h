@@ -34,6 +34,9 @@ struct GameMove {
   int punter_id;
   int source;  // Available only when type is CLAIM.
   int target;  // Available only when type is CLAIM.
+
+  static GameMove Pass(int punter_id);
+  static GameMove Claim(int punter_id, int source, int target);
 };
 
 class Punter {
