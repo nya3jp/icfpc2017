@@ -55,5 +55,6 @@ cc_binary(
     ":pass_punter",
     ":simple_punter",
     "//punter:random_punter",
+    "//punter:greedy_punter",
   ],
 )

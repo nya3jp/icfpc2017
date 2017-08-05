@@ -13,3 +13,19 @@ cc_library(
   ],
   visibility = ["//visibility:public"]
 )
+
+cc_library(
+  name = "greedy_punter",
+  srcs = [
+    "greedy_punter.cc",
+  ],
+  hdrs = [
+    "greedy_punter.h",
+  ],
+
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+  visibility = ["//visibility:public"]
+)
