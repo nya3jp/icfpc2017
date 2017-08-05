@@ -203,16 +203,24 @@ class Arena():
         del message[u'state']
 
         client = self._get_current_client()
-        client['state'] = new_state
+        client[u'state'] = new_state
         if is_move:
+            if source > target:
+                tmp = source
+                source = target
+                target = tmp
+
             rivers = self._map.rivers
             for i in range(self._num_rivers):
                 river = rivers[i]
                 if river[0] == source and river[1] == target:
                     if river[2] is not None:
-                        self._logger.error('Conflict')
-                        pass
-                    rivers[i] = (river[0], river[1], punter_id)
+                        self._debug('Conflict')
+                        self._moves.append({u'pass': {u'punter': new_state[u'punter']}})
+                        return
+                    else:
+                        rivers[i] = (river[0], river[1], punter_id)
+                        break
         self._moves.append(message)
 
     def handle_error(self, s):
@@ -470,7 +478,8 @@ class Bot(FileEndpoint):
             self._debug('+Move')
             #self._debug('%r received' % message)
             state = message.get(u'state')
-            self._write({'pass': {'punter': state['punter']}, 'state': state})
+            #self._write({'pass': {'punter': state['punter']}, 'state': state})
+            self._write({'claim': {'punter': state[u'punter'], u'source': 0, u'target': 1}, 'state': state})
             return
             rivers = self._map.rivers
             for move in message[u'move'][u'moves']:
@@ -534,7 +543,7 @@ if __name__ == '__main__':
                 ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'foo'],
                 ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'bar'],
                 ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'baz'],
-                # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'foo'],
+                #['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'fooz'],
                 # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
                 # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'baz'],
             ]
