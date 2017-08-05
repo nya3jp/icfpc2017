@@ -102,6 +102,7 @@ class Arena():
         return self._clients[self._turn % self._cap]
 
     def _prompt_setup(self):
+        self._debug('prompt_setup')
         player = self._get_current_client()['player']
         player.prompt_setup_soon({'punter': self._turn % self._cap, 'punters': self._cap, 'map': map_data})
 
@@ -182,6 +183,7 @@ class PlayerHost():
         self._arena.handle_error(s)
 
     def _handle_message(self, message):
+        self._debug(message)
         if self._setup_timeout_handle is not None:
             if self._setup_timeout_handle is not True:
                 self._setup_timeout_handle.cancel()
@@ -333,21 +335,30 @@ class SocketPlayerHost(PlayerHost):
 
 
 class FileEndpoint():
-    def __init__(self):
-        self._buffer = ''
+    def __init__(self, logger):
+        self._logger = logger
+        self._buffer = b''
         self._colon_pos = None
         self._next_length = None
+
+    def _debug(self, s):
+        self._logger.debug(s)
 
     def _read(self, in_fd):
         while True:
             if self._next_length is None:
+                self._debug('reading')
                 data = in_fd.read(1)
+                if len(data) == 0:
+                    return
+                self._debug(data.decode('utf-8'))
             else:
                 data = in_fd.read(self._next_length + 1 + self._colon_pos - len(self._buffer))
+                self._debug('b' + data.decode('utf-8'))
             self._buffer += data
             if self._next_length is None:
                 for i in range(len(data)):
-                    if data[i] == ord(':'):
+                    if data[i] == b':':
                         self._colon_pos = i + len(self._buffer)
                         break
                 if self._colon_pos is None:
@@ -355,7 +366,7 @@ class FileEndpoint():
                 if self._colon_pos == 0:
                     self._handle_error('Empty length from %r' % self._name)
                     return
-                length_str = self._buffer[0:self._colon_pos - 1].decode('utf-8')
+                length_str = self._buffer[0:self._colon_pos - 1]
                 self._next_length = int(length_str)
                 if str(self._next_length) != length_str:
                     self._handle_error('Bad length from %r: %s' % (self._name, length_str))
@@ -371,7 +382,7 @@ class FileEndpoint():
             try:
                 message_str = self._buffer[message_start:message_end]
                 self._debug(message_str)
-                message = json.loads(message_str.decode('utf-8'))
+                message = json.loads(message_str)
             except json.JSONDecodeError as e:
                 self._handle_error('Bad message: %s' % message_str)
                 return
@@ -389,9 +400,10 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
         self._logger = logger
         self._arena = arena
 
-        FileEndpoint.__init__(self)
+        FileEndpoint.__init__(self, logger)
         PlayerHost.__init__(self)
 
+        self._command = command
         self._received_handshake = False
 
         self._name = None
@@ -403,20 +415,27 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
 
     def _write(self, data):
         self._process.stdin.write(serialize(data))
+        self._process.stdin.flush()
 
     def _launch_and_write(self, data):
-        self._process = subprocess.Popen([x for x in command], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self._debug(self._command)
+        self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self._read(self._process.stdout)
         self._write(data)
 
     def prompt_setup_soon(self, setup):
         self._launch_and_write(setup)
         self._setup_timeout_handle = True
         self._read(self._process.stdout)
+        self._process.terminate()
+        self._process = None
 
     def prompt_move_soon(self, moves):
         self._launch_and_write(moves)
         self._move_timeout_handle = True
         self._read(self._process.stdout)
+        self._process.terminate()
+        self._process = None
 
 
 class RequestHandler(socketserver.BaseRequestHandler, SocketPlayerHost):
@@ -458,7 +477,7 @@ class Bot(FileEndpoint):
     def __init__(self, name, logger):
         self._logger = logger
 
-        FileEndpoint.__init__(self)
+        FileEndpoint.__init__(self, logger)
         self._name = name
 
         self._debug('Created')
@@ -470,10 +489,12 @@ class Bot(FileEndpoint):
         self._map = None
 
         self._write({'me': self._name})
+        sys.stdout.flush()
         self._read(sys.stdin)
 
     def _write(self, data):
         sys.stdout.write(serialize(data).decode('utf-8'))
+        sys.stdout.flush()
 
     def _debug(self, s):
         self._logger.debug('C %s: %s' % (self._name, s))
