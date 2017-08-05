@@ -216,7 +216,7 @@ class Arena():
                 if river[0] == source and river[1] == target:
                     if river[2] is not None:
                         self._debug('Conflict')
-                        self._moves.append({'pass': {'punter': new_state['punter']}})
+                        self._moves.append({'pass': {'punter': punter_id}})
                         return
                     else:
                         rivers[i] = (river[0], river[1], punter_id)
