@@ -2,6 +2,7 @@
 
 #include <queue>
 
+#include "base/base64.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 
@@ -130,9 +131,11 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
                                &dist_to_mine_[i][k]);
     }
   }
-  std::string serialized_proto;
-  CHECK(state->GetString("proto", &serialized_proto));
-  CHECK(proto_.ParseFromString(serialized_proto));
+  std::string b64_proto;
+  CHECK(state->GetString("proto", &b64_proto));
+  std::string serialized;
+  CHECK(base::Base64Decode(b64_proto, &serialized));
+  CHECK(proto_.ParseFromString(serialized));
 
   GenerateSiteIdToSiteIndex();
   GenerateAdjacencyList();
@@ -177,7 +180,10 @@ std::unique_ptr<base::Value> SimplePunter::GetState() {
   }
   value->Set("dist_to_mine", std::move(dist_to_mine));
 
-  value->SetString("proto", proto_.SerializeAsString());
+  const std::string binary = proto_.SerializeAsString();
+  std::string b64;
+  base::Base64Encode(binary, &b64);
+  value->SetString("proto", b64);
 
   return std::move(value);
 }
