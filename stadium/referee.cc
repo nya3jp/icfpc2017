@@ -65,7 +65,7 @@ struct Referee::Score {
 };
 
 std::vector<Referee::Score> Referee::MapState::GetScore(
-    const std::vector<std::string>& names) {
+    const std::vector<PunterInfo>& punter_info_list) {
   std::multimap<int, const RiverState*> edges;
   for (const auto& entry : rivers) {
     edges.emplace(entry.first.source, &entry.second);
@@ -105,7 +105,7 @@ std::vector<Referee::Score> Referee::MapState::GetScore(
   }
 
   std::vector<Referee::Score> scores;
-  for (int punter_id = 0; punter_id < names.size(); ++punter_id) {
+  for (int punter_id = 0; punter_id < punter_info_list.size(); ++punter_id) {
     int score = 0;
     for (int j = 0; j < mines.size(); ++j) {
       int mine = mines[j];
@@ -140,6 +140,20 @@ std::vector<Referee::Score> Referee::MapState::GetScore(
           q.push(next_site_id);
         }
       }
+
+      // Future bonus.
+      for (const auto& future : punter_info_list[punter_id].futures) {
+        if (future.source != mine)
+          continue;
+        auto it = dist_map.find(future.target);
+        CHECK(it != dist_map.end());  // TODO: FIX ME. ... spec?
+        int dist = it->second;
+        dist = dist * dist * dist;
+        if (!visited.count(future.target)) {
+          dist = -dist;
+        }
+        score += dist;
+      }
     }
     scores.push_back(Referee::Score{punter_id, score});
     LOG(INFO) << "Punter: " << punter_id << ", Score: " << score;
@@ -151,10 +165,11 @@ std::vector<Referee::Score> Referee::MapState::GetScore(
 Referee::Referee() = default;
 Referee::~Referee() = default;
 
-void Referee::Setup(const std::vector<std::string>& names, const Map* map) {
-  names_ = names;
-  for (int punter_id = 0; punter_id < names.size(); ++punter_id) {
-    LOG(INFO) << "P" << punter_id << ": " << names[punter_id];
+void Referee::Setup(const std::vector<PunterInfo>& punter_info_list,
+                    const Map* map) {
+  punter_info_list_ = punter_info_list;
+  for (int punter_id = 0; punter_id < punter_info_list.size(); ++punter_id) {
+    LOG(INFO) << "P" << punter_id << ": " << punter_info_list[punter_id].name;
   }
 
   map_state_ = MapState::FromMap(*map);
@@ -165,7 +180,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
 
   if (actual_move.punter_id != punter_id) {
     LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
-               << ": Punter \"" << names_[punter_id] << "\" "
+               << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
                << "returned a move with a wrong punter ID "
                << actual_move.punter_id
                << ". This should a bug in the punter.";
@@ -176,7 +191,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
     auto iter = map_state_.rivers.find(RiverKey(move.source, move.target));
     if (iter == map_state_.rivers.end()) {
       LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
-                 << ": Punter \"" << names_[punter_id] << "\" "
+                 << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
                  << "tried to claim a non-existence river "
                  << move.source << "-" << move.target
                  << ". Forcing to PASS.";
@@ -185,8 +200,8 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
       RiverState& river = iter->second;
       if (river.punter_id >= 0) {
         LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
-                   << ": Punter \"" << names_[punter_id] << "\" "
-                   << "tried to claim a already-used river "
+                   << ": Punter \"" << punter_info_list_[punter_id].name
+                   << "\" tried to claim a already-used river "
                    << move.source << "-" << move.target
                    << ". Forcing to PASS.";
         actual_move = Move::MakePass(punter_id);
@@ -209,7 +224,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
 void Referee::Finish() {
   LOG(INFO) << "Game finished.";
   // TODO: use returned score?
-  map_state_.GetScore(names_);
+  map_state_.GetScore(punter_info_list_);
 }
 
 }  // namespace stadium

@@ -8,6 +8,7 @@
 #include "stadium/game_data.h"
 #include "stadium/punter.h"
 #include "stadium/referee.h"
+#include "stadium/settings.h"
 
 namespace stadium {
 
@@ -17,10 +18,10 @@ class Master {
   ~Master();
 
   void AddPunter(std::unique_ptr<Punter> punter);
-  void RunGame(Map map);
+  void RunGame(Map map, const Settings& settings);
 
  private:
-  void Initialize(Map map);
+  void Initialize(Map map, const Settings& settings);
   void DoRunGame();
 
   Map map_;

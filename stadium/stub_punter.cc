@@ -8,9 +8,10 @@ StubPunter::StubPunter() = default;
 
 StubPunter::~StubPunter() = default;
 
-std::string StubPunter::Setup(int punter_id,
-                              int num_punters,
-                              const Map* map) {
+PunterInfo StubPunter::Setup(int punter_id,
+                             int num_punters,
+                             const Map* map,
+                             const Settings& settings) {
   punter_id_ = punter_id;
 
   for (const auto& river : map->rivers) {
@@ -19,7 +20,7 @@ std::string StubPunter::Setup(int punter_id,
         std::max(river.source, river.target)));
   }
 
-  return "STUB";
+  return {"STUB", {}};
 }
 
 Move StubPunter::OnTurn(const std::vector<Move>& moves) {

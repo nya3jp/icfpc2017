@@ -16,6 +16,7 @@
 #include "stadium/stub_punter.h"
 
 DEFINE_string(map, "", "Path to a map JSON file.");
+DEFINE_bool(futures, false, "Enable Futures feature.");
 
 namespace stadium {
 namespace {
@@ -39,12 +40,14 @@ void Main(int argc, char** argv) {
     LOG(FATAL) << "No punter argument specified!";
   }
 
+  Settings settings;
+  settings.futures = FLAGS_futures;
   std::unique_ptr<Master> master = base::MakeUnique<Master>();
   for (int i = 1; i < argc; ++i) {
     master->AddPunter(MakePunterFromCommandLine(argv[i]));
   }
 
-  master->RunGame(std::move(map));
+  master->RunGame(std::move(map), settings);
 }
 
 }  // namespace

@@ -129,20 +129,41 @@ LocalPunter::LocalPunter(const std::string& shell)
 
 LocalPunter::~LocalPunter() = default;
 
-std::string LocalPunter::Setup(int punter_id,
-                               int num_punters,
-                               const Map* map) {
+PunterInfo LocalPunter::Setup(int punter_id,
+                              int num_punters,
+                              const Map* map,
+                              const Settings& settings) {
   punter_id_ = punter_id;
 
   auto request = base::MakeUnique<base::DictionaryValue>();
   request->SetInteger("punter", punter_id);
   request->SetInteger("punters", num_punters);
   request->Set("map", map->raw_value->CreateDeepCopy());
+  if (settings.futures) {
+    auto settings_value = base::MakeUnique<base::DictionaryValue>();
+    settings_value->SetBoolean("futures", true);
+    request->Set("settings", std::move(settings_value));
+  }
   std::string name;
   std::unique_ptr<base::DictionaryValue> response =
       base::DictionaryValue::From(RunProcess(*request, &name));
   CHECK(response->Remove("state", &state_));
-  return name;
+
+  std::vector<River> futures;
+  if (settings.futures) {
+    const base::ListValue* futures_list;
+    CHECK(response->GetList("futures", &futures_list));
+    for (int i = 0; i < futures_list->GetSize(); ++i) {
+      const base::DictionaryValue* future_value;
+      CHECK(futures_list->GetDictionary(i, &future_value));
+      int source, target;
+      CHECK(future_value->GetInteger("source", &source));
+      CHECK(future_value->GetInteger("target", &target));
+      futures.push_back(River{source, target});
+      // TDOO check if source is mine.
+    }
+  }
+  return {name, futures};
 }
 
 Move LocalPunter::OnTurn(const std::vector<Move>& moves) {

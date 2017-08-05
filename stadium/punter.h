@@ -5,16 +5,23 @@
 #include <vector>
 
 #include "stadium/game_data.h"
+#include "stadium/settings.h"
 
 namespace stadium {
+
+struct PunterInfo {
+  std::string name;
+  std::vector<River> futures;
+};
 
 class Punter {
  public:
   virtual ~Punter() {}
 
-  virtual std::string Setup(int punter_id,
-                            int num_punters,
-                            const Map* map) = 0;
+  virtual PunterInfo Setup(int punter_id,
+                           int num_punters,
+                           const Map* map,
+                           const Settings& settings) = 0;
   virtual Move OnTurn(const std::vector<Move>& moves) = 0;
 
  protected:

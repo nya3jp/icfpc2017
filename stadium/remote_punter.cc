@@ -6,12 +6,13 @@ RemotePunter::RemotePunter(int port) : port_(port) {}
 
 RemotePunter::~RemotePunter() = default;
 
-std::string RemotePunter::Setup(int punter_id,
+PunterInfo RemotePunter::Setup(int punter_id,
                                int num_punters,
-                               const Map* map) {
+                               const Map* map,
+                               const Settings& settings) {
   punter_id_ = punter_id;
   LOG(ERROR) << "NOT IMPLEMENTED";
-  return "not_implemented";
+  return {"not_implemented", {}};
 }
 
 Move RemotePunter::OnTurn(const std::vector<Move>& moves) {

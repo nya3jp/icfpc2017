@@ -7,6 +7,7 @@
 
 #include "base/macros.h"
 #include "stadium/game_data.h"
+#include "stadium/punter.h"
 
 namespace stadium {
 
@@ -15,7 +16,7 @@ class Referee {
   Referee();
   ~Referee();
 
-  void Setup(const std::vector<std::string>& names, const Map* map);
+  void Setup(const std::vector<PunterInfo>& punter_info_list, const Map* map);
   Move HandleMove(int turn_id, int punter_id, const Move& move);
   void Finish();
 
@@ -28,11 +29,12 @@ class Referee {
     std::map<int, SiteState> sites;
     std::map<RiverKey, RiverState> rivers;
 
-    std::vector<Score> GetScore(const std::vector<std::string>& names);
+    std::vector<Score> GetScore(
+        const std::vector<PunterInfo>& punter_info_list);
     static MapState FromMap(const Map& map);
   };
 
-  std::vector<std::string> names_;
+  std::vector<PunterInfo> punter_info_list_;
   MapState map_state_;
 
   DISALLOW_COPY_AND_ASSIGN(Referee);

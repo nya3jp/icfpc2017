@@ -15,9 +15,10 @@ class LocalPunter : public Punter {
   explicit LocalPunter(const std::string& shell);
   ~LocalPunter() override;
 
-  std::string Setup(int punter_id,
-                    int num_punters,
-                    const Map* map) override;
+  PunterInfo Setup(int punter_id,
+                   int num_punters,
+                   const Map* map,
+                   const Settings& settings) override;
   Move OnTurn(const std::vector<Move>& moves) override;
 
  private:
