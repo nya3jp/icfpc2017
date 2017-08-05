@@ -81,15 +81,15 @@ def calculate_score(num_punters, sites, mines, rivers):
 class Map():
     def __init__(self, map_data):
         self.sites = []
-        for site in map_data[u'sites']:
-            self.sites.append(site[u'id'])
+        for site in map_data['sites']:
+            self.sites.append(site['id'])
 
-        self.mines = map_data[u'mines']
+        self.mines = map_data['mines']
 
         self.rivers = []
-        for river in map_data[u'rivers']:
-            source = river[u'source']
-            target = river[u'target']
+        for river in map_data['rivers']:
+            source = river['source']
+            target = river['target']
             if source > target:
                 tmp = source
                 source = target
@@ -199,11 +199,11 @@ class Arena():
         client['state'] = state
 
     def done_move(self, message, punter_id, is_move, source, target):
-        new_state = message.get(u'state')
-        del message[u'state']
+        new_state = message.get('state')
+        del message['state']
 
         client = self._get_current_client()
-        client[u'state'] = new_state
+        client['state'] = new_state
         if is_move:
             if source > target:
                 tmp = source
@@ -216,7 +216,7 @@ class Arena():
                 if river[0] == source and river[1] == target:
                     if river[2] is not None:
                         self._debug('Conflict')
-                        self._moves.append({u'pass': {u'punter': new_state[u'punter']}})
+                        self._moves.append({'pass': {'punter': new_state['punter']}})
                         return
                     else:
                         rivers[i] = (river[0], river[1], punter_id)
@@ -249,11 +249,11 @@ class PlayerHost():
 
             self._debug('+Setup')
 
-            ready = message.get(u'ready')
+            ready = message.get('ready')
             if ready is None or ready != self._punter_id:
                 self._handle_error('Bad ready: %r' % message)
                 return
-            state = message.get(u'state')
+            state = message.get('state')
             self._arena.ready(state)
 
             self._debug('-Setup')
@@ -264,13 +264,13 @@ class PlayerHost():
 
             #self._debug('+Move')
 
-            claim = message.get(u'claim')
+            claim = message.get('claim')
             if claim is None:
-                pass_desc = message.get(u'pass')
+                pass_desc = message.get('pass')
                 if pass_desc is None:
                     self._handle_error('Bad move: %r' % message)
                     return
-                punter_id = pass_desc.get(u'punter')
+                punter_id = pass_desc.get('punter')
                 if punter_id is None or punter_id != self._punter_id:
                     self._handle_error('Bad move (wrong id): %r' % message)
                     return
@@ -279,15 +279,15 @@ class PlayerHost():
 
                 self._arena.done_move(message, punter_id, False, None, None)
             else:
-                punter_id = claim.get(u'punter')
+                punter_id = claim.get('punter')
                 if punter_id is None or punter_id != self._punter_id:
                     self._handle_error('Bad move: %r' % message)
                     return
-                source = claim.get(u'source')
+                source = claim.get('source')
                 if source is None:
                     self._handle_error('Bad move: %r' % message)
                     return
-                target = claim.get(u'target')
+                target = claim.get('target')
                 if target is None:
                     self._handle_error('Bad move: %r' % message)
                     return
@@ -302,7 +302,7 @@ class PlayerHost():
 
             self._received_handshake = True
 
-            self._name = message.get(u'me')
+            self._name = message.get('me')
             if self._name is None:
                 self._handle_error('Bad handshake: %r' % message)
                 return
@@ -462,12 +462,12 @@ class Bot(FileEndpoint):
             #self._debug('+Handshake')
             #self._debug('-Handshake')
             self._done_handshake = True
-        elif message.get(u'punter') is not None:
+        elif message.get('punter') is not None:
             self._debug('+Setup')
 
-            self._punter_id = message[u'punter']
-            self._punters = message[u'punters']
-            self._map = Map(message[u'map'])
+            self._punter_id = message['punter']
+            self._punters = message['punters']
+            self._map = Map(message['map'])
 
             self._debug('  punter: %d, punters: %d, num_sites: %d, num_mines: %d, num_rivers: %d' %
                         (self._punter_id, self._punters, len(self._map.sites), len(self._map.mines), len(self._map.rivers)))
@@ -477,17 +477,17 @@ class Bot(FileEndpoint):
         else:
             self._debug('+Move')
             #self._debug('%r received' % message)
-            state = message.get(u'state')
+            state = message.get('state')
             #self._write({'pass': {'punter': state['punter']}, 'state': state})
-            self._write({'claim': {'punter': state[u'punter'], u'source': 0, u'target': 1}, 'state': state})
+            self._write({'claim': {'punter': state['punter'], 'source': 0, 'target': 1}, 'state': state})
             return
             rivers = self._map.rivers
-            for move in message[u'move'][u'moves']:
-                claim = move.get(u'claim')
+            for move in message['move']['moves']:
+                claim = move.get('claim')
                 if claim is not None:
-                    punter_id = claim[u'punter']
-                    source = claim[u'source']
-                    target = claim[u'target']
+                    punter_id = claim['punter']
+                    source = claim['source']
+                    target = claim['target']
                     if source > target:
                         tmp = target
                         target = source
@@ -543,8 +543,8 @@ if __name__ == '__main__':
                 ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'foo'],
                 ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'bar'],
                 ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'baz'],
-                #['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'fooz'],
-                # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
+                #['framework/game_main', '--name', 'fooz', '--punter', 'GreedyPunter'],
+                 ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
                 # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'baz'],
             ]
         else:
