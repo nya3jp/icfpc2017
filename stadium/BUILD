@@ -17,6 +17,7 @@ cc_library(
     "master.cc",
     "referee.cc",
     "remote_punter.cc",
+    "stub_punter.cc",
   ],
   hdrs = [
     "game_data.h",
@@ -25,6 +26,7 @@ cc_library(
     "punter.h",
     "referee.h",
     "remote_punter.h",
+    "stub_punter.h",
   ],
   deps = [
     "//third_party/chromiumbase",

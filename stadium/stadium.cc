@@ -13,6 +13,7 @@
 #include "stadium/game_data.h"
 #include "stadium/local_punter.h"
 #include "stadium/remote_punter.h"
+#include "stadium/stub_punter.h"
 
 DEFINE_string(map, "", "Path to a map JSON file.");
 
@@ -20,6 +21,9 @@ namespace stadium {
 namespace {
 
 std::unique_ptr<Punter> MakePunterFromCommandLine(const std::string& arg) {
+  if (arg == "stub") {
+    return base::MakeUnique<StubPunter>();
+  }
   if (base::StartsWith(arg, ":", base::CompareCase::SENSITIVE)) {
     int port;
     CHECK(base::StringToInt(arg.substr(1), &port));
@@ -32,7 +36,7 @@ void Main(int argc, char** argv) {
   Map map = Map::ReadFromFileOrDie(FLAGS_map);
 
   if (argc == 1) {
-    LOG(FATAL) << "No argument specified!";
+    LOG(FATAL) << "No punter argument specified!";
   }
 
   std::unique_ptr<Master> master = base::MakeUnique<Master>();
