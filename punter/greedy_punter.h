@@ -16,9 +16,12 @@ class GreedyPunter : public framework::SimplePunter {
   framework::GameMove Run() override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
+  void ComputeLongestPath();
 
  private:
   std::vector<std::set<int>> connected_from_mine_; // mine_idx -> {site_id}
+  std::vector<int> longest_path_;
+  int longest_path_index_ = 0;
 };
 
 } // namespace punter

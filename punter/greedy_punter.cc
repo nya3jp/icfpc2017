@@ -1,5 +1,6 @@
 #include "punter/greedy_punter.h"
 
+#include <queue>
 #include "base/memory/ptr_util.h"
 
 namespace punter {
@@ -14,12 +15,60 @@ void GreedyPunter::SetUp(int punter_id, int num_punters, const framework::GameMa
   for (size_t i = 0; i < mines_.size(); i++) {
     connected_from_mine_[i].insert(mines_[i]);
   }
+  ComputeLongestPath();
+}
+
+void GreedyPunter::ComputeLongestPath() {
+  size_t num_sites = sites_.size();
+  size_t num_mines = mines_.size();
+
+  int max_length = 0;
+
+  for (size_t i = 0; i < num_mines; ++i) {
+    int mine = site_id_to_site_idx_[mines_[i]];
+
+    std::vector<std::pair<int, int>> dist_and_prev; // site_idx -> (distance, site_idx)
+    dist_and_prev.resize(num_sites, std::make_pair(-1, -1));
+
+    std::queue<std::pair<int, int>> q;  // {(site_idx, dist)}
+    dist_and_prev[mine] = std::make_pair(0, -1);
+    q.push(std::make_pair(mine, 0));
+    int length = 0, last = 0;
+    while (q.size()) {
+      int site = q.front().first;
+      int dist = q.front().second;
+      q.pop();
+      for (int next : edges_[site]) {
+        if (dist_and_prev[next].first != -1) continue;
+        dist_and_prev[next] = std::make_pair(dist + 1, site);
+        q.push(std::make_pair(next, dist + 1));
+        length = dist + 1;
+        last = next;
+      }
+    }
+    if (length > max_length) {
+      max_length = length;
+      longest_path_.resize(length + 1);
+
+      int site = last;
+      for (int i = 0; i < length; i++) {
+        longest_path_[length - i] = sites_[site].id;
+        site = dist_and_prev[site].second;
+      }
+      longest_path_[0] = sites_[site].id;
+    }
+  }
 }
 
 framework::GameMove GreedyPunter::Run() {
   const RiverWithPunter* river_with_max_score = nullptr;
   int max_score = -1;
   std::unique_ptr<std::set<std::pair<int, int>>> max_mines;  // {(mine_idx, site_id)}
+  int longest_src = 0, longest_target = 0;
+  if (longest_path_index_ < static_cast<int>(longest_path_.size()) - 1) {
+    longest_src = longest_path_[longest_path_index_];
+    longest_target = longest_path_[longest_path_index_ + 1];
+  }
 
   for (auto& r : rivers_) {
     if (r.punter != -1)
@@ -42,6 +91,15 @@ framework::GameMove GreedyPunter::Run() {
       mines->insert(std::make_pair(mine_id, target));
     }
     DLOG(INFO) << r.source << " -> " << r.target << ": " << score;
+    if ((r.source == longest_src && r.target == longest_target) ||
+        (r.target == longest_src && r.source == longest_target)) {
+      longest_path_index_++;
+      max_score = score;
+      river_with_max_score = &r;
+      max_mines = std::move(mines);
+      break;
+    }
+
     if (score > max_score) {
       max_score = score;
       river_with_max_score = &r;
@@ -63,6 +121,7 @@ void GreedyPunter::SetState(std::unique_ptr<base::Value> state_in) {
   auto state = base::DictionaryValue::From(std::move(state_in));
   base::ListValue* value;
   CHECK(state->GetList("greedy", &value));
+  CHECK(state->GetInteger("longest_path_index", &longest_path_index_));
 
   connected_from_mine_.resize(value->GetSize());
   for (size_t mine_id = 0; mine_id < connected_from_mine_.size(); mine_id++) {
@@ -76,6 +135,7 @@ void GreedyPunter::SetState(std::unique_ptr<base::Value> state_in) {
   }
 
   SimplePunter::SetState(std::move(state));
+  ComputeLongestPath();
 }
 
 std::unique_ptr<base::Value> GreedyPunter::GetState() {
@@ -93,6 +153,7 @@ std::unique_ptr<base::Value> GreedyPunter::GetState() {
   }
 
   state->Set("greedy", std::move(value));
+  state->SetInteger("longest_path_index", longest_path_index_);
   return state;
 }
 
