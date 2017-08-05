@@ -186,7 +186,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
       if (river.punter_id >= 0) {
         LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
                    << ": Punter \"" << names_[punter_id] << "\" "
-                   << "tried to claim a non-existence river "
+                   << "tried to claim a already-used river "
                    << move.source << "-" << move.target
                    << ". Forcing to PASS.";
         actual_move = Move::MakePass(punter_id);
