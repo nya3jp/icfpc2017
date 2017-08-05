@@ -16,8 +16,9 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
     if (move.type == GameMove::Type::CLAIM) {
       // TODO: This is slow!
       for (auto& r : rivers_) {
-        if (r.source == move.source && r.target == move.target) {
-          CHECK(r.punter == -1);
+        if ((r.source == move.source && r.target == move.target) ||
+            (r.source == move.target && r.target == move.source)) {
+          DCHECK(r.punter == -1);
           r.punter = move.punter_id;
         }
       }
