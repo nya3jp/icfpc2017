@@ -4,9 +4,11 @@
 #include <random>
 
 #include "framework/simple_punter.h"
+#include "punter/extension_example.pb.h"
 
 namespace punter {
 
+// Extension Example Punter just passes with LOG(INFO) the current turn.
 class ExtensionExamplePunter : public framework::SimplePunter {
  public:
   ExtensionExamplePunter();
