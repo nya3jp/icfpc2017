@@ -16,6 +16,68 @@ def serialize(o):
     return ('%d:%s' % (len(data), data)).encode('utf-8')
 
 
+def calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distances, v):
+    if visited.get(v) is not None:
+        return 0
+
+    visited[v] = True
+    score = distances[mine][v] * distances[mine][v]
+    for j in punter_specific_adj[v]:
+        score += calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distances, j)
+    return score
+
+
+def calculate_score_for_punter(punter, sites, mines, rivers, distances):
+    score = 0
+    for mine in mines:
+        punter_specific_adj = []
+        for site in sites:
+            punter_specific_adj.append([])
+
+        for river in rivers:
+            if river[2] is not None and river[2] == punter:
+                punter_specific_adj[river[0]].append(river[1])
+                punter_specific_adj[river[1]].append(river[0])
+        score += calculate_score_for_punter_mine({}, punter_specific_adj, mine, distances, mine)
+    return score
+
+
+def calculate_score(num_punters, sites, mines, rivers):
+    adj = []
+    for site in sites:
+        l = []
+        adj.append(l)
+
+    for river in rivers:
+        adj[river[0]].append(river[1])
+        adj[river[1]].append(river[0])
+
+    distances = {}
+    for mine in mines:
+        l = []
+        for site in sites:
+            l.append(0)
+        distances[mine] = l
+
+        visited = {}
+        visited[mine] = True
+        distances[mine][mine] = 0
+        queue = [(mine, 0)]
+        while len(queue) > 0:
+            v, d = queue.pop()
+            for j in adj[v]:
+                if visited.get(j) is not None:
+                    continue
+                visited[j] = True
+                distances[mine][j] = d + 1
+                queue.append((j, d + 1))
+
+    scores = []
+    for punter in range(num_punters):
+        scores.append(calculate_score_for_punter(punter, sites, mines, rivers, distances))
+    return scores
+
+
 class Map():
     def __init__(self, map_data):
         self.sites = []
@@ -107,9 +169,17 @@ class Arena():
                 sys.stdout.write('\n')
                 sys.stdout.flush()
 
+                result = 'Final rivers\n'
                 rivers = self._map.rivers
                 for river in rivers:
-                    self._logger.info(river)
+                    result += ('  %r\n' % (river,))
+                self._debug(result)
+
+                rivers[1] = (rivers[1][0], rivers[1][1], 1)
+
+                sys.stdout.write(json.dumps(calculate_score(
+                    self._num_punters, self._map.sites, self._map.mines, self._map.rivers)))
+                sys.stdout.write('\n')
 
                 return
 
