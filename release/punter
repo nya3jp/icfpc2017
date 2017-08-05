@@ -2,4 +2,4 @@
 
 cd "$(dirname "$0")"
 
-exec prebuilts/game_main --name=GennAI --punter=GreedyPunter
+exec prebuilts/game_main --name=GennAI --punter=GreedyPunter --logtostderr
