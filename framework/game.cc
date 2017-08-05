@@ -212,7 +212,7 @@ Game::Game(std::unique_ptr<Punter> punter)
 Game::~Game() = default;
 
 void Game::Run() {
-  LOG(INFO) << "Set stdin blocking";
+  DLOG(INFO) << "Set stdin blocking";
   SetStdinBlocking();
 
   DLOG(INFO) << "Game::Run";
@@ -259,6 +259,7 @@ void Game::Run() {
     WriteContent(stdout, output);
   } else if (input->HasKey("stop")) {
     // Game was over.
+#if DCHECK_IS_ON()
     const base::ListValue* moves_value;
     CHECK(input->GetList("stop.moves", &moves_value));
     std::vector<GameMove> moves;
@@ -266,11 +267,11 @@ void Game::Run() {
     for (const auto& m : moves) {
       switch (m.type) {
         case GameMove::Type::CLAIM:
-          LOG(INFO) << "move(claim): " << m.punter_id << ", "
-                    << m.source << ", " << m.target;
+          DLOG(INFO) << "move(claim): " << m.punter_id << ", "
+                     << m.source << ", " << m.target;
           break;
         case GameMove::Type::PASS:
-          LOG(INFO) << "move(pass): " << m.punter_id;
+          DLOG(INFO) << "move(pass): " << m.punter_id;
           break;
       }
     }
@@ -284,8 +285,9 @@ void Game::Run() {
       CHECK(score_value->GetInteger("punter", &punter_id));
       int score;
       CHECK(score_value->GetInteger("score", &score));
-      LOG(INFO) << "score: " << punter_id << ", " << score;
+      DLOG(INFO) << "score: " << punter_id << ", " << score;
     }
+#endif
   } else {
     // Play.
     const base::ListValue* moves_value;
