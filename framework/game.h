@@ -12,17 +12,26 @@ namespace framework {
 
 struct Site {
   int id;
+
+  static Site FromJson(const base::Value& value);
+  static std::unique_ptr<base::Value> ToJson(const Site& site);
 };
 
 struct River {
   int source;
   int target;
+
+  static River FromJson(const base::Value& value);
+  static std::unique_ptr<base::Value> ToJson(const River& river);
 };
 
 struct GameMap {
   std::vector<Site> sites;
   std::vector<River> rivers;
   std::vector<int> mines;
+
+  static GameMap FromJson(const base::Value& value);
+  static std::unique_ptr<base::Value> ToJson(const GameMap& game_map);
 };
 
 struct GameMove {
@@ -37,6 +46,9 @@ struct GameMove {
 
   static GameMove Pass(int punter_id);
   static GameMove Claim(int punter_id, int source, int target);
+
+  static GameMove FromJson(const base::Value& value);
+  static std::unique_ptr<base::Value> ToJson(const GameMove& game_move);
 };
 
 class Punter {

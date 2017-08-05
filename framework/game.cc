@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <cctype>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
@@ -15,6 +17,12 @@ DEFINE_string(name, "", "Punter name.");
 namespace framework {
 
 namespace {
+
+void SetStdinBlocking() {
+  int flg = fcntl(0, F_GETFL);
+  CHECK_GE(flg, 0);
+  CHECK_EQ(0, fcntl(0, F_SETFL, flg & ~O_NONBLOCK));
+}
 
 int ReadLeadingInt(FILE* file) {
   char buf[10];
@@ -49,84 +57,101 @@ void WriteContent(FILE* file, const base::Value& content) {
   fflush(file);
 }
 
-std::vector<Site> ParseSites(const base::ListValue& value) {
-  std::vector<Site> result;
-  for (size_t i = 0; i < value.GetSize(); ++i) {
-    const base::DictionaryValue* ptr;
-    CHECK(value.GetDictionary(i, &ptr));
-    int id;
-    CHECK(ptr->GetInteger("id", &id));
-    result.emplace_back(Site{id});
+template<typename T>
+std::unique_ptr<base::Value> ToJson(const std::vector<T>& elements) {
+  auto result = base::MakeUnique<base::ListValue>();
+  result->Reserve(elements.size());
+  for (const auto& element : elements) {
+    result->Append(T::ToJson(element));
   }
   return result;
 }
 
-std::vector<River> ParseRivers(const base::ListValue& value) {
-  std::vector<River> result;
-  for (size_t i = 0; i < value.GetSize(); ++i) {
-    const base::DictionaryValue* ptr;
-    CHECK(value.GetDictionary(i, &ptr));
-    int source, target;
-    CHECK(ptr->GetInteger("source", &source));
-    CHECK(ptr->GetInteger("target", &target));
-    result.emplace_back(River{source, target});
+std::unique_ptr<base::Value> ToJson(const std::vector<int>& elements) {
+  auto result = base::MakeUnique<base::ListValue>();
+  result->Reserve(elements.size());
+  for (int element : elements) {
+    result->AppendInteger(element);
   }
   return result;
 }
 
-std::vector<int> ParseMines(const base::ListValue& value) {
-  std::vector<int> result;
-  for (size_t i = 0; i < value.GetSize(); ++i) {
-    int mine;
-    CHECK(value.GetInteger(i, &mine));
-    result.push_back(mine);
+template<typename T>
+void FromJson(const base::ListValue& values, std::vector<T>* output) {
+  output->reserve(values.GetSize());
+  for (size_t i = 0; i < values.GetSize(); ++i) {
+    const base::Value* value = nullptr;
+    CHECK(values.Get(i, &value));
+    output->push_back(T::FromJson(*value));
   }
-  return result;
 }
 
-GameMap ParseGameMap(const base::DictionaryValue& value) {
-  GameMap result;
-  const base::ListValue* sites_value;
-  CHECK(value.GetList("sites", &sites_value));
-  result.sites = ParseSites(*sites_value);
-  const base::ListValue* rivers_value;
-  CHECK(value.GetList("rivers", &rivers_value));
-  result.rivers = ParseRivers(*rivers_value);
-  const base::ListValue* mines_value;
-  CHECK(value.GetList("mines", &mines_value));
-  result.mines = ParseMines(*mines_value);
-
-  return std::move(result);
-}
-
-GameMove ParseMove(const base::DictionaryValue& value) {
-  GameMove result;
-  const base::DictionaryValue* params;
-  if (value.GetDictionary("claim", &params)) {
-    result.type = GameMove::Type::CLAIM;
-    CHECK(params->GetInteger("punter", &result.punter_id));
-    CHECK(params->GetInteger("source", &result.source));
-    CHECK(params->GetInteger("target", &result.target));
-  } else {
-    CHECK(value.GetDictionary("pass", &params));
-    result.type = GameMove::Type::PASS;
-    CHECK(params->GetInteger("punter", &result.punter_id));
+void FromJson(const base::ListValue& values, std::vector<int>* output) {
+  output->reserve(values.GetSize());
+  for (size_t i = 0; i < values.GetSize(); ++i) {
+    int value;
+    CHECK(values.GetInteger(i, &value));
+    output->push_back(value);
   }
-  return result;
-}
-
-std::vector<GameMove> ParseMoves(const base::ListValue& value) {
-  std::vector<GameMove> result;
-  for (size_t i = 0; i < value.GetSize(); ++i) {
-    const base::DictionaryValue* ptr;
-    CHECK(value.GetDictionary(i, &ptr));
-    result.push_back(ParseMove(*ptr));
-  }
-  return result;
 }
 
 }  // namespace
 
+Site Site::FromJson(const base::Value& value_in) {
+  const base::DictionaryValue* value;
+  CHECK(value_in.GetAsDictionary(&value));
+  Site result;
+  CHECK(value->GetInteger("id", &result.id));
+  return result;
+}
+
+std::unique_ptr<base::Value> Site::ToJson(const Site& site) {
+  auto result = base::MakeUnique<base::DictionaryValue>();
+  result->SetInteger("id", site.id);
+  return result;
+}
+
+River River::FromJson(const base::Value& value_in) {
+  const base::DictionaryValue* value;
+  CHECK(value_in.GetAsDictionary(&value));
+  River result;
+  CHECK(value->GetInteger("source", &result.source));
+  CHECK(value->GetInteger("target", &result.target));
+  return result;
+}
+
+std::unique_ptr<base::Value> River::ToJson(const River& river) {
+  auto result = base::MakeUnique<base::DictionaryValue>();
+  result->SetInteger("source", river.source);
+  result->SetInteger("target", river.target);
+  return result;
+}
+
+GameMap GameMap::FromJson(const base::Value& value_in) {
+  const base::DictionaryValue* value;
+  CHECK(value_in.GetAsDictionary(&value));
+
+  const base::ListValue* sites_value = nullptr;
+  CHECK(value->GetList("sites", &sites_value));
+  const base::ListValue* rivers_value = nullptr;
+  CHECK(value->GetList("rivers", &rivers_value));
+  const base::ListValue* mines_value = nullptr;
+  CHECK(value->GetList("mines", &mines_value));
+
+  GameMap game_map;
+  framework::FromJson(*sites_value, &game_map.sites);
+  framework::FromJson(*rivers_value, &game_map.rivers);
+  framework::FromJson(*mines_value, &game_map.mines);
+  return game_map;
+}
+
+std::unique_ptr<base::Value> GameMap::ToJson(const GameMap& game_map) {
+  auto result = base::MakeUnique<base::DictionaryValue>();
+  result->Set("sites", framework::ToJson(game_map.sites));
+  result->Set("rivers", framework::ToJson(game_map.rivers));
+  result->Set("mines", framework::ToJson(game_map.mines));
+  return result;
+}
 
 GameMove GameMove::Pass(int punter_id) {
   return {GameMove::Type::PASS, punter_id};
@@ -136,11 +161,59 @@ GameMove GameMove::Claim(int punter_id, int source, int target) {
   return {GameMove::Type::CLAIM, punter_id, source, target};
 }
 
+GameMove GameMove::FromJson(const base::Value& value_in) {
+  const base::DictionaryValue* value;
+  CHECK(value_in.GetAsDictionary(&value));
+
+  GameMove result;
+  if (value->HasKey("claim")) {
+    result.type = GameMove::Type::CLAIM;
+    CHECK(value->GetInteger("claim.punter", &result.punter_id));
+    CHECK(value->GetInteger("claim.source", &result.source));
+    CHECK(value->GetInteger("claim.target", &result.target));
+    return result;
+  }
+  if (value->HasKey("pass")) {
+    result.type = GameMove::Type::PASS;
+    CHECK(value->GetInteger("pass.punter", &result.punter_id));
+    return result;
+  }
+
+  LOG(FATAL) << "Unexpected key: " << value;
+  return result;
+}
+
+std::unique_ptr<base::Value> GameMove::ToJson(const GameMove& game_move) {
+  switch (game_move.type) {
+    case GameMove::Type::CLAIM: {
+      auto result = base::MakeUnique<base::DictionaryValue>();
+      auto content = base::MakeUnique<base::DictionaryValue>();
+      content->SetInteger("punter", game_move.punter_id);
+      content->SetInteger("source", game_move.source);
+      content->SetInteger("target", game_move.target);
+      result->Set("claim", std::move(content));
+      return result;
+    }
+    case GameMove::Type::PASS: {
+      auto result = base::MakeUnique<base::DictionaryValue>();
+      auto content = base::MakeUnique<base::DictionaryValue>();
+      content->SetInteger("punter", game_move.punter_id);
+      result->Set("pass", std::move(content));
+      return result;
+    }
+  }
+  LOG(FATAL) << "Unexpected type";
+  return {};
+}
+
 Game::Game(std::unique_ptr<Punter> punter)
     : punter_(std::move(punter)) {}
 Game::~Game() = default;
 
 void Game::Run() {
+  LOG(INFO) << "Set stdin blocking";
+  SetStdinBlocking();
+
   DLOG(INFO) << "Game::Run";
 
   // Exchange name.
@@ -167,9 +240,11 @@ void Game::Run() {
 
     int num_punters;
     CHECK(input->GetInteger("punters", &num_punters));
+
     const base::DictionaryValue* game_map_value;
     CHECK(input->GetDictionary("map", &game_map_value));
-    GameMap game_map = ParseGameMap(*game_map_value);
+
+    GameMap game_map = GameMap::FromJson(*game_map_value);
     punter_->SetUp(punter_id, num_punters, game_map);
 
     base::DictionaryValue output;
@@ -180,7 +255,8 @@ void Game::Run() {
     // Game was over.
     const base::ListValue* moves_value;
     CHECK(input->GetList("stop.moves", &moves_value));
-    std::vector<GameMove> moves = ParseMoves(*moves_value);
+    std::vector<GameMove> moves;
+    FromJson(*moves_value, &moves);
     for (const auto& m : moves) {
       switch (m.type) {
         case GameMove::Type::CLAIM:
@@ -208,10 +284,13 @@ void Game::Run() {
     // Play.
     const base::ListValue* moves_value;
     CHECK(input->GetList("move.moves", &moves_value));
-    std::vector<GameMove> moves = ParseMoves(*moves_value);
+    std::vector<GameMove> moves;
+    FromJson(*moves_value, &moves);
+
     std::unique_ptr<base::Value> state;
     CHECK(input->Remove("state", &state));
     punter_->SetState(std::move(state));
+
     GameMove result = punter_->Run(moves);
 
     base::DictionaryValue output;
