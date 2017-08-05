@@ -15,11 +15,14 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
   for (auto& move : moves) {
     if (move.type == GameMove::Type::CLAIM) {
       // TODO: This is slow!
-      for (auto& r : rivers_) {
+      for (size_t i = 0; i < rivers_.size(); ++i) {
+        auto& r = rivers_[i];
         if ((r.source == move.source && r.target == move.target) ||
             (r.source == move.target && r.target == move.source)) {
           DCHECK(r.punter == -1);
           r.punter = move.punter_id;
+          proto_.mutable_game_map()->mutable_rivers(i)->set_punter(
+              move.punter_id);
         }
       }
     }
@@ -41,6 +44,31 @@ void SimplePunter::SetUp(
   GenerateSiteIdToSiteIndex();
   GenerateAdjacencyList();
   ComputeDistanceToMine();
+
+  SaveToProto();
+}
+
+void SimplePunter::SaveToProto() {
+  proto_.set_punter_id(punter_id_);
+  proto_.set_num_punters(num_punters_);
+  GameMapProto* game_map_proto = proto_.mutable_game_map();
+  for (size_t i = 0; i < sites_.size(); ++i) {
+    const auto& site = sites_[i];
+    SiteProto* site_proto = game_map_proto->add_sites();
+    site_proto->set_id(site.id);
+    for (size_t k = 0; k < mines_.size(); ++k) {
+      site_proto->add_to_mine()->set_distance(dist_to_mine_[i][k]);
+    }
+  }
+  for (auto& r : rivers_) {
+    RiverProto* river_proto = game_map_proto->add_rivers();
+    river_proto->set_source(r.source);
+    river_proto->set_target(r.target);
+    river_proto->set_punter(-1);
+  }
+  for (auto& m : mines_) {
+    game_map_proto->add_mines()->set_site(m);
+  }
 }
 
 void SimplePunter::GenerateAdjacencyList() {
@@ -95,48 +123,44 @@ void SimplePunter::ComputeDistanceToMine() {
 void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   auto state = base::DictionaryValue::From(std::move(state_in));
 
-  CHECK(state->GetInteger("punter_id", &punter_id_));
-  CHECK(state->GetInteger("num_punters", &num_punters_));
-
-  base::ListValue* sites;
-  CHECK(state->GetList("sites", &sites));
-  sites_.resize(sites->GetSize());
-  for (size_t i = 0; i < sites->GetSize(); i++) {
-    CHECK(sites->GetInteger(i, &sites_[i].id));
-  }
-
-  base::ListValue* rivers;
-  CHECK(state->GetList("rivers", &rivers));
-  rivers_.resize(rivers->GetSize());
-  for (size_t i = 0; i < rivers->GetSize(); i++) {
-    base::DictionaryValue* river;
-    CHECK(rivers->GetDictionary(i, &river));
-    CHECK(river->GetInteger("source", &rivers_[i].source));
-    CHECK(river->GetInteger("target", &rivers_[i].target));
-    CHECK(river->GetInteger("punter", &rivers_[i].punter));
-  }
-  
-  base::ListValue* mines;
-  CHECK(state->GetList("mines", &mines));
-  mines_.resize(mines->GetSize());
-  for (size_t i = 0; i < mines->GetSize(); i++) {
-    CHECK(mines->GetInteger(i, &mines_[i]));
-  }
-
-  base::ListValue* dist_to_mine;
-  CHECK(state->GetList("dist_to_mine", &dist_to_mine));
-  dist_to_mine_.resize(sites_.size(), std::vector<int>(mines_.size()));
-  for (size_t i = 0; i < sites_.size(); ++i) {
-    for (size_t k = 0; k < mines_.size(); ++k) {
-      dist_to_mine->GetInteger(i * mines_.size() + k,
-                               &dist_to_mine_[i][k]);
-    }
-  }
   std::string b64_proto;
   CHECK(state->GetString("proto", &b64_proto));
   std::string serialized;
   CHECK(base::Base64Decode(b64_proto, &serialized));
   CHECK(proto_.ParseFromString(serialized));
+
+  punter_id_ = proto_.punter_id();
+  num_punters_ = proto_.num_punters();
+
+  const GameMapProto& game_map_proto = proto_.game_map();
+  const size_t sites_size = game_map_proto.sites_size();
+  sites_.resize(sites_size);
+  for (size_t i = 0; i < sites_size; ++i) {
+    sites_[i].id = game_map_proto.sites(i).id();
+  }
+
+  const size_t rivers_size = game_map_proto.rivers_size();
+  rivers_.resize(rivers_size);
+  for (size_t i = 0; i < rivers_size; ++i) {
+    auto& r = rivers_[i];
+    const RiverProto& rp = game_map_proto.rivers(i);
+    r.source = rp.source();
+    r.target = rp.target();
+    r.punter = rp.punter();
+  }
+
+  const size_t mines_size = game_map_proto.mines_size();
+  mines_.resize(mines_size);
+  for (size_t i = 0; i < mines_size; ++i) {
+    mines_[i] = game_map_proto.mines(i).site();
+  }
+
+  dist_to_mine_.resize(sites_.size(), std::vector<int>(mines_.size()));
+  for (size_t i = 0; i < sites_.size(); ++i) {
+    for (size_t k = 0; k < mines_.size(); ++k) {
+      dist_to_mine_[i][k] = game_map_proto.sites(i).to_mine(k).distance();
+    }
+  }
 
   GenerateSiteIdToSiteIndex();
   GenerateAdjacencyList();
@@ -144,43 +168,7 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
 
 std::unique_ptr<base::Value> SimplePunter::GetState() {
   auto value = base::MakeUnique<base::DictionaryValue>();
-  value->SetInteger("punter_id", punter_id_);
-  value->SetInteger("num_punters", num_punters_);
   
-  auto sites = base::MakeUnique<base::ListValue>();
-  sites->Reserve(sites_.size());
-  for (auto& site : sites_) {
-    sites->AppendInteger(site.id);
-  }
-  value->Set("sites", std::move(sites));
-
-  auto rivers = base::MakeUnique<base::ListValue>();
-  rivers->Reserve(rivers_.size());
-  for (auto& river : rivers_) {
-    auto v = base::MakeUnique<base::DictionaryValue>();
-    v->SetInteger("source", river.source);
-    v->SetInteger("target", river.target);
-    v->SetInteger("punter", river.punter);
-    rivers->Append(std::move(v));
-  }
-  value->Set("rivers", std::move(rivers));
-
-  auto mines = base::MakeUnique<base::ListValue>();
-  mines->Reserve(mines_.size());
-  for (auto& mine : mines_) {
-    mines->AppendInteger(mine);
-  }
-  value->Set("mines", std::move(mines));
-
-  auto dist_to_mine = base::MakeUnique<base::ListValue>();
-  dist_to_mine->Reserve(sites_.size() * mines_.size());
-  for (size_t i = 0; i < sites_.size(); ++i) {
-    for (size_t k = 0; k < mines_.size(); ++k) {
-      dist_to_mine->AppendInteger(dist_to_mine_[i][k]);
-    }
-  }
-  value->Set("dist_to_mine", std::move(dist_to_mine));
-
   const std::string binary = proto_.SerializeAsString();
   std::string b64;
   base::Base64Encode(binary, &b64);

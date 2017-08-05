@@ -2,25 +2,35 @@ syntax = "proto2";
 
 package framework;
 
+message SiteToMineProto {
+  optional int32 distance = 1;
+}
+
 message SiteProto {
   optional int32 id = 1;
+  repeated SiteToMineProto to_mine = 2;
 }
 
 message RiverProto {
   optional int32 source = 1;
   optional int32 target = 2;
+  optional int32 punter = 3;
+}
+
+message MineProto {
+  optional int32 site = 1;
 }
 
 message GameMapProto {
   repeated SiteProto sites = 1;
   repeated RiverProto rivers = 2;
-  repeated int32 mines = 3;
+  repeated MineProto mines = 3;
 }
 
 message GameStateProto {
   optional int32 punter_id = 1;
   optional int32 num_punters = 2;
-  optional GameMapProto map = 3;
+  optional GameMapProto game_map = 3;
   
   extensions 100 to 199;
 }

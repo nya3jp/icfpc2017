@@ -20,6 +20,7 @@ class SimplePunter : public Punter {
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 
+  void SaveToProto();
   void GenerateAdjacencyList();
   void GenerateSiteIdToSiteIndex();
   void ComputeDistanceToMine();
