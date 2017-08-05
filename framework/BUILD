@@ -71,5 +71,6 @@ cc_binary(
     "//punter:random_punter",
     "//punter:greedy_punter",
     "//punter:greedy_punter_chun",
+    "//punter:greedy_to_jam",
   ],
 )

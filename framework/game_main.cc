@@ -12,6 +12,7 @@
 #include "punter/random_punter.h"
 #include "punter/greedy_punter.h"
 #include "punter/greedy_punter_chun.h"
+#include "punter/greedy_to_jam.h"
 
 using namespace framework;
 using namespace punter;
@@ -51,6 +52,8 @@ int main(int argc, char* argv[]) {
       punter = base::MakeUnique<GreedyPunterChun>();
     else if (FLAGS_punter == "ExtensionExamplePunter")
       punter = base::MakeUnique<ExtensionExamplePunter>();
+    else if (FLAGS_punter == "GreedyToJam")
+      punter = base::MakeUnique<GreedyToJam>();
     else
       LOG(FATAL) << "invalid punter name";
     Game game(std::move(punter));

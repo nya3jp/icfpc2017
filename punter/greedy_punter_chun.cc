@@ -55,8 +55,9 @@ framework::GameMove GreedyPunterChun::Run(const std::vector<framework::GameMove>
        [](const pair<int, const EdgeInfo*> &a,
           const pair<int, const EdgeInfo*> &b) -> bool
        { return a.first < b.first; });
-  
+
   const EdgeInfo *e = v.back().second;
+  LOG(INFO) << "best score = " << v.back().first;
   int source = themap.getNodeInfo()[e->source].id;
   int target = themap.getNodeInfo()[e->dest].id;
   

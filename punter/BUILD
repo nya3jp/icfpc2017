@@ -69,3 +69,20 @@ cc_library(
   ],
   visibility = ["//visibility:public"]
 )
+
+cc_library(
+  name = "greedy_to_jam",
+  srcs = [
+    "greedy_to_jam.cc",
+    "gamemapforai.cc",
+  ],
+  hdrs = [
+    "greedy_to_jam.h",
+    "gamemapforai.h"
+  ],
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+  visibility = ["//visibility:public"]
+)
