@@ -1,10 +1,4 @@
 const INF = Math.pow(10, 18);
-let gGameMap;
-let gPrecomputedData;
-let gHistory;
-let gViewer;
-let gController;
-let gState;
 
 // Static map data
 function GameMap() {
@@ -12,6 +6,7 @@ function GameMap() {
   this.rivers = [];
   this.mines = [];
   this.distance = [];  // distance[i][j]: distance from i-th mine to j-th site.
+  this.adjacent = [];  // adjacent[i][j]: i-th node's j-th edge's destination.
   this.siteId2Index_ = new Map();
   this.siteIndex2Id_ = new Map();
 };
@@ -19,6 +14,7 @@ function GameMap() {
 GameMap.prototype = {
   load: function(map) {
     this.initialize(map.sites, map.rivers, map.mines || []);
+    this.precompute_();
   },
 
   initialize: function(sites, rivers, mines) {
@@ -51,18 +47,11 @@ GameMap.prototype = {
   getSiteId: function(siteIndex) {
     return this.siteIndex2Id_.get(siteId);
   },
-};
 
-function PrecomputedData(gameMap) {
-  this.adjacent = [];
-  this.distance = [];
-};
-
-PrecomputedData.prototype = {
-  precompute: function(gameMap) {
-    const sites = gameMap.sites;
-    const rivers = gameMap.rivers;
-    const mines = gameMap.mines || [];
+  precompute_: function() {
+    const sites = this.sites;
+    const rivers = this.rivers;
+    const mines = this.mines || [];
 
     this.adjacent = new Array(sites.length);
     for (let i = 0; i < this.adjacent.length; i++)
@@ -132,6 +121,79 @@ State.prototype = {
   },
 };
 
+function Scorer(gameMap) {
+  this.gameMap_ = gameMap;
+}
+
+Scorer.prototype = {
+  compute: function(edges) {
+    const mines = this.gameMap_.mines;
+    let score = 0;
+    for (let i = 0; i < mines.length; i++) {
+      score += this.computeForMine_(edges, i);
+    }
+    return score;
+  },
+
+  computeForMine_: function(edges, mineIndex) {
+    const sites = this.gameMap_.sites;
+    const V = sites.length;
+    const visited = new Array(V);
+    const adj = new Array(V);
+    for (let i = 0; i < adj.length; i++)
+      adj[i] = [];
+    for (let i = 0; i < edges.length; i++) {
+      const src = edges[i].src;
+      const dst = edges[i].dst;
+      adj[src].push(dst);
+      adj[dst].push(src);
+    }
+    return this.computeRecursively_(this.gameMap_.mines[mineIndex], mineIndex, adj, visited);
+  },
+
+  computeRecursively_: function(v, mineIndex, adj, visited) {
+    if (visited[v])
+      return 0;
+
+    visited[v] = true;
+    let score = this.gameMap_.distance[mineIndex][v] * this.gameMap_.distance[mineIndex][v];
+    for (let i = 0; i < adj[v].length; i++) {
+      const v2 = adj[v][i];
+      score += this.computeRecursively_(v2, mineIndex, adj, visited);
+    }
+    return score;
+  },
+};
+
+function computeScoreRec(v, mineIndex, adj, depth, visited, mines, precomputedData) {
+  if (visited[v])
+    return 0;
+  
+  visited[v] = true;
+  score = precomputedData.distance[mineIndex][v] * precomputedData.distance[mineIndex][v];
+  for (let i = 0; i < adj[v].length; i++) {
+    const v2 = adj[v][i];
+    score += computeScoreRec(v2, mineIndex, adj, depth, visited, mines, precomputedData);
+  }
+  return score;
+}
+
+function computeScore(mineIndex, edges, punter, V, mines, precomputedData) {
+  const visited = new Array(V);
+  const adj = new Array(V);
+  for (let i = 0; i < adj.length; i++)
+    adj[i] = [];
+
+  for (let i = 0; i < edges[punter].length; i++) {
+    const src = edges[punter][i].src;
+    const dst = edges[punter][i].dst;
+    adj[src].push(dst);
+    adj[dst].push(src);
+  }
+  return computeScoreRec(mines[mineIndex], mineIndex, adj, 0, visited, mines, precomputedData);
+}
+
+
 function Viewer(canvas, scoreLabelContainer, prevButton, nextButton, autoPlayButton, movesInput) {
   this.prevButton = prevButton;
   this.nextButton = nextButton;
@@ -142,7 +204,7 @@ function Viewer(canvas, scoreLabelContainer, prevButton, nextButton, autoPlayBut
 }
 
 Viewer.prototype = {
-  display: function(gameMap, history, state, precomputedData) {
+  display: function(gameMap, history, state, scorer) {
     // Disable/enable elements based on available data.
     this.movesInput_.disabled = !gameMap;
     this.prevButton.disabled = !history || !(state.step > 0);
@@ -204,7 +266,7 @@ Viewer.prototype = {
       colors = new Array(players.size);
       for (let i = 0; i < colors.length; i++) {
         const hue = (0.4 + i / colors.length) / 1.0;
-        const rgb = hslToRgb(hue, 1.0, 0.5);
+        const rgb = this.hslToRgb_(hue, 1.0, 0.5);
         colors[i] = 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
       }
     }
@@ -247,9 +309,7 @@ Viewer.prototype = {
     }
 
     if (history) {
-
       // Update score
-
       // edges[p][i]: punter p's i-th edge.
       const edges = new Array(players.size);
       for (let i = 0; i < edges.length; i++)
@@ -264,15 +324,9 @@ Viewer.prototype = {
       }
 
       const scores = new Array(edges.length);
-      for (let p = 0; p < edges.length; p++) {
-        // Collect adjacent nodes.
-        const punter = p; 
+      for (let i = 0; i < edges.length; i++)
+        scores[i] = scorer.compute(edges[i]);
 
-        scores[p] = 0;
-        for (let i = 0; i < mines.length; i++)
-          scores[p] += computeScore(i, edges, punter, sites.length, mines, precomputedData);
-        console.log('Punter ' + p + ' = ' + scores[p]);
-      }
       this.scoreLabelContainer_.textContent = '';
       for (let i = 0; i < scores.length; i++) {
         const el = document.createElement('span');
@@ -290,6 +344,28 @@ Viewer.prototype = {
   convertY_: function(y, minY, maxY, canvasHeight) {
     return (y - minY) * (canvasHeight * 0.9) / (maxY - minY) + canvasHeight * 0.05;
   },
+
+  hslToRgb_: function(h, s, l){
+    let r, g, b;
+    if (s == 0) {
+      r = g = b = l; // achromatic
+    } else {
+      const hue2rgb = function hue2rgb(p, q, t){
+        if(t < 0) t += 1;
+        if(t > 1) t -= 1;
+        if(t < 1/6) return p + (q - p) * 6 * t;
+        if(t < 1/2) return q;
+        if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      }
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  },
 };
 
 function Controller(prevButton, playButton, nextButton, inputMap, inputMoves, viewer) {
@@ -303,7 +379,7 @@ function Controller(prevButton, playButton, nextButton, inputMap, inputMoves, vi
   this.gameMap_ = new GameMap();
   this.history_ = new History();
   this.state_ = new State();
-  this.precomputedData_ = new PrecomputedData();
+  this.scorer_ = new Scorer(this.gameMap_);
 
   // temporary
   this.playButton_.disabled = false;
@@ -319,6 +395,11 @@ function Controller(prevButton, playButton, nextButton, inputMap, inputMoves, vi
 Controller.prototype = {
   reset: function() {
     this.playing = false;
+    this.state_.step = 0;
+  },
+
+  updateView_: function() {
+    this.viewer_.display(this.gameMap_, this.history_, this.state_, this.scorer_);
   },
 
   startPlay_: function() {
@@ -328,6 +409,7 @@ Controller.prototype = {
       this.state_.step = 0;
     this.timerId_ = setInterval(this.onInterval_.bind(this), 200);
     this.playButton_.querySelector('i').textContent = 'pause';
+    this.playing = true;
   },
 
   stopPlay_: function() {
@@ -336,6 +418,7 @@ Controller.prototype = {
       this.timerId_ = -1;
     }
     this.playButton_.querySelector('i').textContent = 'play_arrow';
+    this.playing = false;
   },
 
   onPlayClicked_: function(event) {
@@ -347,7 +430,6 @@ Controller.prototype = {
   },
 
   onInterval_: function() {
-    console.log('timer');
     this.onNextClicked_();
     if (this.state_.step == this.history_.moves.length)
       this.stopPlay_();
@@ -355,12 +437,12 @@ Controller.prototype = {
 
   onPrevClicked_: function() {
     this.state_.step = Math.max(this.state_.step - 1, 0);
-    this.viewer_.display(this.gameMap_, this.history_, this.state_, this.precomputedData_);
+    this.updateView_();
   },
 
   onNextClicked_: function() {
     this.state_.step = Math.min(this.state_.step + 1, this.history_.moves.length);
-    this.viewer_.display(this.gameMap_, this.history_, this.state_, this.precomputedData_);
+    this.updateView_();
   },
 
   onInputMapChange_: function(event) {
@@ -369,8 +451,7 @@ Controller.prototype = {
     reader.onload = function(event) {
       const map = JSON.parse(event.target.result);
       this.gameMap_.load(map);
-      this.precomputedData_.precompute(this.gameMap_);
-      this.viewer_.display(this.gameMap_, this.history_, this.state_, this.precomputedData_);
+      this.updateView_();
     }.bind(this);
   },
 
@@ -380,87 +461,15 @@ Controller.prototype = {
     reader.onload = function(event) {
       const moves = JSON.parse(event.target.result);
       this.history_.load(moves.moves, this.gameMap_);
-      this.viewer_.display(this.gameMap_, this.history_, this.state_, this.precomputedData_);
+      this.updateView_();
     }.bind(this);
   },
 };
 
-function hslToRgb(h, s, l){
-  let r, g, b;
-  if (s == 0) {
-    r = g = b = l; // achromatic
-  } else {
-    const hue2rgb = function hue2rgb(p, q, t){
-      if(t < 0) t += 1;
-      if(t > 1) t -= 1;
-      if(t < 1/6) return p + (q - p) * 6 * t;
-      if(t < 1/2) return q;
-      if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    }
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1/3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1/3);
-  }
-  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
-
-function computeScoreRec(v, mineIndex, adj, depth, visited, mines, precomputedData) {
-  if (visited[v])
-    return 0;
-  
-  visited[v] = true;
-  score = precomputedData.distance[mineIndex][v] * precomputedData.distance[mineIndex][v];
-  for (let i = 0; i < adj[v].length; i++) {
-    const v2 = adj[v][i];
-    score += computeScoreRec(v2, mineIndex, adj, depth, visited, mines, precomputedData);
-  }
-  return score;
-}
-
-function computeScore(mineIndex, edges, punter, V, mines, precomputedData) {
-  const visited = new Array(V);
-  const adj = new Array(V);
-  for (let i = 0; i < adj.length; i++)
-    adj[i] = [];
-
-  for (let i = 0; i < edges[punter].length; i++) {
-    const src = edges[punter][i].src;
-    const dst = edges[punter][i].dst;
-    adj[src].push(dst);
-    adj[dst].push(src);
-  }
-  return computeScoreRec(mines[mineIndex], mineIndex, adj, 0, visited, mines, precomputedData);
-}
-
-function onPrev() {
-  gState.step = Math.max(gState.step - 1, 0);
-  gViewer.display(gGameMap, gHistory, gState);
-}
-
-function onNext() {
-  gState.step = Math.min(gState.step + 1, gHistory.moves.length);
-  gViewer.display(gGameMap, gHistory, gState);
-}
-
 document.addEventListener('DOMContentLoaded', function(event) {
-  let $ = function( id ) { return document.getElementById( id ); };
-  let btn_play = $('btn_play');
-  btn_play.addEventListener('click', function() {
-    let el = btn_play.querySelector('i');
-    console.log(el);
-    el.textContent = 'pause';
-  });
-  
-  gViewer = new Viewer($('canvas'),
-                       $('scores'),
-                       $('prev'),
-                       $('next'),
-                       $('autoplay'),
-                       $('moves'));
-  gState = new State();
-  gController = new Controller($('prev'), $('btn_play'), $('next'), 
-      $('map'), $('moves'), gViewer);
+  const $ = function( id ) { return document.getElementById( id ); };
+  const viewer = new Viewer($('canvas'), $('scores'), $('prev'), $('next'),
+      $('autoplay'), $('moves'));
+  const controller = new Controller($('prev'), $('btn_play'), $('next'), 
+      $('map'), $('moves'), viewer);
 });
