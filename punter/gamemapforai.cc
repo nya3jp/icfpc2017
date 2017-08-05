@@ -152,8 +152,6 @@ int GameMapForAI::claim_impl(node_index source, node_index dest, int punter, boo
         for(node_index v: newly_reachable) {
           nodeinfo_[v].reachable[mineix][punter] = true;
         }
-        
-        scores_[punter] += ret;
       }
     }
   }
@@ -170,6 +168,8 @@ int GameMapForAI::claim_impl(node_index source, node_index dest, int punter, boo
     if(!updated) {
       DLOG(WARNING) << "Claiming river does not exist: " << source << "->" << dest << " punter = " << punter;
     }
+
+    scores_[punter] += ret;
   }
 
   return ret;
