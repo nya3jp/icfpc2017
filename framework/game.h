@@ -40,10 +40,10 @@ class Punter {
  public:
   virtual ~Punter() = default;
 
+  virtual void SetUp(
+      int punter_id, int num_punters, const GameMap& game_map) = 0;
   virtual GameMove Run(const std::vector<GameMove>& moves) = 0;
 
-  virtual void Initialize(
-      int punter_id, int num_punters, const GameMap& game_map) = 0;
   virtual void SetState(std::unique_ptr<base::Value> state) = 0;
   virtual std::unique_ptr<base::Value> GetState() = 0;
 

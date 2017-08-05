@@ -100,7 +100,7 @@ void Game::Run() {
     const base::DictionaryValue* game_map_value;
     CHECK(input->GetDictionary("map", &game_map_value));
     GameMap game_map = ParseGameMap(*game_map_value);
-    punter_->Initialize(punter_id, num_punters, game_map);
+    punter_->SetUp(punter_id, num_punters, game_map);
 
     base::DictionaryValue output;
     output.SetInteger("ready", punter_id);
