@@ -41,6 +41,13 @@ def _recv(sock):
         content += data
 
 
+def _run_subprocess(command, data):
+    inputdata = json.dumps(data).encode('utf-8')
+    inputdata = str(len(inputdata)).encode('utf-8') + b':' + inputdata
+    output = subprocess.check_call(command, input=inputdata)
+    return json.loads(output.decode('utf-8').split(':', 1)[1])
+
+
 def _run(sock, name, command):
     # Handshake
     _send(sock, {'me': name})
@@ -50,9 +57,7 @@ def _run(sock, name, command):
 
     # Set up.
     response = _recv(sock)
-    output = subprocess.check_output(
-        command, input=json.dumps(response).encode('utf-8'))
-    result = json.loads(output.decode('utf-8'))
+    result = _run_subprocess(command, response)
     state = result.pop('state')
     _send(sock, result)
 
@@ -62,9 +67,7 @@ def _run(sock, name, command):
         if 'stop' in response:
             break
         response['state'] = state
-        output = subprocess.check_output(
-            command, input=json.dumps(response).encode('utf-8'))
-        result = json.loads(output.decode('utf-8'))
+        result = _run_subprocess(command, response)
         state = result.pop('state')
         _send(sock, result)
 

@@ -1,36 +1,50 @@
 #include "framework/game.h"
 
 #include <stdio.h>
+#include <cctype>
 
-#include "base/optional.h"
-#include "base/memory/ptr_util.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
+#include "base/logging.h"
+#include "base/memory/ptr_util.h"
+#include "base/optional.h"
+#include "gflags/gflags.h"
+
+DEFINE_string(name, "", "Punter name.");
 
 namespace framework {
 
 namespace {
 
-base::Optional<std::string> ReadContent(FILE* file) {
-  std::string content;
-  constexpr size_t kBufferSize = 1 << 16;
-  std::unique_ptr<char[]> buf(new char[kBufferSize]);
-  for (size_t len; (len = fread(buf.get(), 1, kBufferSize, file)) > 0; ) {
-    content.append(buf.get(), len);
+int ReadLeadingInt(FILE* file) {
+  char buf[10];
+  for (size_t i = 0; ; ++i) {
+    int c = fgetc(file);
+    if (!std::isdigit(c)) {
+      buf[i] = '\0';
+      break;
+    }
+    buf[i] = static_cast<char>(c);
   }
-  if (ferror(file))
-    return {};
-  return content;
+  return std::atoi(buf);
 }
 
-void WriteContent(FILE* file, const std::string& content) {
-  size_t current = 0;
-  while (current < content.size()) {
-    size_t len =
-        fwrite(content.c_str() + current, 1, content.size() - current, file);
-    CHECK_GE(len, 0);
-    current += len;
-  }
+std::unique_ptr<base::Value> ReadContent(FILE* file) {
+  size_t size = ReadLeadingInt(file);
+  std::unique_ptr<char[]> buf(new char[size]);
+  size_t len = fread(buf.get(), 1, size, file);
+  if (len != size)
+    return nullptr;
+  return base::JSONReader::Read(buf.get());
+}
+
+void WriteContent(FILE* file, const base::Value& content) {
+  std::string output;
+  CHECK(base::JSONWriter::Write(content, &output));
+  std::string length = std::to_string(output.size());
+  CHECK_EQ(length.size(), fwrite(length.c_str(), 1, length.size(), file));
+  fputc(':', file);
+  CHECK_EQ(output.size(), fwrite(output.c_str(), 1, output.size(), file));
 }
 
 std::vector<Site> ParseSites(const base::ListValue& value) {
@@ -125,9 +139,19 @@ Game::Game(std::unique_ptr<Punter> punter)
 Game::~Game() = default;
 
 void Game::Run() {
-  auto content = ReadContent(stdin);
-  auto input = base::DictionaryValue::From(
-      base::JSONReader::Read(content.value()));
+  // Exchange name.
+  {
+    base::DictionaryValue name;
+    name.SetString("me", FLAGS_name);
+    WriteContent(stdout, name);
+    auto input = base::DictionaryValue::From(ReadContent(stdin));
+    std::string you_name;
+    CHECK(input->GetString("you", &you_name));
+    CHECK_EQ(FLAGS_name, you_name);
+  }
+
+  // Set up or play.
+  auto input = base::DictionaryValue::From(ReadContent(stdin));
   if (input->HasKey("punter")) {
     // Set up.
     int punter_id;
@@ -143,11 +167,37 @@ void Game::Run() {
     base::DictionaryValue output;
     output.SetInteger("ready", punter_id);
     output.Set("state", punter_->GetState());
-    std::string output_content;
-    CHECK(base::JSONWriter::Write(output, &output_content));
-    WriteContent(stdout, output_content);
+    WriteContent(stdout, output);
+  } else if (input->HasKey("stop")) {
+    // Game was over.
+    const base::ListValue* moves_value;
+    CHECK(input->GetList("stop.moves", &moves_value));
+    std::vector<GameMove> moves = ParseMoves(*moves_value);
+    for (const auto& m : moves) {
+      switch (m.type) {
+        case GameMove::Type::CLAIM:
+          LOG(INFO) << "move(claim): " << m.punter_id << ", "
+                    << m.source << ", " << m.target;
+          break;
+        case GameMove::Type::PASS:
+          LOG(INFO) << "move(pass): " << m.punter_id;
+          break;
+      }
+    }
+
+    const base::ListValue* scores_value;
+    CHECK(input->GetList("stop.scores", &scores_value));
+    for (size_t i = 0; i < scores_value->GetSize(); ++i) {
+      const base::DictionaryValue* score_value;
+      CHECK(scores_value->GetDictionary(i, &score_value));
+      int punter_id;
+      CHECK(score_value->GetInteger("punter", &punter_id));
+      int score;
+      CHECK(score_value->GetInteger("score", &score));
+      LOG(INFO) << "score: " << punter_id << ", " << score;
+    }
   } else {
-    // Run.
+    // Play.
     const base::ListValue* moves_value;
     CHECK(input->GetList("move.moves", &moves_value));
     std::vector<GameMove> moves = ParseMoves(*moves_value);
@@ -171,9 +221,7 @@ void Game::Run() {
     }
     output.Set("state", punter_->GetState());
 
-    std::string output_content;
-    CHECK(base::JSONWriter::Write(output, &output_content));
-    WriteContent(stdout, output_content);
+    WriteContent(stdout, output);
   }
 }
 
