@@ -57,7 +57,7 @@ void GameMapForAI::init(int num_punters, const framework::GameMap& game_map)
     n.reachable = vector<vector<bool> >(mines_.size(), vector<bool>(num_punters, false));
   }
 
-  for(size_t mineix = 0; mineix < game_map.mines.size(); ++mineix) {
+  for(size_t mineix = 0; mineix < mines_.size(); ++mineix) {
     int m = mines_[mineix];
     nodeinfo_[m].reachable[mineix] = vector<bool>(num_punters, true);
   }
@@ -105,14 +105,11 @@ int GameMapForAI::claim_impl(node_index source, node_index dest, int punter, boo
 {
   int ret = 0;
   
-  DLOG(INFO) << "In claim impl" << (claim ? "" : "(query)") << ": source " << source;
-  DLOG(INFO) << "In claim impl" << (claim ? "" : "(query)") << ": dest " << dest;
-
   for(size_t mineix = 0; mineix < mines_.size(); ++mineix) {
-    DCHECK(nodeinfo_[source].reachable.size() > mineix);
-    DCHECK(nodeinfo_[dest].reachable.size() > mineix);
-    DCHECK(nodeinfo_[source].reachable[mineix].size() > punter);
-    DCHECK(nodeinfo_[dest].reachable[mineix].size() > punter);
+    DCHECK_GT(nodeinfo_[source].reachable.size(), mineix);
+    DCHECK_GT(nodeinfo_[dest].reachable.size(), mineix);
+    DCHECK_GT(nodeinfo_[source].reachable[mineix].size(), punter);
+    DCHECK_GT(nodeinfo_[dest].reachable[mineix].size(), punter);
     bool source_reachable = nodeinfo_[source].reachable[mineix][punter];
     bool dest_reachable = nodeinfo_[dest].reachable[mineix][punter];
     if(source_reachable != dest_reachable) {
@@ -125,6 +122,7 @@ int GameMapForAI::claim_impl(node_index source, node_index dest, int punter, boo
 
       stack<node_index> s;
       s.push(node_to_be_enabled);
+      visited[node_to_be_enabled] = true;
       while(!s.empty()) {
         int v = s.top();
         s.pop();
@@ -229,6 +227,8 @@ std::istream& GameMapForAI::deserialize(std::istream& is)
     node.reachable.resize(num_mines, vector<bool>(num_punters_, false));
     for(int j = 0; j < num_mines; ++j) {
       is >> node.minedist[j];
+    }
+    for(int j = 0; j < num_mines; ++j) {
       for(int k = 0; k < num_punters_; ++k) {
         int st;
         is >> st;
