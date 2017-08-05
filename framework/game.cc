@@ -45,11 +45,40 @@ std::vector<Site> ParseSites(const base::ListValue& value) {
   return result;
 }
 
+std::vector<River> ParseRivers(const base::ListValue& value) {
+  std::vector<River> result;
+  for (size_t i = 0; i < value.GetSize(); ++i) {
+    const base::DictionaryValue* ptr;
+    CHECK(value.GetDictionary(i, &ptr));
+    int source, target;
+    CHECK(ptr->GetInteger("source", &source));
+    CHECK(ptr->GetInteger("target", &target));
+    result.emplace_back(River{source, target});
+  }
+  return result;
+}
+
+std::vector<int> ParseMines(const base::ListValue& value) {
+  std::vector<int> result;
+  for (size_t i = 0; i < value.GetSize(); ++i) {
+    int mine;
+    CHECK(value.GetInteger(i, &mine));
+    result.push_back(mine);
+  }
+  return result;
+}
+
 GameMap ParseGameMap(const base::DictionaryValue& value) {
   GameMap result;
   const base::ListValue* sites_value;
   CHECK(value.GetList("sites", &sites_value));
   result.sites = ParseSites(*sites_value);
+  const base::ListValue* rivers_value;
+  CHECK(value.GetList("rivers", &rivers_value));
+  result.rivers = ParseRivers(*rivers_value);
+  const base::ListValue* mines_value;
+  CHECK(value.GetList("mines", &mines_value));
+  result.mines = ParseMines(*mines_value);
 
   return std::move(result);
 }
