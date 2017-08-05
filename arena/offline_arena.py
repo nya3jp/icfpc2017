@@ -4,6 +4,7 @@ import logging
 import optparse
 import subprocess
 import sys
+import time
 
 
 def serialize(o):
@@ -168,7 +169,7 @@ class Arena():
 
             self._step += 1
 
-    def done_move(self, message, punter_id, is_move, source, target):
+    def done_move(self, message, punter_id, is_move, source, target, time_spent_ms):
         if is_move:
             if source > target:
                 tmp = source
@@ -203,6 +204,10 @@ class Arena():
             self._all_moves.append(full)
         else:
             self._all_moves.append(stripped)
+
+        if options.include_time:
+            self._all_moves[-1] = dict(self._all_moves[-1])
+            self._all_moves[-1]['time'] = time_spent_ms
 
 
 class FileEndpoint():
@@ -309,6 +314,9 @@ class OfflinePunterHost(FileEndpoint):
         elif self._handling_move:
             self._handling_move = False
 
+            time_spent_ms = (time.perf_counter() - self._start_time) * 1000
+            self._debug('move: %d ms' % time_spent_ms)
+
             claim = message.get('claim')
             if claim is None:
                 pass_desc = message.get('pass')
@@ -326,7 +334,7 @@ class OfflinePunterHost(FileEndpoint):
 
                 self._game_state = message.get('state')
 
-                self._arena.done_move(message, punter_id, False, None, None)
+                self._arena.done_move(message, punter_id, False, None, None, time_spent_ms)
             else:
                 punter_id = claim.get('punter')
                 if punter_id is None or punter_id != self._punter_id:
@@ -343,7 +351,7 @@ class OfflinePunterHost(FileEndpoint):
 
                 self._debug('claim %d -> %d' % (source, target))
 
-                self._arena.done_move(message, punter_id, True, source, target)
+                self._arena.done_move(message, punter_id, True, source, target, time_spent_ms)
 
                 self._game_state = message.get('state')
         else:
@@ -366,8 +374,11 @@ class OfflinePunterHost(FileEndpoint):
         self._launch()
 
         self._handling_setup = True
+        self._start_time = time.perf_counter()
         self._write(setup)
         self._read(self._process.stdout)
+        time_spent_ms = (time.perf_counter() - self._start_time) * 1000
+        self._debug('setup: %d ms' % time_spent_ms)
 
         self._kill()
 
@@ -376,6 +387,7 @@ class OfflinePunterHost(FileEndpoint):
 
         self._handling_move= True
         moves['state'] = self._game_state
+        self._start_time = time.perf_counter()
         self._write(moves)
         self._read(self._process.stdout)
 
@@ -388,6 +400,8 @@ if __name__ == '__main__':
     parser.add_option('--commands', type='string', dest='commands', default=None)
     # Include state in the move history to be output.
     parser.add_option('--include_state', action='store_true', dest='include_state')
+    # Include time spent for each move in the move history.
+    parser.add_option('--include_time', action='store_true', dest='include_time')
     # Include the original move in the move history when conflict happens.
     parser.add_option('--include_cause', action='store_true', dest='include_cause')
     parser.add_option('--persistent', action='store_true', dest='persistent')
