@@ -42,7 +42,7 @@ class Arena():
         self._cap = None
 
         self._next_id = 0
-        self._clients = {}
+        self._punters = {}
 
         self._map = Map(map_data)
 
@@ -62,27 +62,36 @@ class Arena():
         return new_id
 
     def join(self, player):
-        client_id = self._generate_id()
-        assert(client_id not in self._clients)
-        self._clients[client_id] = {
+        punter_id = self._generate_id()
+        assert(punter_id not in self._punters)
+        self._punters[punter_id] = {
             'player': player,
             'is_zombie': False,
             'state': None,
         }
 
-        self._info('New player: %d' % client_id)
+        self._info('New player: %d' % punter_id)
 
-        return client_id
+        return punter_id
+
+    def _get_current_client(self):
+        return self._punters[self._turn % self._num_punters]
 
     def run(self):
-        for i in range(len(self._clients)):
-            self._debug('prompt_setup')
+        self._num_punters = len(self._punters)
+
+        for i in range(self._num_punters):
             player = self._get_current_client()['player']
-            player.prompt_setup_soon({'punter': self._turn % len(self._clients), 'punters': len(self._clients), 'map': map_data})
+            player.prompt_setup(
+                {'punter': self._turn % self._num_punters,
+                 'punters': self._num_punters,
+                 'map': map_data})
 
             self._turn += 1
+        self._turn = 0
         while True:
-            if self._turn == len(self._clients) + len(self._map.rivers):
+            self._debug('Game #%d / %d' % (self._turn, len(self._map.rivers)))
+            if self._turn == len(self._map.rivers):
                 self._info('Game over')
 
                 rivers = self._map.rivers
@@ -92,22 +101,24 @@ class Arena():
                 return
 
             moves = []
-            if len(self._moves) == len(self._clients):
-                start = 1
-            else:
-                start = 0
+            start = len(self._moves) - min(len(self._moves), self._num_punters - 1)
             for i in range(start, len(self._moves)):
                 moves.append(self._moves[i])
 
             client = self._get_current_client()
-            client['player'].prompt_move_soon({'move': {'moves': moves}, 'state': client['state']})
+            client['player'].prompt_move(
+                {'move': {'moves': moves},
+                 'state': client['state']})
             self._turn += 1
 
     def ready(self, state):
         client = self._get_current_client()
         client['state'] = state
 
-    def done_move(self, message, punter_id, is_move, source, target, new_state):
+    def done_move(self, message, punter_id, is_move, source, target):
+        new_state = message.get(u'state')
+        del message[u'state']
+
         client = self._get_current_client()
         client['state'] = new_state
         if is_move:
@@ -119,12 +130,9 @@ class Arena():
                         self._logger.error('Conflict')
                         pass
                     rivers[i] = (river[0], river[1], punter_id)
-            self._moves.append(message)
-            if len(self._moves) > len(self._clients):
-                self._moves.popleft()
-
-    def _get_current_client(self):
-        return self._clients[self._turn % len(self._clients)]
+        self._moves.append(message)
+        if len(self._moves) > self._num_punters:
+            self._moves.popleft()
 
     def handle_error(self, s):
         self._debug(s)
@@ -151,6 +159,7 @@ class PlayerHost():
             self._setup_timeout_handle = None
 
             self._debug('+Setup')
+
             ready = message.get(u'ready')
             if ready is None or ready != self._punter_id:
                 self._handle_error('Bad ready: %r' % message)
@@ -164,8 +173,8 @@ class PlayerHost():
                 self._move_timeout_handle.cancel()
             self._move_timeout_handle = None
 
-            self._debug('+Move')
-            new_state = message.get(u'state')
+            #self._debug('+Move')
+
             claim = message.get(u'claim')
             if claim is None:
                 pass_desc = message.get(u'pass')
@@ -179,7 +188,7 @@ class PlayerHost():
 
                 self._debug('  Pass')
 
-                self._arena.done_move(message, punter_id, False, None, None, new_state)
+                self._arena.done_move(message, punter_id, False, None, None)
             else:
                 punter_id = claim.get(u'punter')
                 if punter_id is None or punter_id != self._punter_id:
@@ -196,12 +205,12 @@ class PlayerHost():
 
                 self._debug('  Claim %d -> %d' % (source, target))
 
-                self._arena.done_move(message, punter_id, True, source, target, new_state)
+                self._arena.done_move(message, punter_id, True, source, target)
 
-            self._debug('-Move')
-            self._debug('+Move')
+            #self._debug('-Move')
         elif not self._received_handshake:
-            self._debug('hoge')
+            #self._debug('+Handshake')
+
             self._received_handshake = True
 
             self._name = message.get(u'me')
@@ -211,91 +220,14 @@ class PlayerHost():
 
             self._write({'you': self._name})
 
-            self._debug('-Hanshake')
+            #self._debug('-Hanshake')
         else:
             self._handle_error('Out of turn message: %r' % message)
             return
 
 
-class SocketPlayerHost(PlayerHost):
-    def __init__(self, socket):
-        self._buffer = b''
-        self._colon_pos = -1
-        self._next_length = None
-
-        self._socket = socket
-        self._socket.setblocking(False)
-
-        self._loop = asyncio.new_event_loop()
-        self._loop.add_reader(self._socket, functools.partial(self._recv))
-
-    def start(self):
-        self._loop.run_forever()
-
-    def prompt_setup_soon(self, setup):
-        self._loop.call_soon_threadsafe(functools.partial(self._prompt_setup, setup))
-
-    def _prompt_setup(self, setup):
-        self._send(setup)
-        self._setup_timeout_handle = self._loop.call_later(10, functools.partial(self._timeout))
-
-    def prompt_move_soon(self, moves):
-        self._loop.call_soon_threadsafe(functools.partial(self._prompt_move, moves))
-
-    def _prompt_move(self, moves):
-        self._send(moves)
-        self._move_timeout_handle = self._loop.call_later(1, functools.partial(self._timeout))
-
-    def _send(self, data):
-        self._socket.send(serialize(data))
-
-    def _recv(self):
-        while True:
-            try:
-                data = self._socket.recv(4096)
-            except BlockingIOError:
-                return
-            if not data:
-                return
-            self._buffer += data
-
-            if self._next_length is None:
-                self._colon_pos = self._buffer.find(b':')
-                if self._colon_pos == -1:
-                    continue
-                if self._colon_pos == 0:
-                    self._handle_error('Empty length from %r' % self._name)
-                    return
-
-                length_str = self._buffer[0:self._colon_pos].decode('utf-8')
-                self._next_length = int(length_str)
-                if str(self._next_length) != length_str:
-                    self._handle_error('Bad length from %r: %s' % (self._name, length_str))
-                    return
-            if len(self._buffer) < self._colon_pos + 1 + self._next_length:
-                continue
-
-            message_start = self._colon_pos + 1
-            message_end = self._colon_pos + 1 + self._next_length
-            try:
-                message_str = self._buffer[message_start:message_end]
-                message = json.loads(message_str.decode('utf-8'))
-            except json.JSONDecodeError as e:
-                self._handle_error('Bad message: %s' % message_str)
-                return
-
-            self._buffer = self._buffer[message_end:]
-            self._colon_pos = -1
-            self._next_length = None
-
-            self._handle_message(message)
-
-    def _handle_error(self, detail):
-        pass
-
-
 class FileEndpoint():
-    def __init__(self, logger, decode):
+    def __init__(self, decode, logger):
         self._logger = logger
         self._decode = not decode
         if decode:
@@ -361,7 +293,7 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
         self._logger = logger
         self._arena = arena
 
-        FileEndpoint.__init__(self, logger, True)
+        FileEndpoint.__init__(self, True, logger)
         PlayerHost.__init__(self)
 
         self._command = command
@@ -377,8 +309,7 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
         self._process.stdin.write(serialize(data))
         self._process.stdin.flush()
 
-    def prompt_setup_soon(self, setup):
-        self._debug(self._command)
+    def prompt_setup(self, setup):
         self._received_handshake = False
         self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self._read(self._process.stdout)
@@ -388,8 +319,7 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
         self._process.terminate()
         self._process = None
 
-    def prompt_move_soon(self, moves):
-        self._debug(self._command)
+    def prompt_move(self, moves):
         self._received_handshake = False
         self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self._read(self._process.stdout)
@@ -400,46 +330,12 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
         self._process = None
 
 
-class RequestHandler(socketserver.BaseRequestHandler, SocketPlayerHost):
-    def handle(self):
-        self._arena = self.server.arena
-        self._logger = self.server.logger
-
-        self._received_handshake = False
-
-        self._name = None
-        self._punter_id = None
-
-        self._setup_timeout_handle = None
-        self._move_timeout_handle = None
-
-        SocketPlayerHost.__init__(self, self.request)
-
-        self._debug('+Hanshake')
-
-        self.start()
-
-    def stop(self):
-        self._loop.stop()
-
-    def _debug(self, s):
-        self._logger.debug('S %s: %s' % (self._name, s))
-
-
-class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    def __init__(self, arena, options, logger):
-        self.logger = logger
-
-        self.arena = arena
-
-        socketserver.TCPServer.__init__(self, (options.server_host, options.port), RequestHandler)
-
-
 class Bot(FileEndpoint):
     def __init__(self, name, logger):
+        FileEndpoint.__init__(self, False, logger)
+
         self._logger = logger
 
-        FileEndpoint.__init__(self, logger, False)
         self._name = name
 
         self._debug('Created')
@@ -451,7 +347,7 @@ class Bot(FileEndpoint):
         self._map = None
 
         self._write({'me': self._name})
-        sys.stdout.flush()
+
         self._read(sys.stdin)
 
         self._read(sys.stdin)
@@ -546,15 +442,15 @@ if __name__ == '__main__':
         arena = Arena(map_data, logger)
 
         if options.commands is None:
-            options.commands = json.dumps([
-                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'a'],
-                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'b'],
-                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'c'],
-                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'd'],
-                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'e'],
-            ])
+            commands = [
+                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'foo'],
+                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
+                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'baz'],
+            ]
+        else:
+            commands = json.loads(options.commands)
 
-        commands = json.loads(options.commands)
         for command in commands:
             player = OfflinePlayerHost(command, arena, logger)
+
         arena.run()
