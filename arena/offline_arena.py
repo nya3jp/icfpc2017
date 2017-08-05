@@ -552,11 +552,6 @@ if __name__ == '__main__':
 
     arena = Arena(map_data, logger)
 
-    server = Server(arena, options, logger)
-    server_thread = threading.Thread(target=server.serve_forever)
-    server_thread.daemon = True
-    server_thread.start()
-
     options.commands = json.dumps([
         ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'a'],
         ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'b'],
