@@ -50,8 +50,6 @@ class Arena():
 
         self._moves = collections.deque()
 
-        self._lock = threading.Lock()
-
     def _debug(self, s):
         self._logger.debug('A: %s' % s)
 
@@ -64,8 +62,6 @@ class Arena():
         return new_id
 
     def join(self, player):
-        self._lock.acquire()
-
         if len(self._clients) == self._cap:
             self._debug('Too many players')
             return None
@@ -80,37 +76,42 @@ class Arena():
 
         self._info('New player: %d' % client_id)
 
-        if len(self._clients) == self._cap:
-            self._prompt_setup()
-
-        self._lock.release()
-
         return client_id
 
-    def done_setup(self):
-        self._lock.acquire()
+    def run(self):
+        for i in range(self._cap):
+            self._debug('prompt_setup')
+            player = self._get_current_client()['player']
+            player.prompt_setup_soon({'punter': self._turn % self._cap, 'punters': self._cap, 'map': map_data})
 
-        if self._turn == self._cap:
-            self._info('Setup phrase over')
-            self._prompt_move()
-        else:
-            self._prompt_setup()
+            self._turn += 1
+        while True:
+            if self._turn == self._cap + len(self._map.rivers):
+                self._info('Game over')
 
-        self._lock.release()
+                rivers = self._map.rivers
+                for river in rivers:
+                    self._logger.info(river)
 
-    def _get_current_client(self):
-        return self._clients[self._turn % self._cap]
+                return
 
-    def _prompt_setup(self):
-        self._debug('prompt_setup')
-        player = self._get_current_client()['player']
-        player.prompt_setup_soon({'punter': self._turn % self._cap, 'punters': self._cap, 'map': map_data})
+            moves = []
+            if len(self._moves) == self._cap:
+                start = 1
+            else:
+                start = 0
+            for i in range(start, len(self._moves)):
+                moves.append(self._moves[i])
 
-        self._turn += 1
+            client = self._get_current_client()
+            client['player'].prompt_move_soon({'move': {'moves': moves}, 'state': client['state']})
+            self._turn += 1
+
+    def ready(self, state):
+        client = self._get_current_client()
+        client['state'] = state
 
     def done_move(self, message, punter_id, is_move, source, target, new_state):
-        self._lock.acquire()
-
         client = self._get_current_client()
         client['state'] = new_state
         if is_move:
@@ -122,50 +123,15 @@ class Arena():
                         self._logger.error('Conflict')
                         pass
                     rivers[i] = (river[0], river[1], punter_id)
-        self._moves.append(message)
-        if len(self._moves) > self._cap:
-            self._moves.popleft()
+            self._moves.append(message)
+            if len(self._moves) > self._cap:
+                self._moves.popleft()
 
-        self._prompt_move()
-
-        self._lock.release()
-
-    def setup_timeout(self):
-        self._debug('Setup timeout')
-        client = self._get_current_client()
-        client['is_zombie'] = True
-
-    def move_timeout(self):
-        self._debug('Move timeout')
-        {'pass': {'punter': self._punter_id}}, self._punter_id, False, None, None
+    def _get_current_client(self):
+        return self._clients[self._turn % self._cap]
 
     def handle_error(self, s):
         self._debug(s)
-
-    def _prompt_move(self):
-        if self._turn == self._cap + len(self._map.rivers):
-            self._info('Game over')
-            for client_id, client in self._clients.items():
-                client['handler'].stop()
-
-            rivers = self._map.rivers
-            for river in rivers:
-                self._logger.info(river)
-
-            return
-
-        moves = []
-        if len(self._moves) == self._cap:
-            start = 1
-        else:
-            start = 0
-        for i in range(start, len(self._moves)):
-            moves.append(self._moves[i])
-
-        client = self._get_current_client()
-        client['handler'].prompt_move_soon({'move': {'moves': moves}, 'state': client['state']})
-
-        self._turn += 1
 
 
 class PlayerHost():
@@ -183,7 +149,6 @@ class PlayerHost():
         self._arena.handle_error(s)
 
     def _handle_message(self, message):
-        self._debug(message)
         if self._setup_timeout_handle is not None:
             if self._setup_timeout_handle is not True:
                 self._setup_timeout_handle.cancel()
@@ -193,8 +158,8 @@ class PlayerHost():
             if ready is None or ready != self._punter_id:
                 self._handle_error('Bad ready: %r' % message)
                 return
-
-            self._arena.done_setup()
+            state = message.get(u'state')
+            self._arena.ready(state)
 
             self._debug('-Setup')
             self._debug('+Move')
@@ -212,10 +177,10 @@ class PlayerHost():
                     return
                 punter_id = pass_desc.get(u'punter')
                 if punter_id is None or punter_id != self._punter_id:
-                    self._handle_error('Bad move: %r' % message)
+                    self._handle_error('Bad move (wrong id): %r' % message)
                     return
 
-                self._debug('  Pass %d -> %d' % (source, target))
+                self._debug('  Pass')
 
                 self._arena.done_move(message, punter_id, False, None, None, new_state)
             else:
@@ -239,6 +204,7 @@ class PlayerHost():
             self._debug('-Move')
             self._debug('+Move')
         elif not self._received_handshake:
+            self._debug('hoge')
             self._received_handshake = True
 
             self._name = message.get(u'me')
@@ -246,7 +212,7 @@ class PlayerHost():
                 self._handle_error('Bad handshake: %r' % message)
                 return
 
-            self._punter_id = self._arena.join(self, self._name)
+            self._debug('hoge')
 
             self._write({'you': self._name})
 
@@ -335,9 +301,13 @@ class SocketPlayerHost(PlayerHost):
 
 
 class FileEndpoint():
-    def __init__(self, logger):
+    def __init__(self, logger, decode):
         self._logger = logger
-        self._buffer = b''
+        self._decode = not decode
+        if decode:
+            self._buffer = ''
+        else:
+            self._buffer = ''
         self._colon_pos = None
         self._next_length = None
 
@@ -347,18 +317,18 @@ class FileEndpoint():
     def _read(self, in_fd):
         while True:
             if self._next_length is None:
-                self._debug('reading')
                 data = in_fd.read(1)
                 if len(data) == 0:
+                    self._debug('broken')
                     return
-                self._debug(data.decode('utf-8'))
             else:
-                data = in_fd.read(self._next_length + 1 + self._colon_pos - len(self._buffer))
-                self._debug('b' + data.decode('utf-8'))
+                data = in_fd.read(self._next_length + self._colon_pos - len(self._buffer))
+            if not self._decode:
+                data = data.decode('utf-8')
             self._buffer += data
             if self._next_length is None:
                 for i in range(len(data)):
-                    if data[i] == b':':
+                    if data[i] == ':':
                         self._colon_pos = i + len(self._buffer)
                         break
                 if self._colon_pos is None:
@@ -371,8 +341,6 @@ class FileEndpoint():
                 if str(self._next_length) != length_str:
                     self._handle_error('Bad length from %r: %s' % (self._name, length_str))
                     return
-                if self._next_length is None:
-                    continue
 
             if len(self._buffer) < self._colon_pos + self._next_length:
                 continue
@@ -400,15 +368,14 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
         self._logger = logger
         self._arena = arena
 
-        FileEndpoint.__init__(self, logger)
+        FileEndpoint.__init__(self, logger, True)
         PlayerHost.__init__(self)
 
         self._command = command
-        self._received_handshake = False
 
         self._name = None
 
-        arena.join(self)
+        self._punter_id = arena.join(self)
 
     def _debug(self, s):
         self._logger.debug('S %s: %s' % (self._name, s))
@@ -417,22 +384,24 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
         self._process.stdin.write(serialize(data))
         self._process.stdin.flush()
 
-    def _launch_and_write(self, data):
+    def prompt_setup_soon(self, setup):
         self._debug(self._command)
+        self._received_handshake = False
         self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         self._read(self._process.stdout)
-        self._write(data)
-
-    def prompt_setup_soon(self, setup):
-        self._launch_and_write(setup)
         self._setup_timeout_handle = True
+        self._write(setup)
         self._read(self._process.stdout)
         self._process.terminate()
         self._process = None
 
     def prompt_move_soon(self, moves):
-        self._launch_and_write(moves)
+        self._debug(self._command)
+        self._received_handshake = False
+        self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self._read(self._process.stdout)
         self._move_timeout_handle = True
+        self._write(moves)
         self._read(self._process.stdout)
         self._process.terminate()
         self._process = None
@@ -477,7 +446,7 @@ class Bot(FileEndpoint):
     def __init__(self, name, logger):
         self._logger = logger
 
-        FileEndpoint.__init__(self, logger)
+        FileEndpoint.__init__(self, logger, False)
         self._name = name
 
         self._debug('Created')
@@ -492,6 +461,13 @@ class Bot(FileEndpoint):
         sys.stdout.flush()
         self._read(sys.stdin)
 
+        self._read(sys.stdin)
+        self._read(sys.stdin)
+        self._read(sys.stdin)
+        self._read(sys.stdin)
+        self._read(sys.stdin)
+        self._read(sys.stdin)
+
     def _write(self, data):
         sys.stdout.write(serialize(data).decode('utf-8'))
         sys.stdout.flush()
@@ -504,7 +480,7 @@ class Bot(FileEndpoint):
             self._debug('+Handshake')
             self._debug('-Handshake')
             self._done_handshake = True
-        elif self._punter_id is None:
+        elif message.get(u'punter') is not None:
             self._debug('+Setup')
 
             self._punter_id = message[u'punter']
@@ -513,11 +489,15 @@ class Bot(FileEndpoint):
 
             self._debug('  punter: %d, punters: %d, num_sites: %d, num_mines: %d, num_rivers: %d' %
                         (self._punter_id, self._punters, len(self._map.sites), len(self._map.mines), len(self._map.rivers)))
-            self._send({'ready': self._punter_id})
+            self._write({'ready': self._punter_id, 'state': {'punter': self._punter_id}})
 
             self._debug('-Setup')
         else:
             self._debug('+Move')
+            self._debug('%r received' % message)
+            state = message.get(u'state')
+            self._write({'pass': {'punter': state['punter']}, 'state': state})
+            return
             rivers = self._map.rivers
             for move in message[u'move'][u'moves']:
                 claim = move.get(u'claim')
@@ -540,7 +520,7 @@ class Bot(FileEndpoint):
                 river = rivers[i]
                 if river[2] is None:
                     rivers[i] = (river[0], river[1], self._punter_id)
-                    self._send({'claim': {'punter': self._punter_id, 'source': river[0], 'target': river[1]}})
+                    self._write({'claim': {'punter': self._punter_id, 'source': river[0], 'target': river[1]}})
                     self._debug('  Claim %d -> %d' % (river[0], river[1]))
 
                     self._debug('-Move')
@@ -591,6 +571,7 @@ if __name__ == '__main__':
         commands = json.loads(options.commands)
         for command in commands:
             player = OfflinePlayerHost(command, arena, logger)
+        arena.run()
 
     if options.fake_clients != -1:
         for i in range(options.fake_clients):
