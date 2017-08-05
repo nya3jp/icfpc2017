@@ -2,17 +2,22 @@ const INF = Math.pow(10, 18);
 
 // Static map data
 function GameMap() {
-  this.sites = [];
-  this.rivers = [];
-  this.mines = [];
-  this.distance = [];  // distance[i][j]: distance from i-th mine to j-th site.
-  this.adjacent = [];  // adjacent[i][j]: i-th node's j-th edge's destination.
-  this.siteId2Index_ = new Map();
-  this.siteIndex2Id_ = new Map();
+  this.reset();
 };
 
 GameMap.prototype = {
+  reset: function() {
+    this.sites = [];
+    this.rivers = [];
+    this.mines = [];
+    this.distance = [];  // distance[i][j]: distance from i-th mine to j-th site.
+    this.adjacent = [];  // adjacent[i][j]: i-th node's j-th edge's destination.
+    this.siteId2Index_ = new Map();
+    this.siteIndex2Id_ = new Map();
+  },
+
   load: function(map) {
+    this.reset();
     this.initialize(map.sites, map.rivers, map.mines || []);
     this.precompute_();
   },
@@ -94,10 +99,14 @@ GameMap.prototype = {
 };
 
 function History() {
-  this.moves = [];
+  this.reset();
 };
 
 History.prototype = {
+  reset: function() {
+    this.moves = [];
+  },
+
   load: function(moves, gameMap) {
     this.moves = moves;
     for (let i = 0; i < this.moves.length; i++) {
@@ -112,11 +121,11 @@ History.prototype = {
 };
 
 function State() {
-  this.step = 0;
+  this.reset();
 }
 
 State.prototype = {
-  init: function() {
+  reset: function() {
     this.step = 0;
   },
 };
@@ -194,12 +203,13 @@ function computeScore(mineIndex, edges, punter, V, mines, precomputedData) {
 }
 
 
-function Viewer(canvas, scoreLabelContainer, prevButton, nextButton, autoPlayButton, movesInput) {
+function Viewer(canvas, scoreLabelContainer, prevButton, nextButton, autoPlayButton, slider, movesInput) {
   this.prevButton = prevButton;
   this.nextButton = nextButton;
   this.autoPlayButton = autoPlayButton;
   this.canvas_ = canvas;
   this.scoreLabelContainer_ = scoreLabelContainer;
+  this.slider_ = slider;
   this.movesInput_ = movesInput;
 }
 
@@ -210,6 +220,9 @@ Viewer.prototype = {
     this.prevButton.disabled = !history || !(state.step > 0);
     this.nextButton.disabled = !history || !(state.step < history.moves.length);
     this.autoPlayButton.disabled = !history || !(history.moves.length > 0);
+    this.slider_.disabled = !history || !(history.moves.length > 0);
+    this.slider_.max = history.moves.length;
+    this.slider_.MaterialSlider.change(state.step);
 
     if (!gameMap)
       return;
@@ -369,11 +382,12 @@ Viewer.prototype = {
   },
 };
 
-function Controller(prevButton, playButton, nextButton, inputMap, inputMoves, viewer) {
+function Controller(prevButton, playButton, nextButton, slider, inputMap, inputMoves, viewer) {
   this.playing = false;
   this.prevButton_ = prevButton;
   this.playButton_ = playButton;
   this.nextButton_ = nextButton;
+  this.slider_ = slider;
   this.inputMap_ = inputMap;
   this.inputMoves_ = inputMoves;
   this.viewer_ = viewer;
@@ -386,6 +400,7 @@ function Controller(prevButton, playButton, nextButton, inputMap, inputMoves, vi
   this.prevButton_.addEventListener('click', this.onPrevClicked_.bind(this));
   this.playButton_.addEventListener('click', this.onPlayClicked_.bind(this));
   this.nextButton_.addEventListener('click', this.onNextClicked_.bind(this));
+  this.slider_.addEventListener('input', this.onSliderChange_.bind(this));
   this.inputMap_.addEventListener('change', this.onInputMapChange_.bind(this));
   this.inputMoves_.addEventListener('change', this.onInputMovesChange_.bind(this));
 }
@@ -422,8 +437,7 @@ Controller.prototype = {
   onPlayClicked_: function(event) {
     if (this.playing)
       this.stopPlay_();
-    this.playing = !this.playing;
-    if (this.playing)
+    else
       this.startPlay_();
   },
 
@@ -443,12 +457,25 @@ Controller.prototype = {
     this.updateView_();
   },
 
+  onSliderChange_: function(event) {
+    if (this.playing)
+      this.stopPlay_();
+
+    const step = parseInt(event.target.value, 10);
+    if (step >= 0 && step <= this.history_.moves.length) {
+      this.state_.step = step;
+      this.updateView_();
+    }
+  },
+
   onInputMapChange_: function(event) {
     const reader = new FileReader();
     reader.readAsText(event.target.files[0]);
     reader.onload = function(event) {
       const map = JSON.parse(event.target.result);
       this.gameMap_.load(map);
+      this.history_.reset();
+      this.state_.reset();
       this.updateView_();
     }.bind(this);
   },
@@ -467,7 +494,7 @@ Controller.prototype = {
 document.addEventListener('DOMContentLoaded', function(event) {
   const $ = function( id ) { return document.getElementById( id ); };
   const viewer = new Viewer($('canvas'), $('scores'), $('prev'), $('next'),
-      $('btn_play'), $('moves'));
+      $('btn_play'), $('slider'), $('moves'));
   const controller = new Controller($('prev'), $('btn_play'), $('next'), 
-      $('map'), $('moves'), viewer);
+      $('slider'), $('map'), $('moves'), viewer);
 });
