@@ -175,7 +175,7 @@ class Arena():
                     result += ('  %r\n' % (river,))
                 self._debug(result)
 
-                rivers[1] = (rivers[1][0], rivers[1][1], 1)
+                #rivers[1] = (rivers[1][0], rivers[1][1], 1)
 
                 sys.stdout.write(json.dumps(calculate_score(
                     self._num_punters, self._map.sites, self._map.mines, self._map.rivers)))
