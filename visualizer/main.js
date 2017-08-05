@@ -209,6 +209,7 @@ Viewer.prototype = {
     this.movesInput_.disabled = !gameMap;
     this.prevButton.disabled = !history || !(state.step > 0);
     this.nextButton.disabled = !history || !(state.step < history.moves.length);
+    this.autoPlayButton.disabled = !history || !(history.moves.length > 0);
 
     if (!gameMap)
       return;
@@ -380,11 +381,8 @@ function Controller(prevButton, playButton, nextButton, inputMap, inputMoves, vi
   this.history_ = new History();
   this.state_ = new State();
   this.scorer_ = new Scorer(this.gameMap_);
-
-  // temporary
-  this.playButton_.disabled = false;
-
   this.timerId_ = -1;
+
   this.prevButton_.addEventListener('click', this.onPrevClicked_.bind(this));
   this.playButton_.addEventListener('click', this.onPlayClicked_.bind(this));
   this.nextButton_.addEventListener('click', this.onNextClicked_.bind(this));
@@ -469,7 +467,7 @@ Controller.prototype = {
 document.addEventListener('DOMContentLoaded', function(event) {
   const $ = function( id ) { return document.getElementById( id ); };
   const viewer = new Viewer($('canvas'), $('scores'), $('prev'), $('next'),
-      $('autoplay'), $('moves'));
+      $('btn_play'), $('moves'));
   const controller = new Controller($('prev'), $('btn_play'), $('next'), 
       $('map'), $('moves'), viewer);
 });
