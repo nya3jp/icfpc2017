@@ -1,0 +1,5 @@
+pymongo
+python-gflags
+pyyaml
+six
+ujson

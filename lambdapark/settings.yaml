@@ -1,0 +1,19 @@
+configurations:
+  - name: sample.1
+    map: sample
+    num_punters: 1
+    num_games: 1
+  - name: sample.2
+    map: sample
+    num_punters: 2
+    num_games: 2
+
+punters:
+  - name: pass
+    shell: punter/pass-py/pass.py --bot=pass
+  - name: random-v3
+    shell: prebuilts/v3 --logtostderr --name=random-v3 --punter=RandomPunter
+  - name: lightning
+    shell: prebuilts/v3 --logtostderr --name=lightning --punter=GreedyPunter
+  - name: greedy-chun-v3
+    shell: prebuilts/v3 --logtostderr --name=greedy-chun-v3 --punter=GreedyPunterChun
