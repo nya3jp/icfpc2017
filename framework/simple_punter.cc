@@ -2,6 +2,7 @@
 
 #include <queue>
 
+#include "base/base64.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 
@@ -15,8 +16,9 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
     if (move.type == GameMove::Type::CLAIM) {
       // TODO: This is slow!
       for (auto& r : rivers_) {
-        if (r.source == move.source && r.target == move.target) {
-          CHECK(r.punter == -1);
+        if ((r.source == move.source && r.target == move.target) ||
+            (r.source == move.target && r.target == move.source)) {
+          DCHECK(r.punter == -1);
           r.punter = move.punter_id;
         }
       }
@@ -36,16 +38,16 @@ void SimplePunter::SetUp(
   }
   mines_ = game_map.mines;
 
-  GenerateAdjacencyList();
   GenerateSiteIdToSiteIndex();
+  GenerateAdjacencyList();
   ComputeDistanceToMine();
 }
 
 void SimplePunter::GenerateAdjacencyList() {
   edges_.resize(sites_.size());
   for (const RiverWithPunter& river : rivers_) {
-    int a = river.source;
-    int b = river.target;
+    int a = site_id_to_site_idx_[river.source];
+    int b = site_id_to_site_idx_[river.target];
     edges_[a].push_back(b);
     edges_[b].push_back(a);
   }
@@ -70,7 +72,7 @@ void SimplePunter::ComputeDistanceToMine() {
   for (size_t i = 0; i < num_mines; ++i) {
     int mine = site_id_to_site_idx_[mines_[i]];
 
-    std::queue<std::pair<int, int>> q;
+    std::queue<std::pair<int, int>> q;  // {(site_idx, dist)}
     dist_to_mine_[mine][i] = 0;
     q.push(std::make_pair(mine, 0));
     while(q.size()) {
@@ -84,8 +86,8 @@ void SimplePunter::ComputeDistanceToMine() {
       }
     }
     for (size_t k = 0; k < num_sites; ++k) {
-      DLOG(INFO) << "distance to mine " << mine << " from "
-                 << k << ": " << dist_to_mine_[k][i];
+      DLOG(INFO) << "distance to mine " << mines_[i] << " from "
+                 << sites_[k].id << ": " << dist_to_mine_[k][i];
     }
   }
 }
@@ -130,9 +132,14 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
                                &dist_to_mine_[i][k]);
     }
   }
+  std::string b64_proto;
+  CHECK(state->GetString("proto", &b64_proto));
+  std::string serialized;
+  CHECK(base::Base64Decode(b64_proto, &serialized));
+  CHECK(proto_.ParseFromString(serialized));
 
-  GenerateAdjacencyList();
   GenerateSiteIdToSiteIndex();
+  GenerateAdjacencyList();
 }
 
 std::unique_ptr<base::Value> SimplePunter::GetState() {
@@ -153,7 +160,7 @@ std::unique_ptr<base::Value> SimplePunter::GetState() {
     auto v = base::MakeUnique<base::DictionaryValue>();
     v->SetInteger("source", river.source);
     v->SetInteger("target", river.target);
-    v->SetInteger("punter", -1);
+    v->SetInteger("punter", river.punter);
     rivers->Append(std::move(v));
   }
   value->Set("rivers", std::move(rivers));
@@ -173,6 +180,11 @@ std::unique_ptr<base::Value> SimplePunter::GetState() {
     }
   }
   value->Set("dist_to_mine", std::move(dist_to_mine));
+
+  const std::string binary = proto_.SerializeAsString();
+  std::string b64;
+  base::Base64Encode(binary, &b64);
+  value->SetString("proto", b64);
 
   return std::move(value);
 }

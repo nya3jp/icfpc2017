@@ -1,3 +1,15 @@
+proto_library(
+  name = "game_proto_proto",
+  srcs = ["game_proto.proto"],
+  visibility = ["//visibility:public"]
+)
+
+cc_proto_library(
+  name = "game_proto_cc_proto",
+  deps = ["game_proto_proto"],
+  visibility = ["//visibility:public"]
+)
+
 cc_library(
   name = "game",
   srcs = [
@@ -39,6 +51,7 @@ cc_library(
   deps = [
     "//third_party/chromiumbase",
     ":game",
+    ":game_proto_cc_proto",
   ],
   visibility = ["//visibility:public"]
 )
@@ -54,7 +67,9 @@ cc_binary(
     ":game",
     ":pass_punter",
     ":simple_punter",
+    "//punter:extension_example_punter",
     "//punter:random_punter",
     "//punter:greedy_punter",
+    "//punter:greedy_punter_chun",
   ],
 )

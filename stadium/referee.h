@@ -23,10 +23,12 @@ class Referee {
   struct SiteState;
   struct RiverKey;
   struct RiverState;
+  struct Score;
   struct MapState {
     std::map<int, SiteState> sites;
     std::map<RiverKey, RiverState> rivers;
 
+    std::vector<Score> GetScore(const std::vector<std::string>& names);
     static MapState FromMap(const Map& map);
   };
 

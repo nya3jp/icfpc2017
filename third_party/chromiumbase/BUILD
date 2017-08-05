@@ -4,6 +4,7 @@ cc_library(
   name = "chromiumbase",
   srcs = [
     "base/at_exit.cc",
+    "base/base64.cc",
     "base/base_paths.cc",
     "base/base_paths_posix.cc",
     "base/bind_helpers.cc",
@@ -114,6 +115,7 @@ cc_library(
     "base/atomicops.h",
     "base/atomicops_internals_portable.h",
     "base/auto_reset.h",
+    "base/base64.h",
     "base/base_export.h",
     "base/base_paths.h",
     "base/base_paths_posix.h",
@@ -262,7 +264,7 @@ cc_library(
     "//third_party/glog",
     "//third_party/gtest:gtest_prod",
     "//third_party/libevent",
+    "//third_party/modp_b64",
   ],
   visibility = ["//visibility:public"],
 )
-

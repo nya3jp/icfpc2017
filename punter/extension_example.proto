@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+import "framework/game_proto.proto";
+
+package punter;
+
+message ExtensionExample {
+  optional int32 count = 1;
+  extend framework.GameStateProto {
+    optional ExtensionExample example_ext = 100;
+  }
+}
+
