@@ -31,6 +31,7 @@ int ReadLeadingInt(FILE* file) {
 
 std::unique_ptr<base::Value> ReadContent(FILE* file) {
   size_t size = ReadLeadingInt(file);
+  DLOG(INFO) << "size: " << size;
   std::unique_ptr<char[]> buf(new char[size]);
   size_t len = fread(buf.get(), 1, size, file);
   if (len != size)
@@ -45,6 +46,7 @@ void WriteContent(FILE* file, const base::Value& content) {
   CHECK_EQ(length.size(), fwrite(length.c_str(), 1, length.size(), file));
   fputc(':', file);
   CHECK_EQ(output.size(), fwrite(output.c_str(), 1, output.size(), file));
+  fflush(file);
 }
 
 std::vector<Site> ParseSites(const base::ListValue& value) {
@@ -139,12 +141,18 @@ Game::Game(std::unique_ptr<Punter> punter)
 Game::~Game() = default;
 
 void Game::Run() {
+  DLOG(INFO) << "Game::Run";
+
   // Exchange name.
+  DLOG(INFO) << "Exchanging name";
   {
     base::DictionaryValue name;
     name.SetString("me", FLAGS_name);
+    DLOG(INFO) << "Sending name: " << name;
     WriteContent(stdout, name);
+    DLOG(INFO) << "Reading name";
     auto input = base::DictionaryValue::From(ReadContent(stdin));
+    DLOG(INFO) << "Read name: " << *input;
     std::string you_name;
     CHECK(input->GetString("you", &you_name));
     CHECK_EQ(FLAGS_name, you_name);
