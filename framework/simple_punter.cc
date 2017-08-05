@@ -36,16 +36,16 @@ void SimplePunter::SetUp(
   }
   mines_ = game_map.mines;
 
-  GenerateAdjacencyList();
   GenerateSiteIdToSiteIndex();
+  GenerateAdjacencyList();
   ComputeDistanceToMine();
 }
 
 void SimplePunter::GenerateAdjacencyList() {
   edges_.resize(sites_.size());
   for (const RiverWithPunter& river : rivers_) {
-    int a = river.source;
-    int b = river.target;
+    int a = site_id_to_site_idx_[river.source];
+    int b = site_id_to_site_idx_[river.target];
     edges_[a].push_back(b);
     edges_[b].push_back(a);
   }
@@ -70,7 +70,7 @@ void SimplePunter::ComputeDistanceToMine() {
   for (size_t i = 0; i < num_mines; ++i) {
     int mine = site_id_to_site_idx_[mines_[i]];
 
-    std::queue<std::pair<int, int>> q;
+    std::queue<std::pair<int, int>> q;  // {(site_idx, dist)}
     dist_to_mine_[mine][i] = 0;
     q.push(std::make_pair(mine, 0));
     while(q.size()) {
@@ -84,8 +84,8 @@ void SimplePunter::ComputeDistanceToMine() {
       }
     }
     for (size_t k = 0; k < num_sites; ++k) {
-      DLOG(INFO) << "distance to mine " << mine << " from "
-                 << k << ": " << dist_to_mine_[k][i];
+      DLOG(INFO) << "distance to mine " << mines_[i] << " from "
+                 << sites_[k].id << ": " << dist_to_mine_[k][i];
     }
   }
 }
@@ -131,8 +131,8 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
     }
   }
 
-  GenerateAdjacencyList();
   GenerateSiteIdToSiteIndex();
+  GenerateAdjacencyList();
 }
 
 std::unique_ptr<base::Value> SimplePunter::GetState() {

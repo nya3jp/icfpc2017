@@ -44,7 +44,7 @@ class SimplePunter : public Punter {
   std::vector<int> mines_;
 
   std::map<int, int> site_id_to_site_idx_;
-  std::vector<std::vector<int>> edges_;  // site_id -> {site_id}
+  std::vector<std::vector<int>> edges_;  // site_idx -> {site_id}
   std::vector<std::vector<int>> dist_to_mine_; // site_idx -> mine_idx -> distance
 
  private:
