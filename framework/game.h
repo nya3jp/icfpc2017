@@ -80,7 +80,7 @@ class Game {
   Game(std::unique_ptr<Punter> punter);
   ~Game();
 
-  void Run();
+  bool Run();
 
  private:
   std::unique_ptr<Punter> punter_;

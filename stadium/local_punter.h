@@ -6,6 +6,7 @@
 
 #include "base/macros.h"
 #include "base/values.h"
+#include "stadium/popen.h"
 #include "stadium/punter.h"
 
 namespace stadium {
@@ -22,13 +23,16 @@ class LocalPunter : public Punter {
   Move OnTurn(const std::vector<Move>& moves) override;
 
  private:
-  std::unique_ptr<base::Value> RunProcess(const base::DictionaryValue& request,
-                                          std::string* name);
+  std::unique_ptr<base::Value> RunProcess(
+      Popen* subprocess,
+      const base::DictionaryValue& request,
+      std::string* name);
 
   const std::string shell_;
 
   int punter_id_;
   std::unique_ptr<base::Value> state_;
+  std::unique_ptr<Popen> subprocess_;
 
   DISALLOW_COPY_AND_ASSIGN(LocalPunter);
 };

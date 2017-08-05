@@ -87,9 +87,9 @@ GameMap.prototype = {
         queue.shift();
         for (let j = 0; j < this.adjacent[v].length; j++) {
           const v2 = this.adjacent[v][j];
+          this.distance[i][v2] = Math.min(this.distance[i][v2], d + 1);
           if (!visited[v2]) {
             visited[v2] = true;
-            this.distance[i][v2] = d + 1;
             queue.push({v: v2, d: d+1});
           }
         }
