@@ -32,10 +32,11 @@ int ReadLeadingInt(FILE* file) {
 std::unique_ptr<base::Value> ReadContent(FILE* file) {
   size_t size = ReadLeadingInt(file);
   DLOG(INFO) << "size: " << size;
-  std::unique_ptr<char[]> buf(new char[size]);
+  std::unique_ptr<char[]> buf(new char[size + 1]);
   size_t len = fread(buf.get(), 1, size, file);
   if (len != size)
     return nullptr;
+  buf[size] = 0;
   return base::JSONReader::Read(buf.get());
 }
 
