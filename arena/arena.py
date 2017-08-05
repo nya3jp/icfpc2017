@@ -31,7 +31,7 @@ class Map():
                 tmp = source
                 source = target
                 target = tmp
-            self.rivers.append((source, target, False))
+            self.rivers.append((source, target, None))
 
 
 class Arena():
@@ -54,6 +54,9 @@ class Arena():
     def _debug(self, s):
         self._logger.debug('A: %s' % s)
 
+    def _info(self, s):
+        self._logger.info('A: %s' % s)
+
     def _generate_id(self):
         new_id = self._next_id
         self._next_id += 1
@@ -73,6 +76,8 @@ class Arena():
             'zombie': False
         }
 
+        self._info('New player: %s (id: %d)' % (name, client_id))
+
         if len(self._clients) == self._cap:
             self._prompt_setup()
 
@@ -84,6 +89,7 @@ class Arena():
         self._lock.acquire()
 
         if self._turn == self._cap:
+            self._info('Setup phrase over')
             self._prompt_move()
         else:
             self._prompt_setup()
@@ -96,9 +102,18 @@ class Arena():
 
         self._turn += 1
 
-    def done_move(self, message, is_move, source, target):
+    def done_move(self, message, punter_id, is_move, source, target):
         self._lock.acquire()
 
+        if is_move:
+            rivers = self._map.rivers
+            for i in range(len(rivers)):
+                river = rivers[i]
+                if river[0] == source and river[1] == target:
+                    if river[2] is not None:
+                        self._logger.error('Conflict')
+                        pass
+                    rivers[i] = (river[0], river[1], punter_id)
         self._moves.append(message)
         if len(self._moves) > self._cap:
             self._moves.popleft()
@@ -109,13 +124,22 @@ class Arena():
 
     def _prompt_move(self):
         if self._turn == self._cap + len(self._map.rivers):
-            self._debug('Game over')
+            self._info('Game over')
             for client_id, client in self._clients.items():
                 client['handler'].stop()
+
+            rivers = self._map.rivers
+            for river in rivers:
+                self._logger.info(river)
+
             return
 
         moves = []
-        for i in range(1, len(self._moves)):
+        if len(self._moves) == self._cap:
+            start = 1
+        else:
+            start = 0
+        for i in range(start, len(self._moves)):
             moves.append(self._moves[i])
 
         handler = self._clients[self._turn % self._cap]['handler']
@@ -238,7 +262,7 @@ class RequestHandler(socketserver.BaseRequestHandler, Endpoint):
         elif self._move_timeout_handle is not None:
             self._debug('_prompt_move() timeout')
 
-        self._arena.done_move({'pass': {'punter': self._punter_id}})
+        self._arena.done_move({'pass': {'punter': self._punter_id}}, self._punter_id, False, None, None)
 
     def _handle_error(self, s):
         self._debug(s)
@@ -276,7 +300,7 @@ class RequestHandler(socketserver.BaseRequestHandler, Endpoint):
 
                 self._debug('  Pass %d -> %d' % (source, target))
 
-                self._arena.done_move(message, False, None, None)
+                self._arena.done_move(message, punter_id, False, None, None)
             else:
                 punter_id = claim.get(u'punter')
                 if punter_id is None or punter_id != self._punter_id:
@@ -293,7 +317,7 @@ class RequestHandler(socketserver.BaseRequestHandler, Endpoint):
 
                 self._debug('  Claim %d -> %d' % (source, target))
 
-                self._arena.done_move(message, True, source, target)
+                self._arena.done_move(message, punter_id, True, source, target)
 
             self._debug('-Move')
             self._debug('+Move')
@@ -387,13 +411,13 @@ class Client(Endpoint):
                     while i < len(rivers):
                         river = rivers[i]
                         if river[0] == source and river[1] == target:
-                            rivers[i] = (source, target, True)
+                            rivers[i] = (source, target, punter_id)
                         i += 1
             i = 0
             while i < len(rivers):
                 river = rivers[i]
-                if not river[2]:
-                    rivers[i] = (river[0], river[1], True)
+                if river[2] is None:
+                    rivers[i] = (river[0], river[1], self._punter_id)
                     self._send({'claim': {'punter': self._punter_id, 'source': river[0], 'target': river[1]}})
                     self._debug('  Claim %d -> %d' % (river[0], river[1]))
 
@@ -417,7 +441,6 @@ if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger()
     logger.setLevel(logging.getLevelName(options.log_level.upper()))
-    logger.info('hoge')
 
     map_file = open(options.map_file, 'r')
     map_data = json.loads(map_file.read())
