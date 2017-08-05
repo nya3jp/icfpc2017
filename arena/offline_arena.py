@@ -23,16 +23,17 @@ def calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distance
 
 
 def calculate_score_for_punter(punter, sites, mines, rivers, distances):
+    punter_specific_adj = []
+    for site in sites:
+        punter_specific_adj.append([])
+
+    for river in rivers:
+        if river[2] is not None and river[2] == punter:
+            punter_specific_adj[river[0]].append(river[1])
+            punter_specific_adj[river[1]].append(river[0])
+
     score = 0
     for mine in mines:
-        punter_specific_adj = []
-        for site in sites:
-            punter_specific_adj.append([])
-
-        for river in rivers:
-            if river[2] is not None and river[2] == punter:
-                punter_specific_adj[river[0]].append(river[1])
-                punter_specific_adj[river[1]].append(river[0])
         score += calculate_score_for_punter_mine({}, punter_specific_adj, mine, distances, mine)
     return score
 
@@ -51,7 +52,7 @@ def calculate_score(num_punters, sites, mines, rivers):
     for mine in mines:
         l = []
         for site in sites:
-            l.append(0)
+            l.append(float('inf'))
         distances[mine] = l
 
         visited = {}
@@ -61,12 +62,13 @@ def calculate_score(num_punters, sites, mines, rivers):
         while len(queue) > 0:
             v, d = queue.pop()
             for j in adj[v]:
+                distances[mine][j] = min(distances[mine][j], d + 1)
                 if visited.get(j) is not None:
                     continue
                 visited[j] = True
-                distances[mine][j] = d + 1
                 queue.append((j, d + 1))
 
+    print(distances)
     scores = []
     for punter in range(num_punters):
         scores.append(calculate_score_for_punter(punter, sites, mines, rivers, distances))
