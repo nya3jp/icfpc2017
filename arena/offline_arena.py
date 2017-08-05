@@ -94,8 +94,10 @@ class Map():
 
 
 class Arena():
-    def __init__(self, map_data, logger):
+    def __init__(self, map_data, options, logger):
         self._logger = logger
+
+        self._options = options
 
         self._next_id = 0
 
@@ -179,17 +181,28 @@ class Arena():
                 if river[0] == source and river[1] == target:
                     if river[2] is not None:
                         self._debug('Conflict: %r' % river[2])
-                        move = {'pass': {'punter': punter_id}}
-                        self._moves.append(move)
-                        self._moves.popleft()
-                        self._all_moves.append(move)
-                        return
+
+                        if options.include_cause:
+                            full = {'pass': {'punter': punter_id}, 'cause': message}
+                        else:
+                            full = {'pass': {'punter': punter_id}}
+                        stripped = {'pass': {'punter': punter_id}}
                     else:
                         rivers[i] = (river[0], river[1], punter_id)
-                        break
-        self._moves.append(message)
+
+                        full = message
+                        stripped = {'claim': message['claim']}
+                    break
+        else:
+            full = message
+            stripped = {'pass': message['pass']}
+
+        self._moves.append(stripped)
         self._moves.popleft()
-        self._all_moves.append(message)
+        if options.include_state:
+            self._all_moves.append(full)
+        else:
+            self._all_moves.append(stripped)
 
 
 class FileEndpoint():
@@ -366,6 +379,10 @@ if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--map', dest='map_file')
     parser.add_option('--commands', type='string', dest='commands', default=None)
+    # Include state in the move history to be output.
+    parser.add_option('--include_state', action='store_true', dest='include_state')
+    # Include the original move in the move history when conflict happens.
+    parser.add_option('--include_cause', action='store_true', dest='include_cause')
     parser.add_option('--log-level', '--log_level', type='choice',
                       dest='log_level', default='debug',
                       choices=['debug', 'info', 'warning', 'error',
@@ -380,7 +397,7 @@ if __name__ == '__main__':
     map_file = open(options.map_file, 'r')
     map_data = json.loads(map_file.read())
 
-    arena = Arena(map_data, logger)
+    arena = Arena(map_data, options, logger)
 
     if options.commands is None:
         commands = [
