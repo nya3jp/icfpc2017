@@ -159,7 +159,7 @@ std::unique_ptr<base::Value> SimplePunter::GetState() {
     auto v = base::MakeUnique<base::DictionaryValue>();
     v->SetInteger("source", river.source);
     v->SetInteger("target", river.target);
-    v->SetInteger("punter", -1);
+    v->SetInteger("punter", river.punter);
     rivers->Append(std::move(v));
   }
   value->Set("rivers", std::move(rivers));
