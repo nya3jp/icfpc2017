@@ -13,6 +13,7 @@ class GreedyPunterChun : public framework::SimplePunter {
 
   void SetUp(int punter_id, int num_punters, const framework::GameMap& game_map) override;
   framework::GameMove Run() override;
+  framework::GameMove Run(const std::vector<framework::GameMove>& moves) override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 

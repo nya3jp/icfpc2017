@@ -7,6 +7,7 @@
 #include "framework/pass_punter.h"
 #include "punter/random_punter.h"
 #include "punter/greedy_punter.h"
+#include "punter/greedy_punter_chun.h"
 
 using namespace framework;
 using namespace punter;
@@ -25,6 +26,8 @@ int main(int argc, char* argv[]) {
     punter = base::MakeUnique<PassPunter>();
   else if (FLAGS_punter == "GreedyPunter")
     punter = base::MakeUnique<GreedyPunter>();
+  else if (FLAGS_punter == "GreedyPunterChun")
+    punter = base::MakeUnique<GreedyPunterChun>();
   else
     LOG(FATAL) << "invalid punter name";
   Game game(std::move(punter));

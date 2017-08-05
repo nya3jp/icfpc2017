@@ -33,8 +33,10 @@ cc_library(
   name = "greedy_punter_chun",
   srcs = [
     "greedy_punter_chun.cc",
-    "greedy_punter_chun.h",
     "gamemapforai.cc",
+  ],
+  hdrs = [
+    "greedy_punter_chun.h",
     "gamemapforai.h"
   ],
   deps = [

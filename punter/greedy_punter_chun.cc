@@ -21,6 +21,27 @@ void GreedyPunterChun::SetUp(int punter_id, int num_punters, const framework::Ga
 }
 
 framework::GameMove GreedyPunterChun::Run() {
+  // do nothing
+  return {framework::GameMove::Type::PASS };
+}
+framework::GameMove GreedyPunterChun::Run(const std::vector<framework::GameMove>& moves) {
+  DLOG(INFO) << "Size of moves: " << moves.size();
+  for(auto& move: moves) {
+    if(move.type == framework::GameMove::Type::CLAIM) {
+      int source = move.source;
+      int target = move.target;
+      DLOG(INFO) << "Src ix before conversion " << source;
+      DLOG(INFO) << "Trg ix before conversion " << target;
+      gameutil::GameMapForAI::node_index srcix = themap.id2ix.at(source);
+      gameutil::GameMapForAI::node_index trgix = themap.id2ix.at(target);
+      DLOG(INFO) << "Src ix after conversion " << srcix;
+      DLOG(INFO) << "Trg ix after conversion " << trgix;
+      int color = move.punter_id;
+
+      themap.claim(srcix, trgix, color);
+    }
+  }
+  
   typedef  gameutil::GameMapForAI::EdgeInfo EdgeInfo;
   vector<pair<int, const EdgeInfo*> > v;
   for(const auto &e: themap.getEdgeInfo()) {
@@ -29,6 +50,7 @@ framework::GameMove GreedyPunterChun::Run() {
       v.emplace_back(make_pair(sc, &e));
     }
   }
+  CHECK(v.size() >= 1);
   sort(v.begin(), v.end(),
        [](const pair<int, const EdgeInfo*> &a,
           const pair<int, const EdgeInfo*> &b) -> bool

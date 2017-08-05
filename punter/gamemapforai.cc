@@ -104,7 +104,15 @@ int GameMapForAI::delta_score(node_index source, node_index dest, int punter)
 int GameMapForAI::claim_impl(node_index source, node_index dest, int punter, bool claim)
 {
   int ret = 0;
+  
+  DLOG(INFO) << "In claim impl" << (claim ? "" : "(query)") << ": source " << source;
+  DLOG(INFO) << "In claim impl" << (claim ? "" : "(query)") << ": dest " << dest;
+
   for(size_t mineix = 0; mineix < mines_.size(); ++mineix) {
+    DCHECK(nodeinfo_[source].reachable.size() > mineix);
+    DCHECK(nodeinfo_[dest].reachable.size() > mineix);
+    DCHECK(nodeinfo_[source].reachable[mineix].size() > punter);
+    DCHECK(nodeinfo_[dest].reachable[mineix].size() > punter);
     bool source_reachable = nodeinfo_[source].reachable[mineix][punter];
     bool dest_reachable = nodeinfo_[dest].reachable[mineix][punter];
     if(source_reachable != dest_reachable) {
@@ -139,21 +147,28 @@ int GameMapForAI::claim_impl(node_index source, node_index dest, int punter, boo
         ret += d * d;
       }
 
-      if(claim) {
-        // Update edge color.
-        for(const auto &e: themap_[source]) {
-          if(e.first != dest) continue;
-          edgeinfo_[e.second].color = punter;
-          break;
-        }
-
+      if(claim){
         // Update edge scores.
         for(node_index v: newly_reachable) {
           nodeinfo_[v].reachable[mineix][punter] = true;
         }
-
+        
         scores_[punter] += ret;
       }
+    }
+  }
+
+  if(claim) {
+    // Update edge color.
+    bool updated = false;
+    for(const auto &e: themap_[source]) {
+      if(e.first != dest) continue;
+      edgeinfo_[e.second].color = punter;
+      updated = true;
+      break;
+    }
+    if(!updated) {
+      DLOG(WARNING) << "Claiming river does not exist: " << source << "->" << dest << " punter = " << punter;
     }
   }
 
@@ -239,7 +254,8 @@ std::istream& GameMapForAI::deserialize(std::istream& is)
   for(int i = 0; i < num_mines; ++i) {
     is >> mines_[i];
   }
-  
+
+  scores_.resize(num_punters_);
   for(int i = 0; i < num_punters_; ++i) {
     is >> scores_[i];
   }
