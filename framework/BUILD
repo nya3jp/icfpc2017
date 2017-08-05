@@ -1,3 +1,13 @@
+proto_library(
+  name = "game_proto_proto",
+  srcs = ["game_proto.proto"],
+)
+
+cc_proto_library(
+  name = "game_proto_cc_proto",
+  deps = ["game_proto_proto"],
+)
+
 cc_library(
   name = "game",
   srcs = [
@@ -39,6 +49,7 @@ cc_library(
   deps = [
     "//third_party/chromiumbase",
     ":game",
+    ":game_proto_cc_proto",
   ],
   visibility = ["//visibility:public"]
 )

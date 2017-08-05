@@ -3,6 +3,7 @@
 
 #include "base/macros.h"
 #include "framework/game.h"
+#include "framework/game_proto.pb.h"
 
 namespace framework {
 
@@ -46,6 +47,8 @@ class SimplePunter : public Punter {
   std::map<int, int> site_id_to_site_idx_;
   std::vector<std::vector<int>> edges_;  // site_idx -> {site_id}
   std::vector<std::vector<int>> dist_to_mine_; // site_idx -> mine_idx -> distance
+
+  GameStateProto proto_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(SimplePunter);
