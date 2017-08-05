@@ -19,6 +19,8 @@ class SimplePunter : public Punter {
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 
+  void ComputeDistanceToMine();
+
  protected:
   struct RiverWithPunter {
     RiverWithPunter() = default;
@@ -38,6 +40,9 @@ class SimplePunter : public Punter {
   std::vector<Site> sites_;
   std::vector<RiverWithPunter> rivers_;
   std::vector<int> mines_;
+
+  std::vector<std::vector<int>> edges_;
+  std::vector<std::vector<int>> dist_to_mine_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(SimplePunter);

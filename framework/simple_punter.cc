@@ -1,5 +1,7 @@
 #include "framework/simple_punter.h"
 
+#include <queue>
+
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 
@@ -33,6 +35,48 @@ void SimplePunter::SetUp(
     rivers_.push_back(r);
   }
   mines_ = game_map.mines;
+
+  ComputeDistanceToMine();
+}
+
+void SimplePunter::ComputeDistanceToMine() {
+  size_t num_sites = sites_.size();
+  size_t num_mines = mines_.size();
+  edges_.resize(num_sites);
+  dist_to_mine_.resize(num_sites, std::vector<int>(num_mines, -1));
+
+  for (const RiverWithPunter& river : rivers_) {
+    int a = river.source;
+    int b = river.target;
+    edges_[a].push_back(b);
+    edges_[b].push_back(a);
+  }
+  for (size_t i = 0; i < num_sites; ++i) {
+    std::sort(edges_[i].begin(), edges_[i].end());
+    edges_[i].erase(std::unique(edges_[i].begin(), edges_[i].end()),
+                    edges_[i].end());
+  }
+
+  for (size_t i = 0; i < num_mines; ++i) {
+    int mine = mines_[i];
+    std::queue<std::pair<int, int>> q;
+    dist_to_mine_[mine][i] = 0;
+    q.push(std::make_pair(mine, 0));
+    while(q.size()) {
+      int site = q.front().first;
+      int dist = q.front().second;
+      q.pop();
+      for (int next : edges_[site]) {
+        if (dist_to_mine_[next][i] != -1) continue;
+        dist_to_mine_[next][i] = dist + 1;
+        q.push(std::make_pair(next, dist + 1));
+      }
+    }
+    for (size_t k = 0; k < num_sites; ++k) {
+      DLOG(INFO) << "distance to mine " << mine << " from "
+                 << k << ": " << dist_to_mine_[k][i];
+    }
+  }
 }
 
 void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
