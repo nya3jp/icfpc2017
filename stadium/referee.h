@@ -36,6 +36,7 @@ class Referee {
 
   std::vector<PunterInfo> punter_info_list_;
   MapState map_state_;
+  std::vector<Move> move_history_;
 
   DISALLOW_COPY_AND_ASSIGN(Referee);
 };

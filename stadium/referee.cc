@@ -7,9 +7,51 @@
 #include <utility>
 #include <vector>
 
+#include "base/json/json_writer.h"
 #include "base/logging.h"
+#include "base/values.h"
+#include "gflags/gflags.h"
+#include "base/files/file_util.h"
+#include "base/memory/ptr_util.h"
+
+DEFINE_string(output_json, "", "Path to json moves output");
 
 namespace stadium {
+
+namespace {
+
+void WriteMoves(const std::string& path, std::vector<Move> moves) {
+  auto json = base::MakeUnique<base::DictionaryValue>();
+  auto moves_value = base::MakeUnique<base::ListValue>();
+  moves_value->Reserve(moves.size());
+  for (const auto& move : moves) {
+    auto move_value = base::MakeUnique<base::DictionaryValue>();
+    switch (move.type) {
+      case Move::Type::CLAIM: {
+        auto claim_value = base::MakeUnique<base::DictionaryValue>();
+        claim_value->SetInteger("punter", move.punter_id);
+        claim_value->SetInteger("source", move.source);
+        claim_value->SetInteger("target", move.target);
+        move_value->Set("claim", std::move(claim_value));
+        break;
+      }
+      case Move::Type::PASS: {
+        auto pass_value = base::MakeUnique<base::DictionaryValue>();
+        pass_value->SetInteger("punter", move.punter_id);
+        move_value->Set("pass", std::move(pass_value));
+        break;
+      }
+    }
+    moves_value->Append(std::move(move_value));
+  }
+  json->Set("moves", std::move(moves_value));
+
+  std::string output;
+  CHECK(base::JSONWriter::Write(*json, &output));
+  base::WriteFile(base::FilePath(path), output.data(), output.size());
+}
+
+}
 
 struct Referee::SiteState {
   int id;
@@ -218,6 +260,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
     LOG(INFO) << "LOG: [" << turn_id << "] P" << punter_id
               << ": CLAIM " << move.source << "-" << move.target;
   }
+  move_history_.push_back(actual_move);
   return actual_move;
 }
 
@@ -225,6 +268,8 @@ void Referee::Finish() {
   LOG(INFO) << "Game finished.";
   // TODO: use returned score?
   map_state_.GetScore(punter_info_list_);
+  if (!FLAGS_output_json.empty())
+    WriteMoves(FLAGS_output_json, move_history_);
 }
 
 }  // namespace stadium
