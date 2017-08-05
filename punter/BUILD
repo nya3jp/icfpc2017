@@ -29,3 +29,17 @@ cc_library(
   ],
   visibility = ["//visibility:public"]
 )
+cc_library(
+  name = "greedy_punter_chun",
+  srcs = [
+    "greedy_punter_chun.cc",
+    "greedy_punter_chun.h",
+    "gamemapforai.cc",
+    "gamemapforai.h"
+  ],
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+  visibility = ["//visibility:public"]
+)
