@@ -45,6 +45,7 @@ class Arena():
         self._punters = {}
 
         self._map = Map(map_data)
+        self._num_rivers = len(self._map.rivers)
 
         self._turn = 0
 
@@ -90,9 +91,21 @@ class Arena():
             self._turn += 1
         self._turn = 0
         while True:
-            self._debug('Game #%d / %d' % (self._turn, len(self._map.rivers)))
-            if self._turn == len(self._map.rivers):
+            self._debug('Game #%d / %d' % (self._turn, self._num_rivers))
+            if self._turn == self._num_rivers:
                 self._info('Game over')
+
+                moves = []
+                while True:
+                    try:
+                        move = self._moves.popleft()
+                        moves.append(move)
+                    except IndexError:
+                        break
+
+                sys.stdout.write(json.dumps(moves))
+                sys.stdout.write('\n')
+                sys.stdout.flush()
 
                 rivers = self._map.rivers
                 for river in rivers:
@@ -123,7 +136,7 @@ class Arena():
         client['state'] = new_state
         if is_move:
             rivers = self._map.rivers
-            for i in range(len(rivers)):
+            for i in range(self._num_rivers):
                 river = rivers[i]
                 if river[0] == source and river[1] == target:
                     if river[2] is not None:
@@ -131,8 +144,6 @@ class Arena():
                         pass
                     rivers[i] = (river[0], river[1], punter_id)
         self._moves.append(message)
-        if len(self._moves) > self._num_punters:
-            self._moves.popleft()
 
     def handle_error(self, s):
         self._debug(s)
@@ -243,36 +254,40 @@ class FileEndpoint():
     def _read(self, in_fd):
         while True:
             if self._next_length is None:
-                data = in_fd.read(1)
+                if len(self._buffer) == 0:
+                    data = in_fd.read(5)
+                else:
+                    data = in_fd.read(1)
                 if len(data) == 0:
                     self._debug('broken')
                     return
             else:
-                data = in_fd.read(self._next_length + self._colon_pos - len(self._buffer))
+                data = in_fd.read(self._next_length + 1 + self._colon_pos - len(self._buffer))
             if not self._decode:
                 data = data.decode('utf-8')
+            prev_buffer_len = len(self._buffer)
             self._buffer += data
             if self._next_length is None:
                 for i in range(len(data)):
                     if data[i] == ':':
-                        self._colon_pos = i + len(self._buffer)
+                        self._colon_pos = i + prev_buffer_len
                         break
                 if self._colon_pos is None:
                     continue
                 if self._colon_pos == 0:
                     self._handle_error('Empty length from %r' % self._name)
                     return
-                length_str = self._buffer[0:self._colon_pos - 1]
+                length_str = self._buffer[0:self._colon_pos]
                 self._next_length = int(length_str)
                 if str(self._next_length) != length_str:
                     self._handle_error('Bad length from %r: %s' % (self._name, length_str))
                     return
 
-            if len(self._buffer) < self._colon_pos + self._next_length:
+            if len(self._buffer) < self._colon_pos + 1 + self._next_length:
                 continue
 
-            message_start = self._colon_pos
-            message_end = self._colon_pos + self._next_length
+            message_start = self._colon_pos + 1
+            message_end = self._colon_pos + 1 + self._next_length
             try:
                 message_str = self._buffer[message_start:message_end]
                 message = json.loads(message_str)
@@ -310,23 +325,29 @@ class OfflinePlayerHost(PlayerHost, FileEndpoint):
         self._process.stdin.flush()
 
     def prompt_setup(self, setup):
-        self._received_handshake = False
         self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+        self._received_handshake = False
         self._read(self._process.stdout)
+
         self._setup_timeout_handle = True
         self._write(setup)
         self._read(self._process.stdout)
-        self._process.terminate()
+
+        self._process.kill()
         self._process = None
 
     def prompt_move(self, moves):
-        self._received_handshake = False
         self._process = subprocess.Popen(self._command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+        self._received_handshake = False
         self._read(self._process.stdout)
+
         self._move_timeout_handle = True
         self._write(moves)
         self._read(self._process.stdout)
-        self._process.terminate()
+
+        self._process.kill()
         self._process = None
 
 
@@ -338,7 +359,7 @@ class Bot(FileEndpoint):
 
         self._name = name
 
-        self._debug('Created')
+        #self._debug('Created')
 
         self._done_handshake = False
 
@@ -347,14 +368,8 @@ class Bot(FileEndpoint):
         self._map = None
 
         self._write({'me': self._name})
-
         self._read(sys.stdin)
 
-        self._read(sys.stdin)
-        self._read(sys.stdin)
-        self._read(sys.stdin)
-        self._read(sys.stdin)
-        self._read(sys.stdin)
         self._read(sys.stdin)
 
     def _write(self, data):
@@ -366,8 +381,8 @@ class Bot(FileEndpoint):
 
     def _handle_message(self, message):
         if not self._done_handshake:
-            self._debug('+Handshake')
-            self._debug('-Handshake')
+            #self._debug('+Handshake')
+            #self._debug('-Handshake')
             self._done_handshake = True
         elif message.get(u'punter') is not None:
             self._debug('+Setup')
@@ -383,7 +398,7 @@ class Bot(FileEndpoint):
             self._debug('-Setup')
         else:
             self._debug('+Move')
-            self._debug('%r received' % message)
+            #self._debug('%r received' % message)
             state = message.get(u'state')
             self._write({'pass': {'punter': state['punter']}, 'state': state})
             return
@@ -409,10 +424,13 @@ class Bot(FileEndpoint):
                 river = rivers[i]
                 if river[2] is None:
                     rivers[i] = (river[0], river[1], self._punter_id)
-                    self._write({'claim': {'punter': self._punter_id, 'source': river[0], 'target': river[1]}})
+                    self._write(
+                        {'claim': {'punter': self._punter_id,
+                                   'source': river[0],
+                                   'target': river[1]}})
                     self._debug('  Claim %d -> %d' % (river[0], river[1]))
 
-                    self._debug('-Move')
+                    #self._debug('-Move')
                     return
                 i += 1
 
@@ -443,9 +461,12 @@ if __name__ == '__main__':
 
         if options.commands is None:
             commands = [
-                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'foo'],
-                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
-                ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'baz'],
+                ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'foo'],
+                ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'bar'],
+                ['/usr/bin/python3', 'arena/offline_arena.py', '--bot', 'baz'],
+                # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'foo'],
+                # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
+                # ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'baz'],
             ]
         else:
             commands = json.loads(options.commands)
