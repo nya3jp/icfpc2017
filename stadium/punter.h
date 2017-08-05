@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "stadium/game_states.h"
+#include "stadium/game_data.h"
 
 namespace stadium {
 
@@ -12,9 +12,9 @@ class Punter {
  public:
   virtual ~Punter() {}
 
-  virtual std::string Initialize(int punter_id,
-                                 int num_punters,
-                                 const Map& map) = 0;
+  virtual std::string Setup(int punter_id,
+                            int num_punters,
+                            const Map* map) = 0;
   virtual Move OnTurn(const std::vector<Move>& moves) = 0;
 
  protected:

@@ -13,12 +13,15 @@ class LocalPunter : public Punter {
   explicit LocalPunter(const std::string& shell);
   ~LocalPunter() override;
 
-  std::string Initialize(int punter_id,
-                         int num_punters,
-                         const Map& map) override;
+  std::string Setup(int punter_id,
+                    int num_punters,
+                    const Map* map) override;
   Move OnTurn(const std::vector<Move>& moves) override;
 
  private:
+  const std::string shell_;
+  int punter_id_;
+
   DISALLOW_COPY_AND_ASSIGN(LocalPunter);
 };
 

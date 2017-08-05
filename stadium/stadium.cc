@@ -2,16 +2,31 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "base/logging.h"
+#include "base/memory/ptr_util.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/strings/string_util.h"
 #include "gflags/gflags.h"
 #include "glog/logging.h"
-#include "stadium/game_states.h"
+#include "stadium/game_data.h"
+#include "stadium/local_punter.h"
+#include "stadium/remote_punter.h"
 
 DEFINE_string(map, "", "Path to a map JSON file.");
 
 namespace stadium {
 namespace {
+
+std::unique_ptr<Punter> MakePunterFromCommandLine(const std::string& arg) {
+  if (base::StartsWith(arg, ":", base::CompareCase::SENSITIVE)) {
+    int port;
+    CHECK(base::StringToInt(arg.substr(1), &port));
+    return base::MakeUnique<RemotePunter>(port);
+  }
+  return base::MakeUnique<LocalPunter>(arg);
+}
 
 void Main(int argc, char** argv) {
   Map map = Map::ReadFromFileOrDie(FLAGS_map);
@@ -25,7 +40,7 @@ void Main(int argc, char** argv) {
     master->AddPunter(MakePunterFromCommandLine(argv[i]));
   }
 
-  master->RunGame(map);
+  master->RunGame(std::move(map));
 }
 
 }  // namespace

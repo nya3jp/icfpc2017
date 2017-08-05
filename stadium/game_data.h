@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "base/macros.h"
+#include "base/values.h"
 
 namespace stadium {
 
@@ -20,6 +21,7 @@ struct River {
 struct Map {
   std::vector<Site> sites;
   std::vector<River> rivers;
+  std::unique_ptr<base::Value> raw_value;
 
   static Map ReadFromFileOrDie(const std::string& path);
 };
