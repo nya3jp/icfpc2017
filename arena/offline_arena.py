@@ -165,7 +165,7 @@ class Arena():
                     except IndexError:
                         break
 
-                sys.stdout.write(json.dumps(moves))
+                sys.stdout.write(json.dumps({'moves': moves}))
                 sys.stdout.write('\n')
                 sys.stdout.flush()
 
