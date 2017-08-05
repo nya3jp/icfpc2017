@@ -153,7 +153,7 @@ class Arena():
             self._turn += 1
         self._turn = 0
         while True:
-            self._debug('Game #%d / %d' % (self._turn, self._num_rivers))
+            self._debug('Turn #%d / %d' % (self._turn, self._num_rivers))
             if self._turn == self._num_rivers:
                 self._info('Game over')
 
