@@ -10,8 +10,8 @@ ExtensionExamplePunter::~ExtensionExamplePunter() = default;
 
 void ExtensionExamplePunter::SetUp(
     int punter_id, int num_punters, const framework::GameMap& game_map) {
-  // Note: Don't store proto_.MutableExtension pointer here because
-  // it is reallocated by SetState.
+  // Note: Don't store proto_.MutableExtension pointer into the private fields
+  // here because the extensions is likely to be reallocated by SetState.
   proto_.MutableExtension(ExtensionExample::example_ext)->set_count(1);
 }
 
