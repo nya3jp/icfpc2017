@@ -182,11 +182,12 @@ class Arena():
                 return
 
             moves = []
-            start = len(self._moves) - min(len(self._moves), self._num_punters - 1)
+            start = len(self._moves) - min(len(self._moves), self._num_punters)
             for i in range(start, len(self._moves)):
                 moves.append(self._moves[i])
-
+            self._debug(moves)
             client = self._get_current_client()
+            #self._debug('Sending state along with move %r: ' % client['state'])
             client['player'].prompt_move(
                 {'move': {'moves': moves},
                  'state': client['state']})
@@ -199,6 +200,7 @@ class Arena():
 
     def done_move(self, message, punter_id, is_move, source, target):
         new_state = message.get('state')
+        #self._debug('New state %r: ' % new_state)
         del message['state']
 
         client = self._get_current_client()
