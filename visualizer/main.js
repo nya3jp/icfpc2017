@@ -93,7 +93,13 @@ function updateView(map, moves, step) {
   // Assign colors to players
   var players = new Set();
   for (var i = 0; i < moves.length; i++) {
-    players.add(moves[i].claim.punter);
+    var punterId;
+    if (moves[i].claim)
+      punterId = moves[i].claim.punter;
+    else if (moves[i].pass)
+      punterId = moves[i].pass.punter;
+    if (punterId != undefined)
+      players.add(punterId);
   }
   var colors = new Array(players.size);
   for (var i = 0; i < colors.length; i++) {
@@ -119,6 +125,9 @@ function updateView(map, moves, step) {
   // Draw claimed rivers
   for (var i = 0; i < step; i++) {
     var claim = gMoves[i].claim;
+    if (!claim)
+      continue;
+
     ctx.beginPath();
 
     ctx.strokeStyle = colors[claim.punter];
@@ -147,6 +156,8 @@ function updateView(map, moves, step) {
   for (var i = 0; i < edges.length; i++)
     edges[i] = [];
   for (var i = 0; i < step; i++) {
+    if (!gMoves[i].claim)
+      continue;
     var punter = gMoves[i].claim.punter;
     var src = gMoves[i].claim.source;
     var dst = gMoves[i].claim.target;
