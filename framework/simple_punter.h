@@ -20,6 +20,7 @@ class SimplePunter : public Punter {
   std::unique_ptr<base::Value> GetState() override;
 
   void GenerateAdjacencyList();
+  void GenerateSiteIdToSiteIndex();
   void ComputeDistanceToMine();
 
  protected:
@@ -42,6 +43,7 @@ class SimplePunter : public Punter {
   std::vector<RiverWithPunter> rivers_;
   std::vector<int> mines_;
 
+  std::map<int, int> site_id_to_site_idx_;
   std::vector<std::vector<int>> edges_;
   std::vector<std::vector<int>> dist_to_mine_;
 

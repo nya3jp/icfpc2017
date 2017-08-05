@@ -37,6 +37,7 @@ void SimplePunter::SetUp(
   mines_ = game_map.mines;
 
   GenerateAdjacencyList();
+  GenerateSiteIdToSiteIndex();
   ComputeDistanceToMine();
 }
 
@@ -55,13 +56,20 @@ void SimplePunter::GenerateAdjacencyList() {
   }
 }
 
+void SimplePunter::GenerateSiteIdToSiteIndex() {
+  for (size_t i = 0; i < sites_.size(); ++i) {
+    site_id_to_site_idx_[sites_[i].id] = i;
+  }
+}
+
 void SimplePunter::ComputeDistanceToMine() {
   size_t num_sites = sites_.size();
   size_t num_mines = mines_.size();
   dist_to_mine_.resize(num_sites, std::vector<int>(num_mines, -1));
 
   for (size_t i = 0; i < num_mines; ++i) {
-    int mine = mines_[i];
+    int mine = site_id_to_site_idx_[mines_[i]];
+
     std::queue<std::pair<int, int>> q;
     dist_to_mine_[mine][i] = 0;
     q.push(std::make_pair(mine, 0));
@@ -124,6 +132,7 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   }
 
   GenerateAdjacencyList();
+  GenerateSiteIdToSiteIndex();
 }
 
 std::unique_ptr<base::Value> SimplePunter::GetState() {
