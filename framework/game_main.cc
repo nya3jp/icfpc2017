@@ -4,7 +4,7 @@
 #include "base/logging.h"
 
 #include "framework/game.h"
-#include "framework/pass_punter.h"
+#include "framework/simple_punter.h"
 
 using namespace framework;
 
@@ -13,6 +13,6 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
 
-  Game game(base::MakeUnique<PassPunter>());
+  Game game(base::MakeUnique<SimplePunter>());
   game.Run();
 }
