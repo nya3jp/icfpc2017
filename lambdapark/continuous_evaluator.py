@@ -1,5 +1,6 @@
 #!/usr/bin/python2
 
+import binascii
 import hashlib
 import itertools
 import logging
@@ -78,18 +79,22 @@ def load_result_index(config):
         return ujson.load(f)
 
 
-def save_result(result, config, punters, output_prefix):
+def save_result(result, config, punters, output_prefix, start_time, end_time):
     punter_names = [p['name'] for p in punters]
     result_path = output_prefix + '.json'
     fat_result = result.copy()
     fat_result.update({
         'punters': punter_names,
+        'start_time': start_time,
+        'duration': end_time - start_time,
     })
     thin_result = {
         'result_file': os.path.basename(result_path),
         'log_file': os.path.basename(output_prefix) + '.log',
         'punters': punter_names,
         'scores': fat_result['scores'],
+        'start_time': start_time,
+        'duration': end_time - start_time,
     }
 
     with open(result_path, 'w') as f:
@@ -178,8 +183,7 @@ def process_config(config, all_punters):
         punters = decide_next_punters(config, all_punters)
         if not punters:
             break
-        punter_names = [p['name'] for p in punters]
-        hash = hashlib.md5(':'.join(punter_names)).hexdigest()
+        hash = binascii.hexlify(os.urandom(16))
         logging.info('Match %s: %s [%s]',
                      hash,
                      config['name'],
@@ -188,8 +192,20 @@ def process_config(config, all_punters):
         if not os.path.exists(result_dir):
             os.makedirs(result_dir)
         output_prefix = os.path.join(result_dir, hash)
-        result = run(config, punters, output_prefix)
-        save_result(result, config, punters, output_prefix)
+
+        start_time = time.time()
+        try:
+            result = run(config, punters, output_prefix)
+        except Exception:
+            result = {
+                'error': 'server crashed',
+                'moves': [],
+                'scores': [0 for _ in punters],
+            }
+            logging.exception('server crashed')
+        end_time = time.time()
+
+        save_result(result, config, punters, output_prefix, start_time, end_time)
         logging.info('score: %r', result['scores'])
         check_update()
 
