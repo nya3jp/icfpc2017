@@ -131,16 +131,17 @@ State.prototype = {
   },
 };
 
-function Screen(canvas, scoreLabelContainer, prevButton, nextButton) {
+function Screen(canvas, scoreLabelContainer, prevButton, nextButton, movesInput) {
   this.prevButton = prevButton;
   this.nextButton = nextButton;
   this.canvas_ = canvas;
   this.scoreLabelContainer_ = scoreLabelContainer;
+  this.movesInput_ = movesInput;
 }
 
 Screen.prototype = {
   display: function(gameMap, history, state) {
-    console.log(state);
+    this.movesInput_.disabled = !gameMap;
     if (!gameMap)
       return;
 
@@ -367,7 +368,8 @@ document.addEventListener('DOMContentLoaded', function(event) {
   gScreen = new Screen(document.getElementById('canvas'),
                        document.getElementById('scores'),
                        document.getElementById('prev'),
-                       document.getElementById('next'));
+                       document.getElementById('next'),
+                       document.getElementById('moves'));
   gState = new State();
 
   const inputMap = document.getElementById('map');
