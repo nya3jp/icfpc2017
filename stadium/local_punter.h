@@ -23,8 +23,10 @@ class LocalPunter : public Punter {
   Move OnTurn(const std::vector<Move>& moves) override;
 
  private:
-  std::unique_ptr<base::Value> RunProcess(const base::DictionaryValue& request,
-                                          std::string* name);
+  std::unique_ptr<base::Value> RunProcess(
+      Popen* subprocess,
+      const base::DictionaryValue& request,
+      std::string* name);
 
   const std::string shell_;
 

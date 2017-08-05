@@ -2,8 +2,6 @@
 
 #include <stdio.h>
 #include <cctype>
-#include <unistd.h>
-#include <fcntl.h>
 
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
@@ -17,12 +15,6 @@ DEFINE_string(name, "", "Punter name.");
 namespace framework {
 
 namespace {
-
-void SetStdinBlocking() {
-  int flg = fcntl(0, F_GETFL);
-  CHECK_GE(flg, 0);
-  CHECK_EQ(0, fcntl(0, F_SETFL, flg & ~O_NONBLOCK));
-}
 
 int ReadLeadingInt(FILE* file) {
   char buf[10];
@@ -211,10 +203,7 @@ Game::Game(std::unique_ptr<Punter> punter)
     : punter_(std::move(punter)) {}
 Game::~Game() = default;
 
-void Game::Run() {
-  DLOG(INFO) << "Set stdin blocking";
-  SetStdinBlocking();
-
+bool Game::Run() {
   DLOG(INFO) << "Game::Run";
 
   // Exchange name.
@@ -288,6 +277,7 @@ void Game::Run() {
       DLOG(INFO) << "score: " << punter_id << ", " << score;
     }
 #endif
+    return true;
   } else {
     // Play.
     const base::ListValue* moves_value;
@@ -318,6 +308,8 @@ void Game::Run() {
 
     WriteContent(stdout, output);
   }
+
+  return false;
 }
 
 }  // framework

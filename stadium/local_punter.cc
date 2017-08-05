@@ -14,6 +14,8 @@
 #include "base/memory/ptr_util.h"
 #include "base/strings/string_number_conversions.h"
 
+DEFINE_bool(persistent, false, "Do not kill child process for each turn.");
+
 namespace stadium {
 
 namespace {
@@ -51,7 +53,10 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp) {
 }  // namespace
 
 LocalPunter::LocalPunter(const std::string& shell)
-    : shell_(shell) {}
+    : shell_(shell) {
+  if (FLAGS_persistent)
+    subprocess_ = base::MakeUnique<Popen>(shell_ + " --persistent");
+}
 
 LocalPunter::~LocalPunter() = default;
 
@@ -71,8 +76,15 @@ PunterInfo LocalPunter::Setup(int punter_id,
     request->Set("settings", std::move(settings_value));
   }
   std::string name;
-  std::unique_ptr<base::DictionaryValue> response =
-      base::DictionaryValue::From(RunProcess(*request, &name));
+  std::unique_ptr<base::DictionaryValue> response;
+  if (FLAGS_persistent) {
+    response = base::DictionaryValue::From(
+        RunProcess(subprocess_.get(), *request, &name));
+  } else {
+    Popen subprocess(shell_);
+    response = base::DictionaryValue::From(
+        RunProcess(&subprocess, *request, &name));
+  }
   CHECK(response->Remove("state", &state_));
 
   std::vector<River> futures;
@@ -127,8 +139,15 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
   }
 
   // TODO: Implement timeout.
-  std::unique_ptr<base::DictionaryValue> response =
-      base::DictionaryValue::From(RunProcess(*request, nullptr));
+  std::unique_ptr<base::DictionaryValue> response;
+  if (FLAGS_persistent) {
+    response = base::DictionaryValue::From(
+        RunProcess(subprocess_.get(), *request, nullptr));
+  } else {
+    Popen subprocess(shell_);
+    response = base::DictionaryValue::From(
+        RunProcess(&subprocess, *request, nullptr));
+  }
   CHECK(response->Remove("state", &state_));
 
   if (response->HasKey("pass")) {
@@ -154,12 +173,11 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
 }
 
 std::unique_ptr<base::Value> LocalPunter::RunProcess(
+    Popen* subprocess,
     const base::DictionaryValue& request,
     std::string* name) {
-  subprocess_ = base::MakeUnique<Popen>(shell_);
-
   auto ping =
-      base::DictionaryValue::From(ReadMessage(subprocess_->stdout_read()));
+      base::DictionaryValue::From(ReadMessage(subprocess->stdout_read()));
   CHECK(ping) << "Invalid greeting message";
 
   std::string tmp_name;
@@ -171,12 +189,10 @@ std::unique_ptr<base::Value> LocalPunter::RunProcess(
 
   auto pong = base::MakeUnique<base::DictionaryValue>();
   pong->SetString("you", tmp_name);
-  WriteMessage(*pong, subprocess_->stdin_write());
+  WriteMessage(*pong, subprocess->stdin_write());
 
-  WriteMessage(request, subprocess_->stdin_write());
-  auto result = ReadMessage(subprocess_->stdout_read());
-  subprocess_.reset();
-  return result;
+  WriteMessage(request, subprocess->stdin_write());
+  return ReadMessage(subprocess->stdout_read());
 }
 
 }  // namespace stadium
