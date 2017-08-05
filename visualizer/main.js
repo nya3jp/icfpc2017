@@ -75,8 +75,11 @@ function updateView(map, moves, step) {
   var h = maxY - minY;
 
   // Adjust canvas
-  canvas.width = wrapper.offsetWidth;
-  canvas.height = canvas.width * (maxY - minY) / (maxX - minX);
+  var scaleX = document.documentElement.clientWidth * 0.9 / (maxX - minX);
+  var scaleY = document.documentElement.clientHeight * 0.8 / (maxY - minY);
+  var scale = Math.min(scaleX, scaleY);
+  canvas.width = (maxX - minX) * scale;
+  canvas.height = (maxY - minY) * scale;
 
   var sitePX = new Array(sites.length);
   var sitePY = new Array(sites.length);
@@ -94,19 +97,12 @@ function updateView(map, moves, step) {
   for (var i = 0; i < moves.length; i++) {
     players.add(moves[i].claim.punter);
   }
-  var nPlayers = players.size;
   var colors = new Array(players.size);
   for (var i = 0; i < colors.length; i++) {
     var hue = (0.4 + i / colors.length) / 1.0;
     var rgb = hslToRgb(hue, 1.0, 0.5);
     colors[i] = 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
-    console.log(colors[i]);
-
   }
-  
-
-  console.log(nPlayers);
-
 
   var ctx = canvas.getContext("2d");
 
