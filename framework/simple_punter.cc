@@ -20,14 +20,7 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
       }
     }
   }
-
-  for (auto& r : rivers_) {
-    if (r.punter == -1) {
-      return { GameMove::Type::CLAIM, punter_id_, r.source, r.target };
-    }
-  }
-
-  return {GameMove::Type::PASS, punter_id_};
+  return Run();
 }
 
 void SimplePunter::SetUp(

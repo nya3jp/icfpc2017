@@ -39,7 +39,8 @@ cc_library(
   deps = [
     "//third_party/chromiumbase",
     ":game",
-  ]
+  ],
+  visibility = ["//visibility:public"]
 )
 
 cc_binary(
@@ -53,5 +54,6 @@ cc_binary(
     ":game",
     ":pass_punter",
     ":simple_punter",
+    "//punter:random_punter",
   ],
 )
