@@ -13,6 +13,8 @@ class RandomPunter : public framework::SimplePunter {
   ~RandomPunter() override;
 
   framework::GameMove Run() override;
+  void SetState(std::unique_ptr<base::Value> state) override;
+  std::unique_ptr<base::Value> GetState() override;
 
  private:
   std::default_random_engine rand_;
