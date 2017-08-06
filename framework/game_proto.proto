@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+import "common/scorer.proto";
+
 package framework;
 
 message SiteToMineProto {
@@ -31,6 +33,7 @@ message GameStateProto {
   optional int32 punter_id = 1;
   optional int32 num_punters = 2;
   optional GameMapProto game_map = 3;
-  
+  optional common.ScorerProto scorer = 4;
+
   extensions 100 to 199;
 }

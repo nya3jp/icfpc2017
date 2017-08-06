@@ -1,6 +1,7 @@
 proto_library(
   name = "scorer_proto",
   srcs = ["scorer.proto"],
+  visibility = ["//visibility:public"]
 )
 
 cc_proto_library(

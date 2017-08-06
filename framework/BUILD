@@ -1,6 +1,9 @@
 proto_library(
   name = "game_proto_proto",
   srcs = ["game_proto.proto"],
+  deps = [
+    "//common:scorer_proto",
+  ],
   visibility = ["//visibility:public"]
 )
 

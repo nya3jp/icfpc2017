@@ -5,6 +5,7 @@
 #include "base/base64.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
+#include "common/scorer.h"
 
 namespace framework {
 
@@ -12,7 +13,13 @@ SimplePunter::SimplePunter() = default;
 SimplePunter::~SimplePunter() = default;
 
 GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
+  common::Scorer scorer(proto_.mutable_scorer());
   for (auto move : moves) {
+    if (move.type == GameMove::Type::CLAIM) {
+      // Must use original site ids.
+      scorer.Claim(move.punter_id, move.source, move.target);
+    }
+
     if (move.type != GameMove::Type::PASS) {
       move.source = FindSiteIdxFromSiteId(move.source);
       move.target = FindSiteIdxFromSiteId(move.target);
@@ -67,6 +74,8 @@ void SimplePunter::SetUp(
   ComputeDistanceToMine();
 
   SaveToProto();
+
+  common::Scorer(proto_.mutable_scorer()).Initialize(num_punters, game_map);
 }
 
 int SimplePunter::FindSiteIdxFromSiteId(int id) {
@@ -188,13 +197,16 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
 
 std::unique_ptr<base::Value> SimplePunter::GetState() {
   auto value = base::MakeUnique<base::DictionaryValue>();
-  
   const std::string binary = proto_.SerializeAsString();
   std::string b64;
   base::Base64Encode(binary, &b64);
   value->SetString("proto", b64);
 
   return std::move(value);
+}
+
+int SimplePunter::GetScore(int punter_id) const {
+  return common::Scorer(proto_.mutable_scorer()).GetScore(punter_id);
 }
 
 }  // namespace framework

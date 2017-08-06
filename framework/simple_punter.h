@@ -20,6 +20,8 @@ class SimplePunter : public Punter {
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 
+  // TODO: implement future id conversion.
+
   size_t num_sites() const { return sites_.size(); }
   int FindSiteIdxFromSiteId(int id);
   void SaveToProto();
@@ -45,6 +47,8 @@ class SimplePunter : public Punter {
     int river;
   };
 
+  int GetScore(int site_index) const;
+
   int num_punters_ = -1;
   int punter_id_ = -1;
   std::vector<RiverWithPunter> rivers_;
@@ -53,7 +57,7 @@ class SimplePunter : public Punter {
   std::vector<std::vector<Edge>> edges_; // site_idx -> {Edge}
   std::vector<std::vector<int>> dist_to_mine_; // site_idx -> mine_idx -> distance
 
-  GameStateProto proto_;
+  mutable GameStateProto proto_;
 
  private:
   std::vector<Site> sites_;
