@@ -159,7 +159,7 @@ class Arena():
                 {'punter': i,
                  'punters': self._num_punters,
                  'map': map_data,
-                 'settings': {'futures': True}})
+                 'settings': {'futures': True, 'gennai-persistent': True}})
 
         self._step = 0
 
@@ -342,6 +342,9 @@ class OfflinePunterHost(FileEndpoint):
 
             self._game_state = message.get('state')
 
+            if self._options.feature_negotiation and message.get('gennai-persistent') is None:
+                self._options.persistent = False
+
             self._arena.done_setup(message.get('futures'), self._punter_id)
         elif self._handling_move:
             self._handling_move = False
@@ -399,6 +402,7 @@ class OfflinePunterHost(FileEndpoint):
 
     def _kill(self):
         if not self._options.persistent:
+            self._debug('killing')
             self._process.kill()
             self._process = None
 
@@ -437,6 +441,7 @@ if __name__ == '__main__':
     parser.add_option('--include_time', action='store_true', dest='include_time')
     # Include the original move in the move history when conflict happens.
     parser.add_option('--include_cause', action='store_true', dest='include_cause')
+    parser.add_option('--feature_negotiation', action='store_true', dest='feature_negotiation')
     parser.add_option('--persistent', action='store_true', dest='persistent')
     parser.add_option('--log-level', '--log_level', type='choice',
                       dest='log_level', default='debug',
