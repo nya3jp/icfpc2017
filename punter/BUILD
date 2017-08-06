@@ -47,6 +47,22 @@ cc_library(
   visibility = ["//visibility:public"]
 )
 
+cc_library(
+  name = "greedy_punter_mirac",
+  srcs = [
+    "greedy_punter_mirac.cc",
+  ],
+  hdrs = [
+    "greedy_punter_mirac.h",
+  ],
+
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+  visibility = ["//visibility:public"]
+)
+
 proto_library(
   name = "extension_example_proto",
   srcs = ["extension_example.proto"],

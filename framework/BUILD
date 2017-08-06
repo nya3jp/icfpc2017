@@ -68,9 +68,10 @@ cc_binary(
     ":pass_punter",
     ":simple_punter",
     "//punter:extension_example_punter",
-    "//punter:random_punter",
     "//punter:greedy_punter",
     "//punter:greedy_punter_chun",
     "//punter:greedy_to_jam",
+    "//punter:greedy_punter_mirac",
+    "//punter:random_punter",
   ],
 )

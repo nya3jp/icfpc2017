@@ -73,16 +73,12 @@ void SimplePunter::SaveToProto() {
 
 void SimplePunter::GenerateAdjacencyList() {
   edges_.resize(sites_.size());
-  for (const RiverWithPunter& river : rivers_) {
+  for (size_t i = 0; i < rivers_.size(); ++i) {
+    const RiverWithPunter& river = rivers_[i];
     int a = site_id_to_site_idx_[river.source];
     int b = site_id_to_site_idx_[river.target];
-    edges_[a].push_back(b);
-    edges_[b].push_back(a);
-  }
-  for (size_t i = 0; i < sites_.size(); ++i) {
-    std::sort(edges_[i].begin(), edges_[i].end());
-    edges_[i].erase(std::unique(edges_[i].begin(), edges_[i].end()),
-                    edges_[i].end());
+    edges_[a].push_back(Edge{b, (int)i});
+    edges_[b].push_back(Edge{a, (int)i});
   }
 }
 
@@ -107,10 +103,11 @@ void SimplePunter::ComputeDistanceToMine() {
       int site = q.front().first;
       int dist = q.front().second;
       q.pop();
-      for (int next : edges_[site]) {
-        if (dist_to_mine_[next][i] != -1) continue;
-        dist_to_mine_[next][i] = dist + 1;
-        q.push(std::make_pair(next, dist + 1));
+      for (Edge edge : edges_[site]) {
+        int next_site = edge.site;
+        if (dist_to_mine_[next_site][i] != -1) continue;
+        dist_to_mine_[next_site][i] = dist + 1;
+        q.push(std::make_pair(next_site, dist + 1));
       }
     }
     for (size_t k = 0; k < num_sites; ++k) {

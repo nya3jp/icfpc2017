@@ -38,6 +38,10 @@ class SimplePunter : public Punter {
     int target;
     int punter;
   };
+  struct Edge {
+    int site;
+    int river;
+  };
 
   int num_punters_ = -1;
   int punter_id_ = -1;
@@ -45,8 +49,8 @@ class SimplePunter : public Punter {
   std::vector<RiverWithPunter> rivers_;
   std::vector<int> mines_;
 
-  std::map<int, int> site_id_to_site_idx_;
-  std::vector<std::vector<int>> edges_;  // site_idx -> {site_id}
+  std::map<int, int> site_id_to_site_idx_; // site_id -> site_idx
+  std::vector<std::vector<Edge>> edges_; // site_idx -> {Edge}
   std::vector<std::vector<int>> dist_to_mine_; // site_idx -> mine_idx -> distance
 
   GameStateProto proto_;

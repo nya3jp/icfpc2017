@@ -9,10 +9,11 @@
 #include "framework/game.h"
 #include "framework/pass_punter.h"
 #include "punter/extension_example_punter.h"
-#include "punter/random_punter.h"
 #include "punter/greedy_punter.h"
 #include "punter/greedy_punter_chun.h"
+#include "punter/greedy_punter_mirac.h"
 #include "punter/greedy_to_jam.h"
+#include "punter/random_punter.h"
 
 using namespace framework;
 using namespace punter;
@@ -54,8 +55,10 @@ int main(int argc, char* argv[]) {
       punter = base::MakeUnique<ExtensionExamplePunter>();
     else if (FLAGS_punter == "GreedyToJam")
       punter = base::MakeUnique<GreedyToJam>();
+    else if (FLAGS_punter == "GreedyPunterMirac")
+      punter = base::MakeUnique<GreedyPunterMirac>();
     else
-      LOG(FATAL) << "invalid punter name";
+      LOG(FATAL) << "invalid punter name: " << FLAGS_punter;
     Game game(std::move(punter));
     if (game.Run())
       break;

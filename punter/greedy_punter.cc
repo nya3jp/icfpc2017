@@ -52,7 +52,8 @@ void GreedyPunter::ComputeLongestPath() {
       int site = q.front().first;
       int dist = q.front().second;
       q.pop();
-      for (int next : edges_[site]) {
+      for (Edge edge : edges_[site]) {
+        int next = edge.site;
         if (dist_and_prev[next].first != -1) continue;
         dist_and_prev[next] = std::make_pair(dist + 1, site);
         q.push(std::make_pair(next, dist + 1));
