@@ -35,7 +35,8 @@ def build_requirements():
         '//stadium',
         '//punter',
     ]
-    subprocess.check_call(args, cwd=BASE_DIR)
+    returncode = subprocess.call(args, cwd=BASE_DIR)
+    return returncode == 0
 
 
 def load_settings():
@@ -136,9 +137,6 @@ def main(unused_argv):
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
-    settings = load_settings()
-    all_punters = settings['punters']
-
     db = pymongo.MongoClient().lambdapark
     db.jobs.create_index([
         ('status', pymongo.ASCENDING),
@@ -146,9 +144,13 @@ def main(unused_argv):
         ('_id', pymongo.ASCENDING),
     ])
 
-    build_requirements()
-
     updater = SelfUpdater()
+
+    if not build_requirements():
+        logging.error('build is failing! wait for next revision.')
+        while True:
+            updater.check_update_and_maybe_restart()
+            time.sleep(5)
 
     logging.info('Ready!')
 
@@ -174,6 +176,8 @@ def main(unused_argv):
 
         try:
             start_time = time.time()
+            settings = load_settings()
+            all_punters = settings['punters']
             report = process_job(job, all_punters)
         except Exception:
             end_time = time.time()

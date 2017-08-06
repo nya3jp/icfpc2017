@@ -137,7 +137,10 @@ def main(unused_argv):
 
     db = pymongo.MongoClient().lambdapark
     ensure_index(db)
-    maybe_schedule(db)
+    try:
+        maybe_schedule(db)
+    except Exception:
+        logging.exception('maybe_schedule failed')
     if FLAGS.oneoff:
         return
     last_revision = get_revision()
