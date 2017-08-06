@@ -213,4 +213,15 @@ std::vector<int> SimplePunter::GetConnectedMineList(
   return result;
 }
 
+std::vector<int> SimplePunter::GetConnectedSiteList(
+    int punter_id, int site_index) const {
+  std::vector<int> result =
+      common::Scorer(proto_.mutable_scorer()).GetConnectedSiteList(
+          punter_id, sites_->Get(site_index).id());
+  for (auto& site : result) {
+    site = FindSiteIdxFromSiteId(site);
+  }
+  return result;
+}
+
 }  // namespace framework

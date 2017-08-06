@@ -55,6 +55,7 @@ class SimplePunter : public Punter {
   int TryClaim(int punter_id, int site_index1, int site_index2) const;
   bool IsConnected(int punter_id, int site_index1, int site_index2) const;
   std::vector<int> GetConnectedMineList(int punter_id, int site_index) const;
+  std::vector<int> GetConnectedSiteList(int punter_id, int site_index) const;
 
   int num_punters_ = -1;
   int punter_id_ = -1;
