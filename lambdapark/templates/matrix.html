@@ -24,6 +24,17 @@
 }
 </style>
 
+<div class="well">
+  {% for l in labels %}
+  <form action="/" method="GET">
+    <select name="label">
+      <option value="{{ l }}" {% if l == label %}selected="selected"{% endif %}>{{ l }}</option>
+    </select>
+    <button>Go</button>
+  </form>
+  {% endfor %}
+</div>
+
 <table class="table table-bordered">
   <thead>
     <tr>
@@ -44,7 +55,12 @@
       {% for config in configs %}
       {% set cell = matrix[(config, punter)] %}
       <td class="cell {{ cell.best and 'info' }}">
-        {{ '{:.1f}'.format(cell.avg) }} ({{ cell.count }})
+        {% if cell.avg %}
+        {{ '{:.1f}'.format(cell.avg) }}
+        {% else %}
+        -
+        {% endif %}
+        ({{ cell.count }})
       </td>
       {% endfor %}
     {% endfor %}

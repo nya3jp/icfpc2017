@@ -12,6 +12,7 @@ gflags.DEFINE_string('map', None, 'Map name.')
 gflags.DEFINE_string('label', None, 'Label.')
 gflags.DEFINE_integer('priority', 0, 'Job priority.')
 gflags.MarkFlagAsRequired('map')
+gflags.MarkFlagAsRequired('label')
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -42,6 +43,11 @@ def main(argv):
         'status': 'pending',
     }
     db.jobs.insert(job)
+
+    db.labels.update_one(
+        {'label': FLAGS.label},
+        {'$set': {'label': FLAGS.label}},
+        upsert=True)
 
 
 if __name__ == '__main__':

@@ -1,9 +1,90 @@
 punters:
-  - name: greedy-irori-0806-1706
-    shell: prebuilts/punter-0806-1706 --logtostderr --punter=GreedyPunter --name=GreedyPunter
-  - name: greedy-chun-0806-1706
-    shell: prebuilts/punter-0806-1706 --logtostderr --punter=GreedyPunterChun --name=GreedyPunterChun
-  - name: greedy-mirac-0806-1706
-    shell: prebuilts/punter-0806-1706 --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac
-  - name: greedy-jam-0806-1706
-    shell: prebuilts/punter-0806-1706 --logtostderr --punter=GreedyToJam --name=GreedyToJam
+  - name: irori
+    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
+    continuous: true
+  - name: chun
+    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterChun --name=GreedyPunterChun
+    continuous: true
+  - name: mirac
+    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac
+    continuous: true
+  - name: jam
+    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyToJam --name=GreedyToJam
+    continuous: true
+
+continuous_configs:
+  - map: sample
+    num_punters: 2
+    num_rounds: 10
+  - map: circle
+    num_punters: 2
+    num_rounds: 10
+  - map: gen1
+    num_punters: 2
+    num_rounds: 10
+  - map: gen2
+    num_punters: 2
+    num_rounds: 10
+  - map: gen3
+    num_punters: 2
+    num_rounds: 10
+  - map: gen4
+    num_punters: 2
+    num_rounds: 10
+  - map: lambda
+    num_punters: 2
+    num_rounds: 10
+  - map: randomMedium
+    num_punters: 2
+    num_rounds: 10
+  - map: randomSparse
+    num_punters: 2
+    num_rounds: 10
+  - map: Sierpinski-triangle
+    num_punters: 2
+    num_rounds: 10
+  - map: spider_web
+    num_punters: 2
+    num_rounds: 10
+  - map: t1
+    num_punters: 2
+    num_rounds: 10
+  - map: tube
+    num_punters: 2
+    num_rounds: 10
+  - map: boston-sparse
+    num_punters: 2
+    num_rounds: 10
+  - map: van-city-sparse
+    num_punters: 2
+    num_rounds: 10
+  - map: edinburgh-sparse2
+    num_punters: 2
+    num_rounds: 10
+  - map: edinburgh-sparse
+    num_punters: 2
+    num_rounds: 10
+  - map: gothenburg-sparse
+    num_punters: 2
+    num_rounds: 10
+  - map: nara-sparse
+    num_punters: 2
+    num_rounds: 10
+  - map: oxford2-scaled
+    num_punters: 2
+    num_rounds: 10
+  - map: oxford2-sparse-2
+    num_punters: 2
+    num_rounds: 10
+  - map: oxford2-sparse
+    num_punters: 2
+    num_rounds: 10
+  - map: oxford-center-sparse
+    num_punters: 2
+    num_rounds: 10
+  - map: oxford-sparse2
+    num_punters: 2
+    num_rounds: 10
+  - map: oxford-sparse
+    num_punters: 2
+    num_rounds: 10

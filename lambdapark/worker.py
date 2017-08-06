@@ -35,6 +35,7 @@ def build_requirements():
         '-c',
         'opt',
         '//stadium',
+        '//punter',
     ]
     subprocess.check_call(args, cwd=BASE_DIR)
 
@@ -198,6 +199,9 @@ def main(unused_argv):
             raise
 
         db.reports.insert_one(report)
+        db.jobs.update_one(
+            {'_id': job['_id']},
+            {'$set': {'status': 'finished'}})
 
         if report['error']:
             logging.info('JOB ERROR: %s: %s', job['_id'], report['error'])

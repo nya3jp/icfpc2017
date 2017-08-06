@@ -39,7 +39,8 @@ def index_handler():
 
 @bottle.get('/matrix/')
 def matrix_handler():
-    label = bottle.request.query.get('label')
+    labels = sorted((l['label'] for l in db.labels.find()), reverse=True)
+    label = bottle.request.query.get('label', labels[0] if labels else '-')
     query = {}
     if label:
         query['job.label'] = label
@@ -92,6 +93,7 @@ def matrix_handler():
         'configs': configs,
         'punters': punters,
         'matrix': matrix,
+        'labels': labels,
     }
     return render_template('matrix.html', template_dict)
 
