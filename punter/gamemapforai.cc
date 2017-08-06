@@ -63,6 +63,7 @@ void GameMapForAI::init(int num_punters, const framework::GameMap& game_map)
   }
 
   initMineScores();
+  scores_.resize(num_punters_);
 }
 
 void GameMapForAI::initMineScores()
@@ -108,8 +109,8 @@ int GameMapForAI::claim_impl(node_index source, node_index dest, int punter, boo
   for(size_t mineix = 0; mineix < mines_.size(); ++mineix) {
     DCHECK_GT(nodeinfo_[source].reachable.size(), mineix);
     DCHECK_GT(nodeinfo_[dest].reachable.size(), mineix);
-    DCHECK_GT(nodeinfo_[source].reachable[mineix].size(), punter);
-    DCHECK_GT(nodeinfo_[dest].reachable[mineix].size(), punter);
+    DCHECK_GT(nodeinfo_[source].reachable[mineix].size(), (size_t)punter);
+    DCHECK_GT(nodeinfo_[dest].reachable[mineix].size(), (size_t)punter);
     bool source_reachable = nodeinfo_[source].reachable[mineix][punter];
     bool dest_reachable = nodeinfo_[dest].reachable[mineix][punter];
     if(source_reachable != dest_reachable) {
