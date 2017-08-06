@@ -405,7 +405,8 @@ class OfflinePunterHost(FileEndpoint):
         self._launch()
 
         self._handling_move= True
-        moves['state'] = self._game_state
+        if self._game_state is not None:
+            moves['state'] = self._game_state
         self._start_time = time.perf_counter()
         self._write(moves)
         self._read(self._process.stdout)
