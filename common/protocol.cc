@@ -58,7 +58,7 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp,
                                          const base::TimeTicks& start_time) {
   int fd = fileno(fp);
 
-  int size = -1;
+  size_t size;
   {
     char buf[16];
     int pos = 0;
@@ -70,21 +70,21 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp,
           continue;
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
           if (!WaitForFdReadable(fd, timeout, start_time))
-            return NULL;
+            return nullptr;
           continue;
         }
-        return NULL;
+        return nullptr;
       }
 
       PCHECK(result == 1) << "read";
       if (buf[pos] == ':') {
         buf[pos] = '\0';
-        CHECK(base::StringToInt(buf, &size));
+        CHECK(base::StringToSizeT(buf, &size));
         break;
       }
 
       if (pos >= 16)
-        return NULL;
+        return nullptr;
       ++pos;
     }
   }
