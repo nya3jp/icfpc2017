@@ -23,7 +23,15 @@ db = None
 
 
 def ensure_index():
-    pass
+    db.jobs.create_index([
+        ('label', pymongo.ASCENDING),
+    ])
+    db.reports.create_index([
+        ('job.label', pymongo.ASCENDING),
+    ])
+    db.reports.create_index([
+        ('job._id', pymongo.ASCENDING),
+    ])
 
 
 def load_settings():
@@ -51,11 +59,17 @@ def matrix_handler():
         query['job.label'] = label
     all_reports = list(db.reports.find(query))
 
+    error_configs = set()
     bucketed_points = collections.defaultdict(list)
     for report in all_reports:
+        punters = report['job']['punters']
+        config = '%s %d' % (report['job']['map'], len(punters))
         if report['error']:
+            for punter in punters:
+                bucketed_points[(config, punter)]
+            error_configs.add(config)
             continue
-        ranking = zip(report['job']['punters'], report['scores'])
+        ranking = zip(punters, report['scores'])
         ranking.sort(key=(lambda (punter, score): score), reverse=True)
         points = []
         for i, (_, score) in enumerate(ranking):
@@ -64,9 +78,7 @@ def matrix_handler():
             else:
                 points.append(len(ranking) - len(points))
         for (punter, _), point in zip(ranking, points):
-            config = '%s %d' % (report['job']['map'], len(report['job']['punters']))
-            key = (config, punter)
-            bucketed_points[key].append(point)
+            bucketed_points[(config, punter)].append(point)
 
     configs = sorted(set(config for config, _ in bucketed_points))
     punters = sorted(set(punter for _, punter in bucketed_points))
@@ -119,18 +131,28 @@ def matrix_handler():
         'infos': infos,
         'num_all_jobs': num_all_jobs,
         'num_finished_jobs': num_finished_jobs,
+        'error_configs': error_configs,
     }
     return render_template('matrix.html', template_dict)
 
 
 @bottle.get('/results/')
 def results_handler():
-    label = bottle.request.query.get('label')
+    label = bottle.request.query['label']
+    map = bottle.request.query.get('map')
+    num_punters = int(bottle.request.query.get('num_punters', 0))
+    punter = bottle.request.query.get('punter')
     skip = int(bottle.request.query.get('skip', '0'))
-    limit = int(bottle.request.query.get('limit', '100'))
-    query = {}
-    if label:
-        query['job.label'] = label
+    limit = int(bottle.request.query.get('limit', '10000'))
+    query = {
+        'job.label': label,
+    }
+    if map:
+        query['job.map'] = map
+    if num_punters:
+        query['num_punters'] = num_punters
+    if punter:
+        query['job.punters'] = punter
     reports = list(db.reports.find(
         query,
         sort=[('_id', pymongo.DESCENDING)],
@@ -160,6 +182,51 @@ def results_handler():
         'limit': limit,
     }
     return render_template('results.html', template_dict)
+
+
+@bottle.get('/job/<job_id>/')
+def job_handler(job_id):
+    report = db.reports.find_one({'job._id': job_id})
+    if not report:
+        bottle.abort(403)
+    start_time_utc = datetime.datetime.fromtimestamp(
+        report['start_time'], pytz.utc)
+    start_time_jst = start_time_utc.astimezone(JST)
+    report['injected_start_time'] = start_time_jst.strftime('%m/%d %H:%M:%S')
+    if not report['scores']:
+        injected_sorted_punters = None
+    else:
+        injected_sorted_punters = [
+            {
+                'name': name,
+                'score': score,
+            }
+            for name, score in zip(report['job']['punters'], report['scores'])
+        ]
+        injected_sorted_punters.sort(key=lambda p: p['score'], reverse=True)
+    report['injected_sorted_punters'] = injected_sorted_punters
+    try:
+        with open(os.path.join(LOG_DIR, '%s.log' % job_id)) as f:
+            log = f.read()
+    except Exception:
+        log = ''
+    template_dict = {
+        'job_id': job_id,
+        'report': report,
+        'log': log,
+    }
+    return render_template('job.html', template_dict)
+
+
+@bottle.get('/job/<job_id>.json')
+def job_json_handler(job_id):
+    report = db.reports.find_one({'job._id': job_id})
+    if not report:
+        bottle.abort(403)
+    with open(os.path.join(LOG_DIR, '%s.json' % job_id)) as f:
+        data = f.read()
+    bottle.response.content_type = 'application/json'
+    return data
 
 
 def main(unused_argv):
