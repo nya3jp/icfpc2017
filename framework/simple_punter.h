@@ -20,6 +20,7 @@ class SimplePunter : public Punter {
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 
+  int FindSiteIdxFromSiteId(int id);
   void SaveToProto();
   void GenerateAdjacencyList();
   void GenerateSiteIdToSiteIndex();
@@ -49,7 +50,6 @@ class SimplePunter : public Punter {
   std::vector<RiverWithPunter> rivers_;
   std::vector<int> mines_;
 
-  std::map<int, int> site_id_to_site_idx_; // site_id -> site_idx
   std::vector<std::vector<Edge>> edges_; // site_idx -> {Edge}
   std::vector<std::vector<int>> dist_to_mine_; // site_idx -> mine_idx -> distance
 

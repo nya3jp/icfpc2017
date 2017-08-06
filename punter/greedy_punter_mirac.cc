@@ -22,7 +22,7 @@ framework::GameMove GreedyPunterMirac::Run() {
           num_mines, std::make_pair(-1, -1)));
 
   for (size_t i = 0; i < num_mines; ++i) {
-    int mine = site_id_to_site_idx_[mines_[i]];
+    int mine = mines_[i];
 
     // We may want to implement this with two queues.
     std::priority_queue<std::pair<int, int>> q;  // {(-num_rivers_to_claim, site_idx)}

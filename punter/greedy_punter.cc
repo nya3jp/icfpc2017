@@ -50,7 +50,7 @@ void GreedyPunter::ComputeLongestPath() {
   std::vector<int> longest_path;
 
   for (size_t i = 0; i < num_mines; ++i) {
-    int mine = site_id_to_site_idx_[mines_[i]];
+    int mine = mines_[i];
 
     std::vector<std::pair<int, int>> dist_and_prev; // site_idx -> (distance, site_idx)
     dist_and_prev.resize(num_sites, std::make_pair(-1, -1));
@@ -119,7 +119,7 @@ framework::GameMove GreedyPunter::Run() {
         continue;
       }
 
-      int dist = dist_to_mine_[site_id_to_site_idx_[target]][mine_id];
+      int dist = dist_to_mine_[target][mine_id];
       score += dist * dist;
       mines->insert(std::make_pair(mine_id, target));
     }
