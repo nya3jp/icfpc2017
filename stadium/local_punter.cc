@@ -76,7 +76,7 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
   auto request = base::MakeUnique<base::DictionaryValue>();
   {
     auto action_dict = base::MakeUnique<base::DictionaryValue>();
-    action_dict->Set("moves", GameMoves::ToJson(moves));
+    action_dict->Set("moves", common::GameMoves::ToJson(moves));
     request->Set("move", std::move(action_dict));
     request->Set("state", state_->CreateDeepCopy());
   }
