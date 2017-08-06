@@ -45,9 +45,9 @@ def on_play(last_moves, state, options):
         time.sleep(delay / 1000.0)
 
     if options.test_splurge:
-        if state['pass_count'] >= 4:
+        if state['pass_count'] >= 1:
             state['pass_count'] = 0
-            return {'splurge': {'punter': state['punter_id'], 'route': [1, 3, 5, 7, 0]}, 'state': state}
+            return {'splurge': {'punter': state['punter_id'], 'route': [7, 0]}, 'state': state}
         state['pass_count'] = state['pass_count'] + 1
 
     return {'pass': {'punter': state['punter_id']}, 'state': state}

@@ -21,6 +21,7 @@ class SimplePunter : public Punter {
   GameMove Run(const std::vector<GameMove>& moves) override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
+  void EnableSplurges() override final;
   std::vector<Future> GetFutures() override final;
 
   int num_sites() const { return sites_->size(); }

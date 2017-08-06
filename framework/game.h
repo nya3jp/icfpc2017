@@ -26,6 +26,7 @@ class Punter {
   virtual std::vector<Future> GetFutures() {
     return {};
   }
+  virtual void EnableSplurges() {}
 
   virtual GameMove Run(const std::vector<GameMove>& moves) = 0;
 

@@ -67,7 +67,7 @@ bool Game::RunImpl() {
     bool is_splurges = false;
     if (input->GetBoolean("settings.splurges", &is_splurges) &&
         is_splurges) {
-      // punter_->
+      punter_->EnableSplurges();
     }
 
     base::DictionaryValue output;
@@ -97,6 +97,9 @@ bool Game::RunImpl() {
           break;
         case GameMove::Type::PASS:
           DLOG(INFO) << "move(pass): " << m.punter_id;
+          break;
+        case GameMove::Type::SPLURGE:
+          DLOG(INFO) << "move(splurge): " << m.punter_id;
           break;
       }
     }
@@ -135,11 +138,16 @@ bool Game::RunImpl() {
       claim->SetInteger("source", result.source);
       claim->SetInteger("target", result.target);
       output.Set("claim", std::move(claim));
-    } else {
-      CHECK(result.type == GameMove::Type::PASS);
+    } else if (result.type == GameMove::Type::PASS) {
       auto pass = base::MakeUnique<base::DictionaryValue>();
       pass->SetInteger("punter", result.punter_id);
       output.Set("pass", std::move(pass));
+    } else {
+      CHECK(result.type == GameMove::Type::SPLURGE);
+      auto splurge = base::MakeUnique<base::DictionaryValue>();
+      splurge->SetInteger("punter", result.punter_id);
+      splurge->Set("route", common::ToJson(result.route));
+      output.Set("splurge", std::move(splurge));
     }
     if (FLAGS_persistent) {
       output.Set("state", base::MakeUnique<base::Value>());

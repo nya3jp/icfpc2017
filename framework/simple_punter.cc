@@ -18,13 +18,10 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
     if (move.type == GameMove::Type::CLAIM) {
       // Must use original site ids.
       scorer.Claim(move.punter_id, move.source, move.target);
-    }
 
-    if (move.type != GameMove::Type::PASS) {
       move.source = FindSiteIdxFromSiteId(move.source);
       move.target = FindSiteIdxFromSiteId(move.target);
-    }
-    if (move.type == GameMove::Type::CLAIM) {
+
       // TODO: This is slow!
       for (int i = 0; i < rivers_->size(); ++i) {
         RiverProto* r = rivers_->Mutable(i);
@@ -35,12 +32,37 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
         }
       }
     }
+    if (move.type == GameMove::Type::SPLURGE) {
+      // Must use original site ids.
+      scorer.Splurge(move.punter_id, move.route);
+
+      // TODO: This is slow!
+      for (int i = 0; i + 1 < move.route.size(); ++i) {
+        int source = FindSiteIdxFromSiteId(move.route[i]);
+        int target = FindSiteIdxFromSiteId(move.route[i + 1]);
+
+        for (int i = 0; i < rivers_->size(); ++i) {
+          RiverProto* r = rivers_->Mutable(i);
+          if ((r->source() == source && r->target() == target) ||
+              (r->source() == target && r->target() == source)) {
+            DCHECK(r->punter() == -1);
+            r->set_punter(move.punter_id);
+          }
+        }
+      }
+    }
   }
 
   GameMove out_move = Run();
-  if (out_move.type != GameMove::Type::PASS) {
+  if (out_move.type == GameMove::Type::CLAIM) {
     out_move.source = sites_->Get(out_move.source).id();
     out_move.target = sites_->Get(out_move.target).id();
+  } else if (out_move.type != GameMove::Type::SPLURGE) {
+    for (int i = 0; i < out_move.route.size(); ++i) {
+      out_move.route[i] = sites_->Get(out_move.route[i]).id();
+    }
+  } else {
+    // Nothing
   }
   return out_move;
 }
@@ -170,6 +192,10 @@ std::unique_ptr<base::Value> SimplePunter::GetState() {
   value->SetString("proto", b64);
 
   return std::move(value);
+}
+
+void SimplePunter::EnableSplurges() {
+  // :)
 }
 
 std::vector<Future> SimplePunter::GetFutures() {
