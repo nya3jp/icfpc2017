@@ -29,9 +29,6 @@ class SimplePunter : public Punter {
     return sites_->Get(site).to_mine(mine).distance();
   }
   int FindSiteIdxFromSiteId(int id) const;
-  void GenerateAdjacencyList();
-  void GenerateSiteIdToSiteIndex();
-  void ComputeDistanceToMine();
 
  protected:
   struct Edge {
@@ -66,6 +63,8 @@ class SimplePunter : public Punter {
   google::protobuf::RepeatedPtrField<MineProto>* mines_;
 
  private:
+  void GenerateAdjacencyList();
+  void ComputeDistanceToMine();
   void set_dist_to_mine(int site, int mine, int dist) const {
     return sites_->Mutable(site)->mutable_to_mine(mine)->set_distance(dist);
   }
