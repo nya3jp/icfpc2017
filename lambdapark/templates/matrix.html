@@ -24,16 +24,18 @@
 }
 </style>
 
-<div class="well">
-  <form action="/" method="GET">
-    <select name="label">
-      {% for l in labels %}
-      <option value="{{ l }}" {% if l == label %}selected="selected"{% endif %}>{{ l }}</option>
-      {% endfor %}
-    </select>
-    <button>Go</button>
-  </form>
 </div>
+
+<img src="/static/logo.png" style="height: 100px; width: auto">
+
+<form action="/" method="GET" class="well pull-right" style="margin: 20px">
+  <select name="label">
+    {% for l in labels %}
+    <option value="{{ l }}" {% if l == label %}selected="selected"{% endif %}>{{ l }}</option>
+    {% endfor %}
+  </select>
+  <button>Go</button>
+</form>
 
 <table class="table table-bordered">
   <thead>
