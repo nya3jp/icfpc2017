@@ -4,6 +4,7 @@
 #include "base/macros.h"
 #include "framework/game.h"
 #include "framework/game_proto.pb.h"
+#include "google/protobuf/repeated_field.h"
 
 namespace framework {
 
@@ -54,13 +55,13 @@ class SimplePunter : public Punter {
 
   int num_punters_ = -1;
   int punter_id_ = -1;
-  std::vector<RiverWithPunter> rivers_;
   std::vector<int> mines_;
 
   std::vector<std::vector<Edge>> edges_; // site_idx -> {Edge}
   std::vector<std::vector<int>> dist_to_mine_; // site_idx -> mine_idx -> distance
 
   mutable GameStateProto proto_;
+  google::protobuf::RepeatedPtrField<RiverProto>* rivers_;
 
  private:
   std::vector<Site> sites_;

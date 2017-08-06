@@ -26,14 +26,12 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
     }
     if (move.type == GameMove::Type::CLAIM) {
       // TODO: This is slow!
-      for (size_t i = 0; i < rivers_.size(); ++i) {
-        auto& r = rivers_[i];
-        if ((r.source == move.source && r.target == move.target) ||
-            (r.source == move.target && r.target == move.source)) {
-          DCHECK(r.punter == -1);
-          r.punter = move.punter_id;
-          proto_.mutable_game_map()->mutable_rivers(i)->set_punter(
-              move.punter_id);
+      for (int i = 0; i < rivers_->size(); ++i) {
+        RiverProto* r = rivers_->Mutable(i);
+        if ((r->source() == move.source && r->target() == move.target) ||
+            (r->source() == move.target && r->target() == move.source)) {
+          DCHECK(r->punter() == -1);
+          r->set_punter(move.punter_id);
         }
       }
     }
@@ -52,19 +50,23 @@ void SimplePunter::SetUp(
   punter_id_ = punter_id;
   num_punters_ = num_punters;
   sites_ = game_map.sites;
-  rivers_.reserve(game_map.rivers.size());
-  for (auto& r : game_map.rivers) {
-    rivers_.push_back(r);
+  GameMapProto* game_map_proto = proto_.mutable_game_map();
+  for (const River& r : game_map.rivers) {
+    RiverProto* river_proto = game_map_proto->add_rivers();
+    river_proto->set_source(r.source);
+    river_proto->set_target(r.target);
+    river_proto->set_punter(-1);
   }
+  rivers_ = proto_.mutable_game_map()->mutable_rivers();
   mines_ = game_map.mines;
 
   std::sort(sites_.begin(), sites_.end(),
             [](const Site& lhs, const Site& rhs) {
               return lhs.id < rhs.id;
             });
-  for (size_t i = 0; i < rivers_.size(); ++i) {
-    rivers_[i].source = FindSiteIdxFromSiteId(rivers_[i].source);
-    rivers_[i].target = FindSiteIdxFromSiteId(rivers_[i].target);
+  for (int i = 0; i < rivers_->size(); ++i) {
+    rivers_->Mutable(i)->set_source(FindSiteIdxFromSiteId(rivers_->Get(i).source()));
+    rivers_->Mutable(i)->set_target(FindSiteIdxFromSiteId(rivers_->Get(i).target()));
   }
   for (size_t i = 0; i < mines_.size(); ++i) {
     mines_[i] = FindSiteIdxFromSiteId(mines_[i]);
@@ -99,12 +101,6 @@ void SimplePunter::SaveToProto() {
       site_proto->add_to_mine()->set_distance(dist_to_mine_[i][k]);
     }
   }
-  for (auto& r : rivers_) {
-    RiverProto* river_proto = game_map_proto->add_rivers();
-    river_proto->set_source(r.source);
-    river_proto->set_target(r.target);
-    river_proto->set_punter(-1);
-  }
   for (auto& m : mines_) {
     game_map_proto->add_mines()->set_site(m);
   }
@@ -112,12 +108,12 @@ void SimplePunter::SaveToProto() {
 
 void SimplePunter::GenerateAdjacencyList() {
   edges_.resize(sites_.size());
-  for (size_t i = 0; i < rivers_.size(); ++i) {
-    const RiverWithPunter& river = rivers_[i];
-    int a = river.source;
-    int b = river.target;
-    edges_[a].push_back(Edge{b, (int)i});
-    edges_[b].push_back(Edge{a, (int)i});
+  for (int i = 0; i < rivers_->size(); ++i) {
+    const RiverProto& river = rivers_->Get(i);
+    int a = river.source();
+    int b = river.target();
+    edges_[a].push_back(Edge{b, i});
+    edges_[b].push_back(Edge{a, i});
   }
 }
 
@@ -158,6 +154,7 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   std::string serialized;
   CHECK(base::Base64Decode(b64_proto, &serialized));
   CHECK(proto_.ParseFromString(serialized));
+  rivers_ = proto_.mutable_game_map()->mutable_rivers();
 
   punter_id_ = proto_.punter_id();
   num_punters_ = proto_.num_punters();
@@ -167,16 +164,6 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   sites_.resize(sites_size);
   for (size_t i = 0; i < sites_size; ++i) {
     sites_[i].id = game_map_proto.sites(i).id();
-  }
-
-  const size_t rivers_size = game_map_proto.rivers_size();
-  rivers_.resize(rivers_size);
-  for (size_t i = 0; i < rivers_size; ++i) {
-    auto& r = rivers_[i];
-    const RiverProto& rp = game_map_proto.rivers(i);
-    r.source = rp.source();
-    r.target = rp.target();
-    r.punter = rp.punter();
   }
 
   const size_t mines_size = game_map_proto.mines_size();

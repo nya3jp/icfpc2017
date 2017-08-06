@@ -2,7 +2,10 @@
 
 #include <queue>
 #include "base/memory/ptr_util.h"
+#include "framework/game_proto.pb.h"
 #include "punter/greedy_punter.pb.h"
+
+using framework::RiverProto;
 
 namespace punter {
 
@@ -92,7 +95,7 @@ void GreedyPunter::ComputeLongestPath() {
 framework::GameMove GreedyPunter::Run() {
   auto greedy_ext = proto_.MutableExtension(GreedyPunterProto::greedy_ext);
 
-  const RiverWithPunter* river_with_max_score = nullptr;
+  const RiverProto* river_with_max_score = nullptr;
   int max_score = -1;
   std::unique_ptr<std::set<std::pair<int, int>>> max_mines;  // {(mine_idx, site_id)}
   int longest_src = 0, longest_target = 0;
@@ -102,18 +105,18 @@ framework::GameMove GreedyPunter::Run() {
     longest_target = greedy_ext->longest_path(longest_path_index + 1);
   }
 
-  for (auto& r : rivers_) {
-    if (r.punter != -1)
+  for (const RiverProto& r : *rivers_) {
+    if (r.punter() != -1)
       continue;
 
     int score = 0;
     auto mines = base::MakeUnique<std::set<std::pair<int, int>>>();
     for (size_t mine_id = 0; mine_id < mines_.size(); mine_id++) {
       int target;
-      if (connected_from_mine_[mine_id].count(r.source) && !connected_from_mine_[mine_id].count(r.target)) {
-        target = r.target;
-      } else if (!connected_from_mine_[mine_id].count(r.source) && connected_from_mine_[mine_id].count(r.target)) {
-        target = r.source;
+      if (connected_from_mine_[mine_id].count(r.source()) && !connected_from_mine_[mine_id].count(r.target())) {
+        target = r.target();
+      } else if (!connected_from_mine_[mine_id].count(r.source()) && connected_from_mine_[mine_id].count(r.target())) {
+        target = r.source();
       } else {
         continue;
       }
@@ -122,9 +125,9 @@ framework::GameMove GreedyPunter::Run() {
       score += dist * dist;
       mines->insert(std::make_pair(mine_id, target));
     }
-    DLOG(INFO) << r.source << " -> " << r.target << ": " << score;
-    if ((r.source == longest_src && r.target == longest_target) ||
-        (r.target == longest_src && r.source == longest_target)) {
+    DLOG(INFO) << r.source() << " -> " << r.target() << ": " << score;
+    if ((r.source() == longest_src && r.target() == longest_target) ||
+        (r.target() == longest_src && r.source() == longest_target)) {
       greedy_ext->set_longest_path_index(longest_path_index + 1);
       max_score = score;
       river_with_max_score = &r;
@@ -145,7 +148,7 @@ framework::GameMove GreedyPunter::Run() {
       greedy_ext->mutable_connected_from_mine(pair.first)->add_site(pair.second);
     }
     return {framework::GameMove::Type::CLAIM, punter_id_,
-        river_with_max_score->source, river_with_max_score->target};
+        river_with_max_score->source(), river_with_max_score->target()};
   }
   return {framework::GameMove::Type::PASS, punter_id_};
 }

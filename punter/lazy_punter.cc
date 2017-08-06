@@ -4,6 +4,9 @@
 #include <random>
 
 #include "base/memory/ptr_util.h"
+#include "framework/game_proto.pb.h"
+
+using framework::RiverProto;
 
 namespace punter {
 
@@ -36,20 +39,20 @@ void LazyPunter::SetUp(
 
 framework::GameMove LazyPunter::Run() {
   std::vector<std::pair<int, int>> remaining_edges;
-  for (size_t i = 0; i < rivers_.size(); i++) {
-    if (rivers_[i].punter == -1)
-      remaining_edges.push_back(std::make_pair(rivers_[i].source, rivers_[i].target));
+  for (int i = 0; i < rivers_->size(); i++) {
+    if (rivers_->Get(i).punter() == -1)
+      remaining_edges.push_back(std::make_pair(rivers_->Get(i).source(), rivers_->Get(i).target()));
   }
 
   double best_score = -1;
-  RiverWithPunter best_river;
-  for (auto& r : rivers_) {
-    if (r.punter != -1)
+  RiverProto best_river;
+  for (auto& r : *rivers_) {
+    if (r.punter() != -1)
       continue;
 
-    r.punter = punter_id_;
+    r.set_punter(punter_id_);
     int score = Evaluate();
-    r.punter = -1;
+    r.set_punter(-1);
 
     if (score > best_score) {
       best_score = score;
@@ -61,7 +64,7 @@ framework::GameMove LazyPunter::Run() {
     return {framework::GameMove::Type::PASS, punter_id_};
 
   return {framework::GameMove::Type::CLAIM, punter_id_,
-          best_river.source, best_river.target};
+          best_river.source(), best_river.target()};
 }
 
 void LazyPunter::SetState(std::unique_ptr<base::Value> state_in) {
@@ -115,21 +118,21 @@ std::vector<double> LazyPunter::ComputeReachability(
 double LazyPunter::Evaluate() {
   std::vector<std::vector<int>> adj(edges_.size(), std::vector<int>());
   int hoge = 0;
-  for (auto& r : rivers_) {
-    if (r.punter != punter_id_)
+  for (auto& r : *rivers_) {
+    if (r.punter() != punter_id_)
       continue;
     hoge++;
-    adj[r.source].push_back(r.target);
-    adj[r.target].push_back(r.source);
+    adj[r.source()].push_back(r.target());
+    adj[r.target()].push_back(r.source());
   }
 
   int fuga = 0;
   std::vector<std::pair<int, int>> remaining_edges;
-  for (auto& r : rivers_) {
-    if (r.punter != -1)
+  for (auto& r : *rivers_) {
+    if (r.punter() != -1)
       continue;
     fuga++;
-    remaining_edges.push_back(std::make_pair(r.source, r.target));
+    remaining_edges.push_back(std::make_pair(r.source(), r.target()));
   }
 
   std::vector<double> scores(edges_.size(), 0.0);

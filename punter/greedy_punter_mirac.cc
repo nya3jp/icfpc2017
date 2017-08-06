@@ -3,7 +3,10 @@
 #include <queue>
 
 #include "base/memory/ptr_util.h"
+#include "framework/game_proto.pb.h"
 #include "framework/simple_punter.h"
+
+using framework::RiverProto;
 
 namespace punter {
 
@@ -32,7 +35,7 @@ framework::GameMove GreedyPunterMirac::Run() {
       int site = q.top().second;
       q.pop();
       for (Edge edge : edges_[site]) {
-        int punter_of_edge = rivers_[edge.river].punter;
+        int punter_of_edge = rivers_->Get(edge.river).punter();
         // Ignore the river if it's claimed by somebody else.
         if (punter_of_edge != -1 && punter_of_edge != punter_id_) continue;
         int next_site = edge.site;
@@ -71,11 +74,12 @@ framework::GameMove GreedyPunterMirac::Run() {
 
   if (max_score == -1) {
     // We cannot gain more points, but claim edge to disturb other punters.
-    for (const RiverWithPunter& river : rivers_) {
-      if (river.punter == -1) {
-          return {framework::GameMove::Type::CLAIM, punter_id_, river.source, river.target};
+    for (const RiverProto& river : *rivers_) {
+      if (river.punter() == -1) {
+          return {framework::GameMove::Type::CLAIM, punter_id_, river.source(), river.target()};
       }
     }
+    return {framework::GameMove::Type::PASS, punter_id_};
   }
 
   int prev_pos = -1;
