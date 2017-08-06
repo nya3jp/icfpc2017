@@ -43,7 +43,7 @@ a.textlike {
       {% for config in configs %}
       <th class="config {{ (config in error_configs) and 'danger' }}">
         <div>
-          <span><a class="textlike" href="/results/?label={{ label }}&amp;map={{ config.split()[0] }}&amp;num_punters={{ config.split()[1] }}">{{ config.split()[0] }}</a></span>
+          <span><a class="textlike" href="/results/?label={{ label }}&amp;map={{ config.split()[0] }}&amp;num_punters={{ config.split()[1] }}&amp;extensions={{ config.split()[3] if config.split()[3] != '-' else '' }}">{{ config.split()[0] }}</a></span>
         </div>
       </th>
       {% endfor %}
@@ -82,7 +82,7 @@ a.textlike {
       {% for config in configs %}
       {% set cell = matrix[(config, punter)] %}
       <td class="cell {{ cell.best and 'info' }}">
-        <a class="textlike" href="/results/?label={{ label }}&amp;map={{ config.split()[0] }}&amp;num_punters={{ config.split()[1] }}&amp;punter={{ punter }}">{% if cell.avg %}{{ '{:.1f}'.format(cell.avg) }}{% else %}-{% endif %}<br>({{ cell.count }})</a>
+        <a class="textlike" href="/results/?label={{ label }}&amp;map={{ config.split()[0] }}&amp;num_punters={{ config.split()[1] }}&amp;extensions={{ config.split()[3] if config.split()[3] != '-' else '' }}&amp;punter={{ punter }}">{% if cell.avg %}{{ '{:.1f}'.format(cell.avg) }}{% else %}-{% endif %}<br>({{ cell.count }})</a>
       </td>
       {% endfor %}
     {% endfor %}

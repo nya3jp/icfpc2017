@@ -63,10 +63,11 @@ def matrix_handler():
     bucketed_points = collections.defaultdict(list)
     for report in all_reports:
         punters = report['job']['punters']
-        config = '%s %d %s' % (
+        config = '%s %d %s %s' % (
             report['job']['map'],
             len(punters),
             ','.join([s[0].upper() for s in filter(None, report['job'].get('extensions', '').split(','))]) or '-',
+            report['job'].get('extensions', '') or '-',
         )
         if report['error']:
             for punter in punters:
@@ -145,6 +146,7 @@ def results_handler():
     label = bottle.request.query['label']
     map = bottle.request.query.get('map')
     num_punters = int(bottle.request.query.get('num_punters', 0))
+    extensions = bottle.request.query.get('extensions')
     punter = bottle.request.query.get('punter')
     skip = int(bottle.request.query.get('skip', '0'))
     limit = int(bottle.request.query.get('limit', '10000'))
@@ -157,6 +159,10 @@ def results_handler():
         query['num_punters'] = num_punters
     if punter:
         query['job.punters'] = punter
+    if extensions:
+        query['job.extensions'] = extensions
+    elif extensions is not None:
+        query['job.extensions'] = {'$in': [None, '']}
     reports = list(db.reports.find(
         query,
         sort=[('_id', pymongo.DESCENDING)],
