@@ -234,7 +234,8 @@ bool SimplePunter::IsConnectable(
     q.pop();
     for (const auto& edge : edges_[site_index]) {
       const RiverProto& river = rivers_->Get(edge.river);
-      if (river.has_punter() && river.punter() != punter_id) {
+      if (river.has_punter() && river.punter() != -1 &&
+          river.punter() != punter_id) {
         // This river is already used. Skip it.
         continue;
       }
