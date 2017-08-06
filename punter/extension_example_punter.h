@@ -14,7 +14,7 @@ class ExtensionExamplePunter : public framework::SimplePunter {
   ExtensionExamplePunter();
   ~ExtensionExamplePunter() override;
 
-  void SetUp(int punter_id, int num_punters, const framework::GameMap& game_map) override;
+  void SetUp(const common::SetUpData& args) override;
   framework::GameMove Run() override;
 
  private:

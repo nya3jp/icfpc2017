@@ -32,11 +32,6 @@ void dfs(int site_idx,
 LazyPunter::LazyPunter() = default;
 LazyPunter::~LazyPunter() = default;
 
-void LazyPunter::SetUp(
-    int punter_id, int num_punters, const framework::GameMap& game_map) {
-  SimplePunter::SetUp(punter_id, num_punters, game_map);
-}
-
 framework::GameMove LazyPunter::Run() {
   std::vector<std::pair<int, int>> remaining_edges;
   for (int i = 0; i < rivers_->size(); i++) {

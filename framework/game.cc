@@ -45,40 +45,26 @@ bool Game::RunImpl() {
 
   if (input->HasKey("punter")) {
     // Set up.
-
-    int punter_id;
-    CHECK(input->GetInteger("punter", &punter_id));
-
-    int num_punters;
-    CHECK(input->GetInteger("punters", &num_punters));
-
-    const base::DictionaryValue* game_map_value;
-    CHECK(input->GetDictionary("map", &game_map_value));
-    GameMap game_map = GameMap::FromJson(*game_map_value);
-
-    punter_->SetUp(punter_id, num_punters, game_map);
+    common::SetUpData args = common::SetUpData::FromJson(*input);
+    punter_->SetUp(args);
 
     std::unique_ptr<base::Value> futures;
-    bool is_futures_enabled = false;
-    if (input->GetBoolean("settings.futures", &is_futures_enabled) &&
-        is_futures_enabled) {
+    if (args.settings.futures) {
       // Signal the punter that the futures feature is enabled and get the
       // futures to send.
       futures = common::Futures::ToJson(punter_->GetFutures());
     }
 
-    bool is_splurges_enabled = false;
-    if (input->GetBoolean("settings.splurges", &is_splurges_enabled) &&
-        is_splurges_enabled) {
+    if (args.settings.splurges) {
       // Signal the punter that the splurges feature is enabled.
       punter_->EnableSplurges();
     }
 
     base::DictionaryValue output;
 
-    output.SetInteger("ready", punter_id);
+    output.SetInteger("ready", args.punter_id);
 
-    if (is_futures_enabled) {
+    if (args.settings.futures) {
       output.Set("futures", std::move(futures));
     }
 

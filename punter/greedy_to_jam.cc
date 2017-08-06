@@ -16,9 +16,9 @@ GreedyToJam::GreedyToJam()
 
 GreedyToJam::~GreedyToJam() = default;
 
-void GreedyToJam::SetUp(int punter_id, int num_punters, const framework::GameMap& game_map) {
-  themap.init(num_punters, game_map);
-  SimplePunter::SetUp(punter_id, num_punters, game_map);
+void GreedyToJam::SetUp(const common::SetUpData& args) {
+  themap.init(args.num_punters, args.game_map);
+  SimplePunter::SetUp(args);
 }
 
 framework::GameMove GreedyToJam::Run() {

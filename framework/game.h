@@ -21,8 +21,7 @@ class Punter {
  public:
   virtual ~Punter() = default;
 
-  virtual void SetUp(
-      int punter_id, int num_punters, const GameMap& game_map) = 0;
+  virtual void SetUp(const common::SetUpData& args) = 0;
   virtual std::vector<Future> GetFutures() {
     return {};
   }

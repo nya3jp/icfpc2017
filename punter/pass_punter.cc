@@ -12,9 +12,8 @@ GameMove PassPunter::Run(const std::vector<GameMove>& moves) {
   return GameMove::Pass(punter_id_);
 }
 
-void PassPunter::SetUp(
-    int punter_id, int num_punters, const GameMap& game_map) {
-  punter_id_ = punter_id;
+void PassPunter::SetUp(const common::SetUpData& args) {
+  punter_id_ = args.punter_id;
 }
 
 void PassPunter::SetState(std::unique_ptr<base::Value> state_in) {

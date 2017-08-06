@@ -19,7 +19,7 @@ class SimplePunter : public Punter {
 
   // Punter overrides
 
-  void SetUp(int punter_id, int num_punters, const GameMap& game_map) override;
+  void SetUp(const common::SetUpData& args) override;
   GameMove Run(const std::vector<GameMove>& moves) override;
 
   void SetState(std::unique_ptr<base::Value> state) override;

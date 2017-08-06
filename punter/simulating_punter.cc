@@ -84,13 +84,12 @@ GameMove ClaimRiver(int id, const framework::RiverProto& r) {
 SimulatingPunter::SimulatingPunter() = default;
 SimulatingPunter::~SimulatingPunter() = default;
 
-void SimulatingPunter::SetUp(
-    int punter_id, int num_punters, const framework::GameMap& game_map) {
-  SimplePunter::SetUp(punter_id, num_punters, game_map);
+void SimulatingPunter::SetUp(const common::SetUpData& args) {
+  SimplePunter::SetUp(args);
 
   // TODO: fix this.
   punter_ = base::MakeUnique<RandomPunter>();
-  punter_->SetUp(0, num_punters, game_map);
+  punter_->SetUp(args);
 }
 
 framework::GameMove SimulatingPunter::Run() {

@@ -11,7 +11,6 @@ class LazyPunter : public framework::SimplePunter {
   ~LazyPunter() override;
   
   // framework::SimplePunter:
-  void SetUp(int punter_id, int num_punters, const framework::GameMap& game_map) override;
   framework::GameMove Run() override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;

@@ -42,10 +42,10 @@ bool Benkei::IsRiverClaimed(int source, int dest) {
   //NOTREACHED
   return false;
 }
-  
-void Benkei::SetUp(int punter_id, int num_punters, const framework::GameMap& game_map)
+
+void Benkei::SetUp(const common::SetUpData& args)
 {
-  SimplePunter::SetUp(punter_id, num_punters, game_map);
+  SimplePunter::SetUp(args);
 
   // Estimated to complete within sub-seconds.
   // V = 5000 , E = 20000, M=100

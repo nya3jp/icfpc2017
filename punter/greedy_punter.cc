@@ -13,8 +13,8 @@ namespace punter {
 GreedyPunter::GreedyPunter() = default;
 GreedyPunter::~GreedyPunter() = default;
 
-void GreedyPunter::SetUp(int punter_id, int num_punters, const framework::GameMap& game_map) {
-  SimplePunter::SetUp(punter_id, num_punters, game_map);
+void GreedyPunter::SetUp(const common::SetUpData& args) {
+  SimplePunter::SetUp(args);
 
   ComputeLongestPath();
 

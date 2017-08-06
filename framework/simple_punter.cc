@@ -67,13 +67,13 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
   return out_move;
 }
 
-void SimplePunter::SetUp(
-    int punter_id, int num_punters, const GameMap& game_map) {
-  punter_id_ = punter_id;
-  num_punters_ = num_punters;
+void SimplePunter::SetUp(const common::SetUpData& args) {
+  punter_id_ = args.punter_id;
+  num_punters_ = args.num_punters;
 
   GameMapProto* game_map_proto = proto_.mutable_game_map();
 
+  const GameMap& game_map = args.game_map;
   for (const Site& s : game_map.sites) {
     SiteProto* site_proto = game_map_proto->add_sites();
     site_proto->set_id(s.id);
@@ -118,7 +118,8 @@ void SimplePunter::SetUp(
   proto_.set_punter_id(punter_id_);
   proto_.set_num_punters(num_punters_);
 
-  common::Scorer(proto_.mutable_scorer()).Initialize(num_punters, game_map);
+  common::Scorer(proto_.mutable_scorer()).Initialize(
+      args.num_punters, args.game_map);
 }
 
 int SimplePunter::FindSiteIdxFromSiteId(int id) const {

@@ -15,9 +15,9 @@ GreedyPunterChun::GreedyPunterChun()
 
 GreedyPunterChun::~GreedyPunterChun() = default;
 
-void GreedyPunterChun::SetUp(int punter_id, int num_punters, const framework::GameMap& game_map) {
-  themap.init(num_punters, game_map);
-  SimplePunter::SetUp(punter_id, num_punters, game_map);
+void GreedyPunterChun::SetUp(const common::SetUpData& args) {
+  themap.init(args.num_punters, args.game_map);
+  SimplePunter::SetUp(args);
 }
 
 framework::GameMove GreedyPunterChun::Run() {

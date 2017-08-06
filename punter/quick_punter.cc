@@ -8,21 +8,21 @@ namespace punter {
 QuickPunter::QuickPunter() = default;
 QuickPunter::~QuickPunter() = default;
 
-void QuickPunter::SetUp(int punter_id, int num_punters, const framework::GameMap& game_map) {
-  proto_.set_punter_id(punter_id);
+void QuickPunter::SetUp(const common::SetUpData& args) {
+  proto_.set_punter_id(args.punter_id);
   framework::GameMapProto* game_map_proto = proto_.mutable_game_map();
-  for (size_t i = 0; i < game_map.sites.size(); ++i) {
-    const auto& site = game_map.sites[i];
+  for (size_t i = 0; i < args.game_map.sites.size(); ++i) {
+    const auto& site = args.game_map.sites[i];
     framework::SiteProto* site_proto = game_map_proto->add_sites();
     site_proto->set_id(site.id);
   }
-  for (auto& r : game_map.rivers) {
+  for (auto& r : args.game_map.rivers) {
     framework::RiverProto* river_proto = game_map_proto->add_rivers();
     river_proto->set_source(r.source);
     river_proto->set_target(r.target);
     river_proto->set_punter(-1);
   }
-  for (auto& m : game_map.mines) {
+  for (auto& m : args.game_map.mines) {
     game_map_proto->add_mines()->set_site(m);
     QuickPunterNodeColor* color_proto = proto_.add_node_color();
     color_proto->set_site(m);
