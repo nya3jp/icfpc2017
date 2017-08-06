@@ -18,6 +18,7 @@ class Scorer {
 
   int GetScore(size_t punter_id) const;
   void Claim(size_t punter_id, int site_id1, int site_id2);
+  int TryClaim(size_t punter_id, int site_id1, int site_id2) const;
 
  private:
   mutable ScorerProto* data_;

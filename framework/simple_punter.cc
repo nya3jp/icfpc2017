@@ -223,4 +223,10 @@ int SimplePunter::GetScore(int punter_id) const {
   return common::Scorer(proto_.mutable_scorer()).GetScore(punter_id);
 }
 
+int SimplePunter::TryClaim(
+    int punter_id, int site_index1, int site_index2) const {
+  return common::Scorer(proto_.mutable_scorer()).TryClaim(
+      punter_id, sites_[site_index1].id, sites_[site_index2].id);
+}
+
 }  // namespace framework

@@ -245,4 +245,29 @@ void Scorer::Claim(size_t punter_id, int site_id1, int site_id2) {
   ufset.Merge(site_index1, site_index2);
 }
 
+int Scorer::TryClaim(size_t punter_id, int site_id1, int site_id2) const {
+  int score = GetScore(punter_id);
+  UnionFindSet ufset(data_->mutable_scores(punter_id));
+
+  int site_index1 = GetIndex(data_->site_ids(), site_id1);
+  int site_index2 = GetIndex(data_->site_ids(), site_id2);
+
+  if (ufset.IsConnected(site_index1, site_index2))
+    return score;
+
+  for (int i = 0; i < data_->mine_index_list_size(); ++i) {
+    int mine_index = data_->mine_index_list(i);
+    if (ufset.IsConnected(mine_index, site_index1)) {
+      score += ufset.GetScore(site_index2, i);
+      continue;
+    }
+    if (ufset.IsConnected(mine_index, site_index2)) {
+      score += ufset.GetScore(site_index1, i);
+      continue;
+    }
+  }
+
+  return score;
+}
+
 }  // namespace stadium
