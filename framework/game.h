@@ -7,51 +7,15 @@
 
 #include "base/macros.h"
 #include "base/values.h"
+#include "common/game_data.h"
 
 namespace framework {
 
-struct Site {
-  int id;
-
-  static Site FromJson(const base::Value& value);
-  static std::unique_ptr<base::Value> ToJson(const Site& site);
-};
-
-struct River {
-  int source;
-  int target;
-
-  static River FromJson(const base::Value& value);
-  static std::unique_ptr<base::Value> ToJson(const River& river);
-};
-
-struct GameMap {
-  std::vector<Site> sites;
-  std::vector<River> rivers;
-  std::vector<int> mines;
-
-  static GameMap FromJson(const base::Value& value);
-  static std::unique_ptr<base::Value> ToJson(const GameMap& game_map);
-};
-
-struct GameMove {
-  enum class Type {
-    CLAIM, PASS,
-  };
-
-  Type type;
-  int punter_id;
-  int source;  // Available only when type is CLAIM.
-  int target;  // Available only when type is CLAIM.
-
-  static GameMove Pass(int punter_id);
-  static GameMove Claim(int punter_id, int source, int target);
-
-  static GameMove FromJson(const base::Value& value);
-  static std::unique_ptr<base::Value> ToJson(const GameMove& game_move);
-};
-
-using Future = River;
+using Site = common::Site;
+using River = common::River;
+using GameMap = common::GameMap;
+using GameMove = common::GameMove;
+using Future = common::Future;
 
 class Punter {
  public:

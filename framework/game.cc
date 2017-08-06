@@ -17,157 +17,6 @@ DEFINE_bool(persistent, false, "If true, messages are repeatedly recieved");
 
 namespace framework {
 
-namespace {
-
-template<typename T>
-std::unique_ptr<base::Value> ToJson(const std::vector<T>& elements) {
-  auto result = base::MakeUnique<base::ListValue>();
-  result->Reserve(elements.size());
-  for (const auto& element : elements) {
-    result->Append(T::ToJson(element));
-  }
-  return result;
-}
-
-std::unique_ptr<base::Value> ToJson(const std::vector<int>& elements) {
-  auto result = base::MakeUnique<base::ListValue>();
-  result->Reserve(elements.size());
-  for (int element : elements) {
-    result->AppendInteger(element);
-  }
-  return result;
-}
-
-template<typename T>
-void FromJson(const base::ListValue& values, std::vector<T>* output) {
-  output->reserve(values.GetSize());
-  for (size_t i = 0; i < values.GetSize(); ++i) {
-    const base::Value* value = nullptr;
-    CHECK(values.Get(i, &value));
-    output->push_back(T::FromJson(*value));
-  }
-}
-
-void FromJson(const base::ListValue& values, std::vector<int>* output) {
-  output->reserve(values.GetSize());
-  for (size_t i = 0; i < values.GetSize(); ++i) {
-    int value;
-    CHECK(values.GetInteger(i, &value));
-    output->push_back(value);
-  }
-}
-
-}  // namespace
-
-Site Site::FromJson(const base::Value& value_in) {
-  const base::DictionaryValue* value;
-  CHECK(value_in.GetAsDictionary(&value));
-  Site result;
-  CHECK(value->GetInteger("id", &result.id));
-  return result;
-}
-
-std::unique_ptr<base::Value> Site::ToJson(const Site& site) {
-  auto result = base::MakeUnique<base::DictionaryValue>();
-  result->SetInteger("id", site.id);
-  return result;
-}
-
-River River::FromJson(const base::Value& value_in) {
-  const base::DictionaryValue* value;
-  CHECK(value_in.GetAsDictionary(&value));
-  River result;
-  CHECK(value->GetInteger("source", &result.source));
-  CHECK(value->GetInteger("target", &result.target));
-  return result;
-}
-
-std::unique_ptr<base::Value> River::ToJson(const River& river) {
-  auto result = base::MakeUnique<base::DictionaryValue>();
-  result->SetInteger("source", river.source);
-  result->SetInteger("target", river.target);
-  return result;
-}
-
-GameMap GameMap::FromJson(const base::Value& value_in) {
-  const base::DictionaryValue* value;
-  CHECK(value_in.GetAsDictionary(&value));
-
-  const base::ListValue* sites_value = nullptr;
-  CHECK(value->GetList("sites", &sites_value));
-  const base::ListValue* rivers_value = nullptr;
-  CHECK(value->GetList("rivers", &rivers_value));
-  const base::ListValue* mines_value = nullptr;
-  CHECK(value->GetList("mines", &mines_value));
-
-  GameMap game_map;
-  framework::FromJson(*sites_value, &game_map.sites);
-  framework::FromJson(*rivers_value, &game_map.rivers);
-  framework::FromJson(*mines_value, &game_map.mines);
-  return game_map;
-}
-
-std::unique_ptr<base::Value> GameMap::ToJson(const GameMap& game_map) {
-  auto result = base::MakeUnique<base::DictionaryValue>();
-  result->Set("sites", framework::ToJson(game_map.sites));
-  result->Set("rivers", framework::ToJson(game_map.rivers));
-  result->Set("mines", framework::ToJson(game_map.mines));
-  return result;
-}
-
-GameMove GameMove::Pass(int punter_id) {
-  return {GameMove::Type::PASS, punter_id};
-}
-
-GameMove GameMove::Claim(int punter_id, int source, int target) {
-  return {GameMove::Type::CLAIM, punter_id, source, target};
-}
-
-GameMove GameMove::FromJson(const base::Value& value_in) {
-  const base::DictionaryValue* value;
-  CHECK(value_in.GetAsDictionary(&value));
-
-  GameMove result;
-  if (value->HasKey("claim")) {
-    result.type = GameMove::Type::CLAIM;
-    CHECK(value->GetInteger("claim.punter", &result.punter_id));
-    CHECK(value->GetInteger("claim.source", &result.source));
-    CHECK(value->GetInteger("claim.target", &result.target));
-    return result;
-  }
-  if (value->HasKey("pass")) {
-    result.type = GameMove::Type::PASS;
-    CHECK(value->GetInteger("pass.punter", &result.punter_id));
-    return result;
-  }
-
-  LOG(FATAL) << "Unexpected key: " << value;
-  return result;
-}
-
-std::unique_ptr<base::Value> GameMove::ToJson(const GameMove& game_move) {
-  switch (game_move.type) {
-    case GameMove::Type::CLAIM: {
-      auto result = base::MakeUnique<base::DictionaryValue>();
-      auto content = base::MakeUnique<base::DictionaryValue>();
-      content->SetInteger("punter", game_move.punter_id);
-      content->SetInteger("source", game_move.source);
-      content->SetInteger("target", game_move.target);
-      result->Set("claim", std::move(content));
-      return result;
-    }
-    case GameMove::Type::PASS: {
-      auto result = base::MakeUnique<base::DictionaryValue>();
-      auto content = base::MakeUnique<base::DictionaryValue>();
-      content->SetInteger("punter", game_move.punter_id);
-      result->Set("pass", std::move(content));
-      return result;
-    }
-  }
-  LOG(FATAL) << "Unexpected type";
-  return {};
-}
-
 Game::Game(std::unique_ptr<Punter> punter)
     : punter_(std::move(punter)) {}
 Game::~Game() = default;
@@ -218,7 +67,7 @@ bool Game::RunImpl() {
     bool is_futures = false;
     if (input->GetBoolean("settings.futures", &is_futures) &&
         is_futures) {
-      output.Set("futures", framework::ToJson(punter_->GetFutures()));
+      output.Set("futures", common::Futures::ToJson(punter_->GetFutures()));
     }
     if (FLAGS_persistent) {
       output.Set("state", base::MakeUnique<base::Value>());
@@ -231,8 +80,7 @@ bool Game::RunImpl() {
 #if DCHECK_IS_ON()
     const base::ListValue* moves_value;
     CHECK(input->GetList("stop.moves", &moves_value));
-    std::vector<GameMove> moves;
-    FromJson(*moves_value, &moves);
+    std::vector<GameMove> moves = common::GameMoves::FromJson(*moves_value);
     for (const auto& m : moves) {
       switch (m.type) {
         case GameMove::Type::CLAIM:
@@ -262,8 +110,7 @@ bool Game::RunImpl() {
     // Play.
     const base::ListValue* moves_value;
     CHECK(input->GetList("move.moves", &moves_value));
-    std::vector<GameMove> moves;
-    FromJson(*moves_value, &moves);
+    std::vector<GameMove> moves = common::GameMoves::FromJson(*moves_value);
 
     if (!FLAGS_persistent) {
       std::unique_ptr<base::Value> state;

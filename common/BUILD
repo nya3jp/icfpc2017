@@ -12,9 +12,11 @@ cc_proto_library(
 cc_library(
   name = "common",
   srcs = [
+    "game_data.cc",
     "protocol.cc",
   ],
   hdrs = [
+    "game_data.h",
     "protocol.h",
   ],
   deps = [
