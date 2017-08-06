@@ -35,6 +35,7 @@ cc_library(
   ],
   deps = [
     "//third_party/chromiumbase",
+    "//common",
   ],
   copts = [
     "-Wno-sign-compare",

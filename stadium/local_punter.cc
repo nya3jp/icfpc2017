@@ -13,44 +13,11 @@
 #include "base/json/json_writer.h"
 #include "base/memory/ptr_util.h"
 #include "base/strings/string_number_conversions.h"
+#include "common/protocol.h"
 
 DEFINE_bool(persistent, false, "Do not kill child process for each turn.");
 
 namespace stadium {
-
-namespace {
-
-void WriteMessage(const base::Value& value, FILE* fp) {
-  std::string text;
-  CHECK(base::JSONWriter::Write(value, &text));
-  fprintf(fp, "%d:", static_cast<int>(text.size()));
-  CHECK_EQ(text.size(), fwrite(text.c_str(), 1, text.size(), fp));
-  fflush(fp);
-}
-
-std::unique_ptr<base::Value> ReadMessage(FILE* fp) {
-  int size = -1;
-  {
-    char buf[16];
-    for (int i = 0; i < 10; ++i) {
-      size_t result = fread(&buf[i], sizeof(char), 1, fp);
-      PCHECK(result == 1) << "fread";
-      if (buf[i] == ':') {
-        buf[i] = '\0';
-        CHECK(base::StringToInt(buf, &size));
-        break;
-      }
-    }
-  }
-  CHECK(size >= 0) << "Invalid JSON message header";
-
-  std::vector<char> buf(size, 'x');
-  CHECK_EQ(static_cast<size_t>(size),
-           fread(buf.data(), sizeof(char), size, fp));
-  return base::JSONReader::Read(base::StringPiece(buf.data(), buf.size()));
-}
-
-}  // namespace
 
 LocalPunter::LocalPunter(const std::string& shell)
     : shell_(shell) {
@@ -176,8 +143,8 @@ std::unique_ptr<base::Value> LocalPunter::RunProcess(
     Popen* subprocess,
     const base::DictionaryValue& request,
     std::string* name) {
-  auto ping =
-      base::DictionaryValue::From(ReadMessage(subprocess->stdout_read()));
+  auto ping = base::DictionaryValue::From(
+      common::ReadMessage(subprocess->stdout_read()));
   CHECK(ping) << "Invalid greeting message";
 
   std::string tmp_name;
@@ -189,10 +156,10 @@ std::unique_ptr<base::Value> LocalPunter::RunProcess(
 
   auto pong = base::MakeUnique<base::DictionaryValue>();
   pong->SetString("you", tmp_name);
-  WriteMessage(*pong, subprocess->stdin_write());
+  common::WriteMessage(subprocess->stdin_write(), *pong);
 
-  WriteMessage(request, subprocess->stdin_write());
-  return ReadMessage(subprocess->stdout_read());
+  common::WriteMessage(subprocess->stdin_write(), request);
+  return common::ReadMessage(subprocess->stdout_read());
 }
 
 }  // namespace stadium
