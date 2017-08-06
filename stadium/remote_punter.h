@@ -11,10 +11,7 @@ class RemotePunter : public Punter {
   explicit RemotePunter(int port);
   ~RemotePunter() override;
 
-  PunterInfo Setup(int punter_id,
-                   int num_punters,
-                   const Map* map,
-                   const Settings& settings) override;
+  PunterInfo SetUp(const common::SetUpData& args) override;
   Move OnTurn(const std::vector<Move>& moves) override;
 
  private:

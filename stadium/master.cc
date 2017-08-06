@@ -15,22 +15,24 @@ void Master::AddPunter(std::unique_ptr<Punter> punter) {
   punters_.emplace_back(std::move(punter));
 }
 
-void Master::RunGame(Map map, const Settings& settings) {
+void Master::RunGame(Map map, const common::Settings& settings) {
   CHECK(!punters_.empty());
   Initialize(std::move(map), settings);
   DoRunGame();
 }
 
-void Master::Initialize(Map map, const Settings& settings) {
-  map_ = std::move(map);
-
+void Master::Initialize(Map map, const common::Settings& settings) {
+  common::SetUpData args;
+  args.num_punters = punters_.size();
+  args.game_map = std::move(map);
+  args.settings = settings;
   std::vector<PunterInfo> punter_info_list;
   for (int punter_id = 0; punter_id < punters_.size(); ++punter_id) {
-    PunterInfo punter_info = punters_[punter_id]->Setup(
-        punter_id, punters_.size(), &map_, settings);
-    punter_info_list.push_back(std::move(punter_info));
+    args.punter_id = punter_id;
+    punter_info_list.push_back(punters_[punter_id]->SetUp(args));
   }
 
+  map_ = std::move(args.game_map);
   referee_ = base::MakeUnique<Referee>();
   referee_->Setup(punter_info_list, &map_);
 

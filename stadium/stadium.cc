@@ -41,7 +41,7 @@ void Main(int argc, char** argv) {
     LOG(FATAL) << "No punter argument specified!";
   }
 
-  Settings settings;
+  common::Settings settings;
   settings.futures = FLAGS_futures;
   settings.splurges = FLAGS_splurges;
   std::unique_ptr<Master> master = base::MakeUnique<Master>();

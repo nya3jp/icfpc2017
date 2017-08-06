@@ -35,29 +35,10 @@ LocalPunter::LocalPunter(const std::string& shell)
 
 LocalPunter::~LocalPunter() = default;
 
-PunterInfo LocalPunter::Setup(int punter_id,
-                              int num_punters,
-                              const Map* map,
-                              const Settings& settings) {
-  punter_id_ = punter_id;
+PunterInfo LocalPunter::SetUp(const common::SetUpData& args) {
+  punter_id_ = args.punter_id;
 
-  auto request = base::MakeUnique<base::DictionaryValue>();
-  request->SetInteger("punter", punter_id);
-  request->SetInteger("punters", num_punters);
-  request->Set("map", Map::ToJson(*map));
-
-  auto settings_value = base::MakeUnique<base::DictionaryValue>();
-  bool empty_settings = true;
-  if (settings.futures) {
-    settings_value->SetBoolean("futures", true);
-    empty_settings = false;
-  }
-  if (settings.splurges) {
-    settings_value->SetBoolean("splurges", true);
-    empty_settings = false;
-  }
-  if (!empty_settings)
-    request->Set("settings", std::move(settings_value));
+  auto request = common::SetUpData::ToJson(args);
 
   std::string name;
   std::unique_ptr<base::DictionaryValue> response;
@@ -75,7 +56,7 @@ PunterInfo LocalPunter::Setup(int punter_id,
   CHECK(response->Remove("state", &state_));
 
   std::vector<River> futures;
-  if (settings.futures) {
+  if (args.settings.futures) {
     const base::ListValue* futures_list;
     CHECK(response->GetList("futures", &futures_list));
     for (int i = 0; i < futures_list->GetSize(); ++i) {
@@ -156,7 +137,7 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
 
 std::unique_ptr<base::Value> LocalPunter::RunProcess(
     common::Popen* subprocess,
-    const base::DictionaryValue& request,
+    const base::Value& request,
     std::string* out_name,
     const base::TimeDelta& timeout) {
   // Exchange names.

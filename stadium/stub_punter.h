@@ -15,10 +15,7 @@ class StubPunter : public Punter {
   StubPunter();
   ~StubPunter() override;
 
-  PunterInfo Setup(int punter_id,
-                   int num_punters,
-                   const Map* map,
-                   const Settings& settings) override;
+  PunterInfo SetUp(const common::SetUpData& set_up_data) override;
   Move OnTurn(const std::vector<Move>& moves) override;
 
  private:

@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "stadium/game_data.h"
-#include "stadium/settings.h"
 
 namespace stadium {
 
@@ -18,10 +17,7 @@ class Punter {
  public:
   virtual ~Punter() {}
 
-  virtual PunterInfo Setup(int punter_id,
-                           int num_punters,
-                           const Map* map,
-                           const Settings& settings) = 0;
+  virtual PunterInfo SetUp(const common::SetUpData& args) = 0;
   virtual Move OnTurn(const std::vector<Move>& moves) = 0;
 
  protected:

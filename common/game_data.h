@@ -33,6 +33,21 @@ struct GameMap {
   static std::unique_ptr<base::Value> ToJson(const GameMap& game_map);
 };
 
+struct Settings {
+  bool futures;
+  bool splurges;
+};
+
+struct SetUpData {
+  int punter_id;
+  int num_punters;
+  GameMap game_map;
+  Settings settings;
+
+  static SetUpData FromJson(const base::Value& value);
+  static std::unique_ptr<base::Value> ToJson(const SetUpData& set_up_data);
+};
+
 struct GameMove {
   enum class Type {
     CLAIM, PASS, SPLURGE,

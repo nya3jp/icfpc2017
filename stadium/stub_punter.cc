@@ -8,13 +8,10 @@ StubPunter::StubPunter() = default;
 
 StubPunter::~StubPunter() = default;
 
-PunterInfo StubPunter::Setup(int punter_id,
-                             int num_punters,
-                             const Map* map,
-                             const Settings& settings) {
-  punter_id_ = punter_id;
+PunterInfo StubPunter::SetUp(const common::SetUpData& args) {
+  punter_id_ = args.punter_id;
 
-  for (const auto& river : map->rivers) {
+  for (const auto& river : args.game_map.rivers) {
     unclaimed_rivers_.insert(std::make_pair(
         std::min(river.source, river.target),
         std::max(river.source, river.target)));

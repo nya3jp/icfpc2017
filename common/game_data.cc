@@ -105,6 +105,48 @@ std::unique_ptr<base::Value> GameMap::ToJson(const GameMap& game_map) {
   return result;
 }
 
+SetUpData SetUpData::FromJson(const base::Value& value_in) {
+  const base::DictionaryValue* value;
+  CHECK(value_in.GetAsDictionary(&value));
+
+  SetUpData result;
+  CHECK(value->GetInteger("punter", &result.punter_id));
+  CHECK(value->GetInteger("punters", &result.num_punters));
+
+  const base::Value* game_map_value;
+  CHECK(value->Get("map", &game_map_value));
+  result.game_map = GameMap::FromJson(*game_map_value);
+
+  result.settings.futures = false;
+  result.settings.splurges = false;
+  const base::DictionaryValue* settings_value;
+  if (value->GetDictionary("settings", &settings_value)) {
+    settings_value->GetBoolean("futures", &result.settings.futures);
+    settings_value->GetBoolean("splurges", &result.settings.splurges);
+  }
+  return result;
+}
+
+std::unique_ptr<base::Value> SetUpData::ToJson(const SetUpData& args) {
+  auto result = base::MakeUnique<base::DictionaryValue>();
+  result->SetInteger("punter", args.punter_id);
+  result->SetInteger("punters", args.num_punters);
+  result->Set("map", GameMap::ToJson(args.game_map));
+
+  if (args.settings.futures || args.settings.splurges) {
+    auto settings_value = base::MakeUnique<base::DictionaryValue>();
+    if (args.settings.futures) {
+      settings_value->SetBoolean("futures", true);
+    }
+    if (args.settings.splurges) {
+      settings_value->SetBoolean("splurges", true);
+    }
+    result->Set("settings", std::move(settings_value));
+  }
+
+  return result;
+}
+
 GameMove GameMove::Pass(int punter_id) {
   return {GameMove::Type::PASS, punter_id};
 }

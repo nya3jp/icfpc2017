@@ -6,11 +6,8 @@ RemotePunter::RemotePunter(int port) : port_(port) {}
 
 RemotePunter::~RemotePunter() = default;
 
-PunterInfo RemotePunter::Setup(int punter_id,
-                               int num_punters,
-                               const Map* map,
-                               const Settings& settings) {
-  punter_id_ = punter_id;
+PunterInfo RemotePunter::SetUp(const common::SetUpData& args) {
+  punter_id_ = args.punter_id;
   LOG(ERROR) << "NOT IMPLEMENTED";
   return {"not_implemented", {}};
 }

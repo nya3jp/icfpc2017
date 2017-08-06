@@ -26,7 +26,6 @@ cc_library(
     "punter.h",
     "referee.h",
     "remote_punter.h",
-    "settings.h",
     "stub_punter.h",
   ],
   deps = [
