@@ -13,7 +13,10 @@
 
 namespace common {
 
-bool WaitForFdReadable(int fd, const base::TimeDelta& timeout, const base::TimeTicks& start_time) {
+bool WaitForFdReadable(
+    int fd,
+    const base::TimeDelta& timeout,
+    const base::TimeTicks& start_time) {
   int timeout_ms = -1;
 
   if (!timeout.is_zero()) {
@@ -41,7 +44,8 @@ bool WaitForFdReadable(int fd, const base::TimeDelta& timeout, const base::TimeT
         continue;
       NOTREACHED();
     }
-    if (num_fds == 0 || (!timeout.is_zero() && base::TimeTicks::Now() > start_time + timeout)) {
+    if (num_fds == 0 ||
+        (!timeout.is_zero() && base::TimeTicks::Now() > start_time + timeout)) {
       // timeout
       close(epoll_fd);
       return false;
@@ -69,8 +73,10 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp,
         if (errno == EINTR)
           continue;
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-          if (!WaitForFdReadable(fd, timeout, start_time))
+          if (!WaitForFdReadable(fd, timeout, start_time)) {
+            LOG(INFO) << "Timeout during reading the size of the message";
             return nullptr;
+          }
           continue;
         }
         return nullptr;
@@ -97,8 +103,10 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp,
 
     if (result == -1) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        if (!WaitForFdReadable(fd, timeout, start_time))
+        if (!WaitForFdReadable(fd, timeout, start_time)) {
+          LOG(INFO) << "Timeout during reading the body of the message";
           return NULL;
+        }
         continue;
       }
       if (errno == EINTR)

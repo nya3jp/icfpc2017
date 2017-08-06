@@ -21,13 +21,16 @@ DEFINE_bool(persistent, false, "Do not kill child process for each turn.");
 
 namespace stadium {
 
+void InitializeSubprocess(Popen* subprocess) {
+  base::SetNonBlocking(fileno(subprocess->stdout_read()));
+}
+
 LocalPunter::LocalPunter(const std::string& shell)
     : shell_(shell) {
   if (!FLAGS_persistent)
     return;
   subprocess_ = base::MakeUnique<Popen>(shell_ + " --persistent");
-  int fd = fileno(subprocess_->stdout_read());
-  base::SetNonBlocking(fd);
+  InitializeSubprocess(subprocess_.get());
 }
 
 LocalPunter::~LocalPunter() = default;
@@ -50,14 +53,14 @@ PunterInfo LocalPunter::Setup(int punter_id,
   std::string name;
   std::unique_ptr<base::DictionaryValue> response;
   if (FLAGS_persistent) {
-    response = base::DictionaryValue::From(RunProcess(subprocess_.get(), *request, &name, base::TimeDelta::FromSeconds(10)));
+    response = base::DictionaryValue::From(
+        RunProcess(subprocess_.get(), *request, &name, base::TimeDelta::FromSeconds(10)));
   } else {
     Popen subprocess(shell_);
+    InitializeSubprocess(&subprocess);
 
-    int fd = fileno(subprocess.stdout_read());
-    base::SetNonBlocking(fd);
-
-    response = base::DictionaryValue::From(RunProcess(&subprocess, *request, &name, base::TimeDelta::FromSeconds(10)));
+    response = base::DictionaryValue::From(
+        RunProcess(&subprocess, *request, &name, base::TimeDelta::FromSeconds(10)));
   }
   CHECK(response) << "Setup() failed for punter " << punter_id_;
   CHECK(response->Remove("state", &state_));
@@ -116,14 +119,14 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
   // TODO: Implement timeout.
   std::unique_ptr<base::DictionaryValue> response;
   if (FLAGS_persistent) {
-    response = base::DictionaryValue::From(RunProcess(subprocess_.get(), *request, nullptr, base::TimeDelta::FromSeconds(1)));
+    response = base::DictionaryValue::From(
+        RunProcess(subprocess_.get(), *request, nullptr, base::TimeDelta::FromSeconds(1)));
   } else {
     Popen subprocess(shell_);
+    InitializeSubprocess(&subprocess);
 
-    int fd = fileno(subprocess.stdout_read());
-    base::SetNonBlocking(fd);
-
-    response = base::DictionaryValue::From(RunProcess(&subprocess, *request, nullptr, base::TimeDelta::FromSeconds(1)));
+    response = base::DictionaryValue::From(
+        RunProcess(&subprocess, *request, nullptr, base::TimeDelta::FromSeconds(1)));
   }
   if (!response) {
     LOG(INFO) << "LOG: P" << punter_id_ << " timeout";
