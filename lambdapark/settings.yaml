@@ -1,5 +1,9 @@
 punters:
-  - name: lightning
-    shell: prebuilts/punter-0806-1327 --logtostderr --name=lightning --punter=GreedyPunter
-  - name: greedy-chun
-    shell: prebuilts/punter-0806-1327 --logtostderr --name=greedy-chun --punter=GreedyPunterChun
+  - name: greedy-irori-0806-1706
+    shell: prebuilts/punter-0806-1706 --logtostderr --punter=GreedyPunter --name=GreedyPunter
+  - name: greedy-chun-0806-1706
+    shell: prebuilts/punter-0806-1706 --logtostderr --punter=GreedyPunterChun --name=GreedyPunterChun
+  - name: greedy-mirac-0806-1706
+    shell: prebuilts/punter-0806-1706 --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac
+  - name: greedy-jam-0806-1706
+    shell: prebuilts/punter-0806-1706 --logtostderr --punter=GreedyToJam --name=GreedyToJam

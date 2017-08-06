@@ -1,5 +1,6 @@
 import logging
 import os
+import pipes
 import subprocess
 import sys
 import tempfile
@@ -73,6 +74,9 @@ def run_stadium(map_name, punter_shells, log_path):
     ] + punter_shells
     with tempfile.TemporaryFile() as stdout:
         with open(log_path, 'w') as stderr:
+            stderr.write(
+                'Command line: %s\n' %
+                ' '.join(pipes.quote(arg) for arg in args))
             with open(os.devnull) as null:
                 proc = subprocess.Popen(
                     args,
