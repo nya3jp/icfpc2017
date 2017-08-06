@@ -420,7 +420,7 @@ Controller.prototype = {
       clearInterval(this.timerId_);
     if (this.state_.step == this.history_.moves.length)
       this.state_.step = 0;
-    this.timerId_ = setInterval(this.onInterval_.bind(this), 200);
+    this.timerId_ = setInterval(this.onInterval_.bind(this), 50);
     this.playButton_.querySelector('i').textContent = 'pause';
     this.playing = true;
   },
