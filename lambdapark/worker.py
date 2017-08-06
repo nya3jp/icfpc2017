@@ -51,9 +51,7 @@ class SelfUpdater(object):
         return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
 
     def check_update_and_maybe_restart(self):
-        self._last_check = now
-        current_rev = self._get_revision()
-        if current_rev != self._last_rev:
+        if self._get_revision() != self._last_rev:
             logging.info('Detected an update. Restarting...')
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
