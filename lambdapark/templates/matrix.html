@@ -42,19 +42,27 @@
       {% for config in configs %}
       <th class="config">
         <div>
-          <span>{{ config }}</span>
+          <span>{{ config.split()[0] }}</span>
         </div>
       </th>
       {% endfor %}
     </tr>
     <tr>
       <th class="punter"></th>
-      {% for info in infos %}
+      {% for config in configs %}
       <th class="cell">
+        {{ config.split()[1] }}
+      </th>
+      {% endfor %}
+    </tr>
+    <tr>
+      <th class="punter"></th>
+      {% for info in infos %}
+      <td class="cell" style="font-size: 10px">
         S={{ info.num_sites }}<br>
         R={{ info.num_rivers }}<br>
         M={{ info.num_mines }}
-      </th>
+      </td>
       {% endfor %}
     </tr>
   </thead>

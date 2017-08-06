@@ -64,7 +64,7 @@ def matrix_handler():
             else:
                 points.append(len(ranking) - len(points))
         for (punter, _), point in zip(ranking, points):
-            config = '%s [%d]' % (report['job']['map'], len(report['job']['punters']))
+            config = '%s %d' % (report['job']['map'], len(report['job']['punters']))
             key = (config, punter)
             bucketed_points[key].append(point)
 
