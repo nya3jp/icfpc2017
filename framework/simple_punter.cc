@@ -205,6 +205,20 @@ std::unique_ptr<base::Value> SimplePunter::GetState() {
   return std::move(value);
 }
 
+std::vector<Future> SimplePunter::GetFutures() {
+  // Conver to original id before returning.
+  std::vector<Future> result = GetFuturesImpl();
+  for (auto& future : result) {
+    future.source = sites_[future.source].id;
+    future.target = sites_[future.target].id;
+  }
+
+  // Update future.
+  common::Scorer(proto_.mutable_scorer()).AddFuture(punter_id_, result);
+
+  return std::move(result);
+}
+
 int SimplePunter::GetScore(int punter_id) const {
   return common::Scorer(proto_.mutable_scorer()).GetScore(punter_id);
 }

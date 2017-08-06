@@ -13,14 +13,14 @@ class SimplePunter : public Punter {
   ~SimplePunter() override;
 
   virtual GameMove Run() = 0;
+  virtual std::vector<Future> GetFuturesImpl() { return {}; };
 
   // Punter overrides
   void SetUp(int punter_id, int num_punters, const GameMap& game_map) override;
   GameMove Run(const std::vector<GameMove>& moves) override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
-
-  // TODO: implement future id conversion.
+  std::vector<Future> GetFutures() override final;
 
   size_t num_sites() const { return sites_.size(); }
   int FindSiteIdxFromSiteId(int id);

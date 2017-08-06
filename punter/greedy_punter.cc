@@ -26,7 +26,7 @@ void GreedyPunter::SetUp(int punter_id, int num_punters, const framework::GameMa
   }
 }
 
-std::vector<framework::Future> GreedyPunter::GetFutures() {
+std::vector<framework::Future> GreedyPunter::GetFuturesImpl() {
   std::vector<framework::Future> futures;
 
   auto greedy_ext = proto_.MutableExtension(GreedyPunterProto::greedy_ext);
