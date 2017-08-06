@@ -1,4 +1,4 @@
-#include "stadium/scorer.h"
+#include "common/scorer.h"
 
 #include <algorithm>
 #include <utility>
@@ -7,7 +7,7 @@
 #include "base/logging.h"
 #include "common/scorer.pb.h"
 
-namespace stadium {
+namespace common {
 
 namespace {
 
@@ -56,15 +56,15 @@ std::vector<std::pair<int, int>> CreateBidirectionalGraph(
 
 class DistanceMap {
  public:
-  explicit DistanceMap(common::DistanceMapProto* proto) : proto_(proto) {}
+  explicit DistanceMap(DistanceMapProto* proto) : proto_(proto) {}
 
-  void Initialize(const Map& game_map,
+  void Initialize(const GameMap& game_map,
                   const ::google::protobuf::RepeatedField<int>& site_id_list,
                   const ::google::protobuf::RepeatedField<int>& mine_list) {
     std::vector<std::pair<int, int>> edges =
         CreateBidirectionalGraph(game_map.rivers, site_id_list);
 
-    for (size_t i = 0; i < mine_list.size(); ++i) {
+    for (int i = 0; i < mine_list.size(); ++i) {
       int mine_site_index = mine_list[i];
       auto* dist_map = proto_->add_entries();
 
@@ -98,7 +98,7 @@ class DistanceMap {
     }
   }
 
-  size_t mine_size() const {
+  int mine_size() const {
     return proto_->entries_size();
   }
   int GetDistance(int mine_index, int site_index) const {
@@ -106,13 +106,13 @@ class DistanceMap {
   }
 
  private:
-  common::DistanceMapProto* proto_;
+  DistanceMapProto* proto_;
   DISALLOW_COPY_AND_ASSIGN(DistanceMap);
 };
 
 class UnionFindSet {
  public:
-  UnionFindSet(common::ScorerUnionFindSetProto* proto)
+  UnionFindSet(ScorerUnionFindSetProto* proto)
       : proto_(proto) {}
 
   void Initialize(size_t num_sites) {
@@ -122,8 +122,8 @@ class UnionFindSet {
   }
 
   void SetDistanceMap(const DistanceMap& distance_map) {
-    for (size_t i = 0; i < proto_->cells_size(); ++i) {
-      for (size_t j = 0; j < distance_map.mine_size(); ++j) {
+    for (int i = 0; i < proto_->cells_size(); ++i) {
+      for (int j = 0; j < distance_map.mine_size(); ++j) {
         int dist = distance_map.GetDistance(j, i);
         mutable_cells(i)->add_scores(dist * dist);
       }
@@ -160,7 +160,7 @@ class UnionFindSet {
     // TODO use rank?
     auto* cell1 = mutable_cells(site_index1);
     auto* cell2 = mutable_cells(site_index2);
-    for (size_t i = 0; i < cell1->scores_size(); ++i) {
+    for (int i = 0; i < cell1->scores_size(); ++i) {
       cell1->set_scores(i, cell1->scores(i) + cell2->scores(i));
     }
     cell2->set_parent_index(site_index1);
@@ -178,24 +178,24 @@ class UnionFindSet {
     return root_index;
   }
 
-  const common::ScoreCell& cells(size_t index) const {
+  const ScoreCell& cells(size_t index) const {
     return proto_->cells(index);
   }
 
-  common::ScoreCell* mutable_cells(size_t index) {
+  ScoreCell* mutable_cells(size_t index) {
     return proto_->mutable_cells(index);
   }
 
-  mutable common::ScorerUnionFindSetProto* proto_;
+  mutable ScorerUnionFindSetProto* proto_;
   DISALLOW_COPY_AND_ASSIGN(UnionFindSet);
 };
 
 }  // namespace
 
-Scorer::Scorer(common::ScorerProto* data) : data_(data) {}
+Scorer::Scorer(ScorerProto* data) : data_(data) {}
 Scorer::~Scorer() = default;
 
-void Scorer::Initialize(size_t num_punters, const Map& game_map) {
+void Scorer::Initialize(size_t num_punters, const GameMap& game_map) {
   CreateSiteIdList(game_map.sites, data_->mutable_site_ids());
   CreateMineIndexList(
       game_map.mines, data_->site_ids(), data_->mutable_mine_index_list());
@@ -212,7 +212,7 @@ void Scorer::Initialize(size_t num_punters, const Map& game_map) {
 }
 
 void Scorer::AddFuture(
-    size_t punter_id, const std::vector<common::Future>& futures) {
+    size_t punter_id, const std::vector<Future>& futures) {
   UnionFindSet union_find_set(data_->mutable_scores(punter_id));
   DistanceMap distance_map(data_->mutable_distance_map());
 
@@ -232,7 +232,7 @@ int Scorer::GetScore(size_t punter_id) const {
   UnionFindSet ufset(data_->mutable_scores(punter_id));
 
   int score = 0;
-  for (size_t i = 0; i < data_->mine_index_list_size(); ++i)
+  for (int i = 0; i < data_->mine_index_list_size(); ++i)
     score += ufset.GetScore(data_->mine_index_list(i), i);
 
   return score;
