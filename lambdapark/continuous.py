@@ -94,7 +94,7 @@ def maybe_schedule(db):
 
     timestamp = datetime.datetime.now(pytz.utc).astimezone(JST).strftime(
         '%Y%m%d-%H%M%S')
-    label = 'continuous-%s-%s' % (timestamp, get_revision())
+    label = 'continuous-%s-%s' % (timestamp, get_revision()[:10])
 
     logging.info('scheduling jobs for %s', label)
 
