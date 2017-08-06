@@ -9,10 +9,12 @@
 #include <sys/wait.h>
 
 #include "base/files/scoped_file.h"
+#include "base/files/file_util.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/memory/ptr_util.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/time/time.h"
 #include "common/protocol.h"
 
 DEFINE_bool(persistent, false, "Do not kill child process for each turn.");
@@ -21,8 +23,11 @@ namespace stadium {
 
 LocalPunter::LocalPunter(const std::string& shell)
     : shell_(shell) {
-  if (FLAGS_persistent)
-    subprocess_ = base::MakeUnique<Popen>(shell_ + " --persistent");
+  if (!FLAGS_persistent)
+    return;
+  subprocess_ = base::MakeUnique<Popen>(shell_ + " --persistent");
+  int fd = fileno(subprocess_->stdout_read());
+  base::SetNonBlocking(fd);
 }
 
 LocalPunter::~LocalPunter() = default;
@@ -45,13 +50,16 @@ PunterInfo LocalPunter::Setup(int punter_id,
   std::string name;
   std::unique_ptr<base::DictionaryValue> response;
   if (FLAGS_persistent) {
-    response = base::DictionaryValue::From(
-        RunProcess(subprocess_.get(), *request, &name));
+    response = base::DictionaryValue::From(RunProcess(subprocess_.get(), *request, &name, base::TimeDelta::FromSeconds(10)));
   } else {
     Popen subprocess(shell_);
-    response = base::DictionaryValue::From(
-        RunProcess(&subprocess, *request, &name));
+
+    int fd = fileno(subprocess.stdout_read());
+    base::SetNonBlocking(fd);
+
+    response = base::DictionaryValue::From(RunProcess(&subprocess, *request, &name, base::TimeDelta::FromSeconds(10)));
   }
+  CHECK(response) << "Setup() failed for punter " << punter_id_;
   CHECK(response->Remove("state", &state_));
 
   std::vector<River> futures;
@@ -108,13 +116,20 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
   // TODO: Implement timeout.
   std::unique_ptr<base::DictionaryValue> response;
   if (FLAGS_persistent) {
-    response = base::DictionaryValue::From(
-        RunProcess(subprocess_.get(), *request, nullptr));
+    response = base::DictionaryValue::From(RunProcess(subprocess_.get(), *request, nullptr, base::TimeDelta::FromSeconds(1)));
   } else {
     Popen subprocess(shell_);
-    response = base::DictionaryValue::From(
-        RunProcess(&subprocess, *request, nullptr));
+
+    int fd = fileno(subprocess.stdout_read());
+    base::SetNonBlocking(fd);
+
+    response = base::DictionaryValue::From(RunProcess(&subprocess, *request, nullptr, base::TimeDelta::FromSeconds(1)));
   }
+  if (!response) {
+    LOG(INFO) << "Punter " << punter_id_ << " timeout";
+    return Move::MakePass(punter_id_);
+  }
+
   CHECK(response->Remove("state", &state_));
 
   if (response->HasKey("pass")) {
@@ -142,9 +157,10 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
 std::unique_ptr<base::Value> LocalPunter::RunProcess(
     Popen* subprocess,
     const base::DictionaryValue& request,
-    std::string* name) {
+    std::string* name,
+    const base::TimeDelta& timeout) {
   auto ping = base::DictionaryValue::From(
-      common::ReadMessage(subprocess->stdout_read()));
+      common::ReadMessage(subprocess->stdout_read(), base::TimeDelta(), base::TimeTicks()));
   CHECK(ping) << "Invalid greeting message";
 
   std::string tmp_name;
@@ -156,10 +172,11 @@ std::unique_ptr<base::Value> LocalPunter::RunProcess(
 
   auto pong = base::MakeUnique<base::DictionaryValue>();
   pong->SetString("you", tmp_name);
+  base::TimeTicks start_time = base::TimeTicks::Now();
   common::WriteMessage(subprocess->stdin_write(), *pong);
 
   common::WriteMessage(subprocess->stdin_write(), request);
-  return common::ReadMessage(subprocess->stdout_read());
+  return common::ReadMessage(subprocess->stdout_read(), timeout, start_time);
 }
 
 }  // namespace stadium

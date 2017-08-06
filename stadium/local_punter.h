@@ -6,6 +6,7 @@
 
 #include "base/macros.h"
 #include "base/values.h"
+#include "base/time/time.h"
 #include "stadium/popen.h"
 #include "stadium/punter.h"
 
@@ -26,7 +27,8 @@ class LocalPunter : public Punter {
   std::unique_ptr<base::Value> RunProcess(
       Popen* subprocess,
       const base::DictionaryValue& request,
-      std::string* name);
+      std::string* name,
+      const base::TimeDelta& timeout);
 
   const std::string shell_;
 

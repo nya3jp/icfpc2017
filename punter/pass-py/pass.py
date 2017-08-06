@@ -2,6 +2,7 @@
 
 import json
 import sys
+import time
 import optparse
 
 
@@ -34,6 +35,7 @@ def on_setup(punter_id, num_punters, map):
 
 
 def on_play(last_moves, state):
+    time.sleep(10)
     return {'pass': {'punter': state['punter_id']}, 'state': state}
 
 
@@ -46,17 +48,18 @@ def main():
     parser.add_option('--bot', default=None, dest='bot')
     options, args = parser.parse_args(sys.argv[1:])
 
-    write_message({'me': options.bot})
-    read_message()
+    while True:
+        write_message({'me': options.bot})
+        read_message()
 
-    request = read_message()
-    if 'punter' in request:
-        response = on_setup(request['punter'], request['punters'], request['map'])
-    elif 'move' in request:
-        response = on_play(request['move']['moves'], request['state'])
-    elif 'stop' in request:
-        response = on_stop(request['stop']['moves'], request['stop']['scores'], request['state'])
-    write_message(response)
+        request = read_message()
+        if 'punter' in request:
+            response = on_setup(request['punter'], request['punters'], request['map'])
+        elif 'move' in request:
+            response = on_play(request['move']['moves'], request['state'])
+        elif 'stop' in request:
+            response = on_stop(request['stop']['moves'], request['stop']['scores'], request['state'])
+        write_message(response)
 
 
 if __name__ == '__main__':

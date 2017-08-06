@@ -8,6 +8,7 @@
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/optional.h"
+#include "base/time/time.h"
 #include "common/protocol.h"
 #include "gflags/gflags.h"
 
@@ -189,7 +190,7 @@ bool Game::RunImpl() {
     DLOG(INFO) << "Sending name: " << name;
     common::WriteMessage(stdout, name);
     DLOG(INFO) << "Reading name";
-    auto input = base::DictionaryValue::From(common::ReadMessage(stdin));
+    auto input = base::DictionaryValue::From(common::ReadMessage(stdin, base::TimeDelta(), base::TimeTicks()));
     DLOG(INFO) << "Read name: " << *input;
     std::string you_name;
     CHECK(input->GetString("you", &you_name));
@@ -197,7 +198,7 @@ bool Game::RunImpl() {
   }
 
   // Set up or play.
-  auto input = base::DictionaryValue::From(common::ReadMessage(stdin));
+  auto input = base::DictionaryValue::From(common::ReadMessage(stdin, base::TimeDelta(), base::TimeTicks()));
   if (input->HasKey("punter")) {
     // Set up.
     int punter_id;
