@@ -212,8 +212,8 @@ class Arena():
             self._step += 1
 
     def done_setup(self, futures, punter_id):
-        self._map.set_futures([{'source': 1, 'target': 6}], 1)
-        #self._map.set_futures(futures, punter_id)
+        #self._map.set_futures([{'source': 1, 'target': 6}], 1)
+        self._map.set_futures(futures, punter_id)
 
     def done_move(self, message, punter_id, is_move, source, target, time_spent_ms):
         if is_move:
