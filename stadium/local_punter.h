@@ -27,7 +27,7 @@ class LocalPunter : public Punter {
   std::unique_ptr<base::Value> RunProcess(
       Popen* subprocess,
       const base::DictionaryValue& request,
-      std::string* name,
+      std::string* out_name,
       const base::TimeDelta& timeout);
 
   const std::string shell_;

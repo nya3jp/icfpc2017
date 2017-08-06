@@ -157,25 +157,21 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
 std::unique_ptr<base::Value> LocalPunter::RunProcess(
     Popen* subprocess,
     const base::DictionaryValue& request,
-    std::string* name,
+    std::string* out_name,
     const base::TimeDelta& timeout) {
-  auto ping = base::DictionaryValue::From(
-      common::ReadMessage(subprocess->stdout_read(), base::TimeDelta(), base::TimeTicks()));
-  CHECK(ping) << "Invalid greeting message";
-
-  std::string tmp_name;
-  CHECK(ping->GetString("me", &tmp_name)) << "Invalid greeting message";
-
-  if (name) {
-    *name = tmp_name;
+  // Exchange names.
+  base::Optional<std::string> name =
+      common::ReadPing(subprocess->stdout_read());
+  CHECK(name) << "Invalid greeting message.";
+  if (out_name) {
+    *out_name = name.value();
   }
+  common::WritePong(subprocess->stdin_write(), name.value());
 
-  auto pong = base::MakeUnique<base::DictionaryValue>();
-  pong->SetString("you", tmp_name);
-  common::WriteMessage(subprocess->stdin_write(), *pong);
-
+  // Start timer for timeout.
   base::TimeTicks start_time = base::TimeTicks::Now();
 
+  // Exchange the message.
   common::WriteMessage(subprocess->stdin_write(), request);
   std::unique_ptr<base::Value> result =
       common::ReadMessage(subprocess->stdout_read(), timeout, start_time);

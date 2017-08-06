@@ -13,6 +13,8 @@
 
 namespace common {
 
+namespace {
+
 bool WaitForFdReadable(
     int fd,
     const base::TimeDelta& timeout,
@@ -56,6 +58,26 @@ bool WaitForFdReadable(
     return true;
   }
 }
+
+void WritePingInternal(
+    FILE* fp, base::StringPiece field_name, const std::string& name) {
+  DLOG(INFO) << "Sending name: " << name;
+  base::DictionaryValue ping;
+  ping.SetString(field_name, name);
+  WriteMessage(fp, ping);
+}
+
+base::Optional<std::string> ReadPingInternal(
+    FILE* fp, base::StringPiece field_name) {
+  auto message = base::DictionaryValue::From(ReadMessage(fp));
+  std::string result;
+  if (!message || !message->GetString(field_name, &result))
+    return base::nullopt;
+  DLOG(INFO) << "Received name: " << result;
+  return result;
+}
+
+}  // namespace
 
 std::unique_ptr<base::Value> ReadMessage(FILE* fp,
                                          const base::TimeDelta& timeout,
@@ -105,18 +127,22 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp,
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
         if (!WaitForFdReadable(fd, timeout, start_time)) {
           LOG(INFO) << "Timeout during reading the body of the message";
-          return NULL;
+          return nullptr;
         }
         continue;
       }
       if (errno == EINTR)
         continue;
-      return NULL;
+      return nullptr;
     }
 
     filled += result;
   }
   return base::JSONReader::Read(base::StringPiece(buf.data(), buf.size()));
+}
+
+std::unique_ptr<base::Value> ReadMessage(FILE* fp) {
+  return ReadMessage(fp, base::TimeDelta(), base::TimeTicks());
 }
 
 void WriteMessage(FILE* fp, const base::Value& value) {
@@ -125,6 +151,22 @@ void WriteMessage(FILE* fp, const base::Value& value) {
   fprintf(fp, "%d:", static_cast<int>(text.size()));
   CHECK_EQ(text.size(), fwrite(text.c_str(), 1, text.size(), fp));
   fflush(fp);
+}
+
+void WritePing(FILE* fp, const std::string& name) {
+  WritePingInternal(fp, "me", name);
+}
+
+base::Optional<std::string> ReadPing(FILE* fp) {
+  return ReadPingInternal(fp, "me");
+}
+
+void WritePong(FILE* fp, const std::string& name) {
+  WritePingInternal(fp, "you", name);
+}
+
+base::Optional<std::string> ReadPong(FILE* fp) {
+  return ReadPingInternal(fp, "you");
 }
 
 }  // namespace common

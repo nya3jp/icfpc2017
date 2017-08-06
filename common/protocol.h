@@ -5,6 +5,7 @@
 
 #include <memory>
 
+#include "base/optional.h"
 #include "base/values.h"
 
 namespace base {
@@ -17,7 +18,17 @@ namespace common {
 std::unique_ptr<base::Value> ReadMessage(FILE* fp,
                                          const base::TimeDelta& timeout,
                                          const base::TimeTicks& start_time);
+
+// Recieve a message without timeout.
+std::unique_ptr<base::Value> ReadMessage(FILE* fp);
+
 void WriteMessage(FILE* fp, const base::Value& value);
+
+void WritePing(FILE* fp, const std::string& name);
+base::Optional<std::string> ReadPing(FILE* fp);
+
+void WritePong(FILE* fp, const std::string& name);
+base::Optional<std::string> ReadPong(FILE* fp);
 
 }  // namespace common
 
