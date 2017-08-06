@@ -20,6 +20,7 @@ class SimplePunter : public Punter {
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 
+  size_t num_sites() const { return sites_.size(); }
   int FindSiteIdxFromSiteId(int id);
   void SaveToProto();
   void GenerateAdjacencyList();
@@ -46,7 +47,6 @@ class SimplePunter : public Punter {
 
   int num_punters_ = -1;
   int punter_id_ = -1;
-  std::vector<Site> sites_;
   std::vector<RiverWithPunter> rivers_;
   std::vector<int> mines_;
 
@@ -56,6 +56,7 @@ class SimplePunter : public Punter {
   GameStateProto proto_;
 
  private:
+  std::vector<Site> sites_;
   DISALLOW_COPY_AND_ASSIGN(SimplePunter);
 };
 

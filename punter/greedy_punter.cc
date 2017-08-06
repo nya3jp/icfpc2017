@@ -43,7 +43,6 @@ std::vector<framework::Future> GreedyPunter::GetFutures() {
 }
 
 void GreedyPunter::ComputeLongestPath() {
-  size_t num_sites = sites_.size();
   size_t num_mines = mines_.size();
 
   int max_length = 0;
@@ -53,7 +52,7 @@ void GreedyPunter::ComputeLongestPath() {
     int mine = mines_[i];
 
     std::vector<std::pair<int, int>> dist_and_prev; // site_idx -> (distance, site_idx)
-    dist_and_prev.resize(num_sites, std::make_pair(-1, -1));
+    dist_and_prev.resize(num_sites(), std::make_pair(-1, -1));
 
     std::queue<std::pair<int, int>> q;  // {(site_idx, dist)}
     dist_and_prev[mine] = std::make_pair(0, -1);

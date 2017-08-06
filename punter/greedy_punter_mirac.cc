@@ -11,14 +11,13 @@ GreedyPunterMirac::GreedyPunterMirac() {}
 GreedyPunterMirac::~GreedyPunterMirac() = default;
 
 framework::GameMove GreedyPunterMirac::Run() {
-  size_t num_sites = sites_.size();
   size_t num_mines = mines_.size();
 
   // site_idx -> mine_idx -> (how many rivers do we need to
   // claim in order to connect the site and the mine, site_idx of
   // previous location)
   std::vector<std::vector<std::pair<int, int>>> rivers_to_claim(
-      num_sites, std::vector<std::pair<int, int>>(
+      num_sites(), std::vector<std::pair<int, int>>(
           num_mines, std::make_pair(-1, -1)));
 
   for (size_t i = 0; i < num_mines; ++i) {
@@ -44,7 +43,7 @@ framework::GameMove GreedyPunterMirac::Run() {
         q.push(std::make_pair(-next_dist, next_site));
       }
     }
-    for (size_t k = 0; k < num_sites; ++k) {
+    for (size_t k = 0; k < num_sites(); ++k) {
       VLOG(10) << " from " << mine << " to " << k << ": distance:" << rivers_to_claim[k][i].first << " via: " << rivers_to_claim[k][i].second;
     }
   }
@@ -53,7 +52,7 @@ framework::GameMove GreedyPunterMirac::Run() {
   int min_dist = -1;
   int max_site_idx = -1;
   int max_mine_idx = -1;
-  for (size_t i = 0; i < num_sites; ++i) {
+  for (size_t i = 0; i < num_sites(); ++i) {
     for (size_t k = 0; k < num_mines; ++k) {
       if (rivers_to_claim[i][k].first == -1) continue;
       if (rivers_to_claim[i][k].first == 0) continue;
