@@ -155,11 +155,16 @@ std::unique_ptr<base::Value> LocalPunter::RunProcess(
 
   auto pong = base::MakeUnique<base::DictionaryValue>();
   pong->SetString("you", tmp_name);
-  base::TimeTicks start_time = base::TimeTicks::Now();
   common::WriteMessage(subprocess->stdin_write(), *pong);
 
+  base::TimeTicks start_time = base::TimeTicks::Now();
+
   common::WriteMessage(subprocess->stdin_write(), request);
-  return common::ReadMessage(subprocess->stdout_read(), timeout, start_time);
+  std::unique_ptr<base::Value> result =
+      common::ReadMessage(subprocess->stdout_read(), timeout, start_time);
+
+  VLOG(3) << "Finished in " << (base::TimeTicks::Now() - start_time).InMilliseconds() << " ms";
+  return result;
 }
 
 }  // namespace stadium
