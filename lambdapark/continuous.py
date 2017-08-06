@@ -52,7 +52,7 @@ def restart():
 
 
 def get_revision():
-    return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
 
 
 def wait_for_idle(db):
