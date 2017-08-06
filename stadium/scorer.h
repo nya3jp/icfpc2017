@@ -11,7 +11,7 @@ namespace stadium {
 
 class Scorer {
  public:
-  Scorer();
+  explicit Scorer(common::ScorerProto* data);
   ~Scorer();
 
   void Initialize(size_t num_punters, const Map& game_map);
@@ -21,7 +21,7 @@ class Scorer {
   void Claim(size_t punter_id, int site_id1, int site_id2);
 
  private:
-  mutable common::ScorerProto data_;
+  mutable common::ScorerProto* data_;
 
   DISALLOW_COPY_AND_ASSIGN(Scorer);
 };

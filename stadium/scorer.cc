@@ -192,34 +192,35 @@ class UnionFindSet {
 
 }  // namespace
 
-Scorer::Scorer() = default;
+Scorer::Scorer(common::ScorerProto* data) : data_(data) {}
 Scorer::~Scorer() = default;
 
 void Scorer::Initialize(size_t num_punters, const Map& game_map) {
-  CreateSiteIdList(game_map.sites, data_.mutable_site_ids());
+  CreateSiteIdList(game_map.sites, data_->mutable_site_ids());
   CreateMineIndexList(
-      game_map.mines, data_.site_ids(), data_.mutable_mine_index_list());
+      game_map.mines, data_->site_ids(), data_->mutable_mine_index_list());
 
-  DistanceMap distance_map(data_.mutable_distance_map());
-  distance_map.Initialize(game_map, data_.site_ids(), data_.mine_index_list());
+  DistanceMap distance_map(data_->mutable_distance_map());
+  distance_map.Initialize(
+      game_map, data_->site_ids(), data_->mine_index_list());
 
   for (size_t i = 0; i < num_punters; ++i) {
-    UnionFindSet union_find_set(data_.add_scores());
-    union_find_set.Initialize(data_.site_ids_size());
+    UnionFindSet union_find_set(data_->add_scores());
+    union_find_set.Initialize(data_->site_ids_size());
     union_find_set.SetDistanceMap(distance_map);
   }
 }
 
 void Scorer::AddFuture(
     size_t punter_id, const std::vector<common::Future>& futures) {
-  UnionFindSet union_find_set(data_.mutable_scores(punter_id));
-  DistanceMap distance_map(data_.mutable_distance_map());
+  UnionFindSet union_find_set(data_->mutable_scores(punter_id));
+  DistanceMap distance_map(data_->mutable_distance_map());
 
   // Assume futures is valid.
   for (const auto& future : futures) {
-    int source_index = GetIndex(data_.site_ids(), future.source);
-    int mine_index = GetIndex(data_.mine_index_list(), source_index);
-    int target_index = GetIndex(data_.site_ids(), future.target);
+    int source_index = GetIndex(data_->site_ids(), future.source);
+    int mine_index = GetIndex(data_->mine_index_list(), source_index);
+    int target_index = GetIndex(data_->site_ids(), future.target);
 
     union_find_set.AddFuture(
         mine_index, source_index, target_index,
@@ -228,19 +229,19 @@ void Scorer::AddFuture(
 }
 
 int Scorer::GetScore(size_t punter_id) const {
-  UnionFindSet ufset(data_.mutable_scores(punter_id));
+  UnionFindSet ufset(data_->mutable_scores(punter_id));
 
   int score = 0;
-  for (size_t i = 0; i < data_.mine_index_list_size(); ++i)
-    score += ufset.GetScore(data_.mine_index_list(i), i);
+  for (size_t i = 0; i < data_->mine_index_list_size(); ++i)
+    score += ufset.GetScore(data_->mine_index_list(i), i);
 
   return score;
 }
 
 void Scorer::Claim(size_t punter_id, int site_id1, int site_id2) {
-  UnionFindSet ufset(data_.mutable_scores(punter_id));
-  int site_index1 = GetIndex(data_.site_ids(), site_id1);
-  int site_index2 = GetIndex(data_.site_ids(), site_id2);
+  UnionFindSet ufset(data_->mutable_scores(punter_id));
+  int site_index1 = GetIndex(data_->site_ids(), site_id1);
+  int site_index2 = GetIndex(data_->site_ids(), site_id2);
   ufset.Merge(site_index1, site_index2);
 }
 

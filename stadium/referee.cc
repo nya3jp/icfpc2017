@@ -13,6 +13,7 @@
 #include "gflags/gflags.h"
 #include "base/files/file_util.h"
 #include "base/memory/ptr_util.h"
+#include "stadium/scorer.h"
 
 DEFINE_string(result_json, "", "Path to output result json");
 
@@ -120,10 +121,11 @@ void Referee::Setup(const std::vector<PunterInfo>& punter_info_list,
   }
 
   map_state_ = MapState::FromMap(*map);
-  scorer_.Initialize(punter_info_list.size(), *map);
+  Scorer scorer(&scorer_);
+  scorer.Initialize(punter_info_list.size(), *map);
   for (size_t punter_id = 0; punter_id < punter_info_list.size();
        ++punter_id) {
-    scorer_.AddFuture(punter_id, punter_info_list[punter_id].futures);
+    scorer.AddFuture(punter_id, punter_info_list[punter_id].futures);
   }
 }
 
@@ -169,7 +171,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
   } else {
     LOG(INFO) << "LOG: [" << turn_id << "] P" << punter_id
               << ": CLAIM " << move.source << "-" << move.target;
-    scorer_.Claim(punter_id, move.source, move.target);
+    Scorer(&scorer_).Claim(punter_id, move.source, move.target);
   }
 
   ComputeScores();
@@ -186,10 +188,11 @@ void Referee::Finish() {
 }
 
 std::vector<int> Referee::ComputeScores() const {
+  Scorer scorer(&scorer_);
   std::vector<int> scores;
   for (size_t punter_id = 0; punter_id < punter_info_list_.size();
        ++punter_id) {
-    scores.push_back(scorer_.GetScore(punter_id));
+    scores.push_back(scorer.GetScore(punter_id));
     LOG(INFO) << "Punter: " << punter_id << ", Score: " << scores.back();
   }
   return scores;
