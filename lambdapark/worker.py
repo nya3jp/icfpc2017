@@ -26,19 +26,6 @@ def setup_logging():
         datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def build_requirements():
-    args = [
-        'bazel',
-        'build',
-        '-c',
-        'opt',
-        '//stadium',
-        '//punter',
-    ]
-    returncode = subprocess.call(args, cwd=BASE_DIR)
-    return returncode == 0
-
-
 def load_settings():
     with open(os.path.join(BASE_DIR, 'lambdapark/settings.yaml')) as f:
         return yaml.load(f)
@@ -145,12 +132,6 @@ def main(unused_argv):
     ])
 
     updater = SelfUpdater()
-
-    if not build_requirements():
-        logging.error('build is failing! wait for next revision.')
-        while True:
-            updater.check_update_and_maybe_restart()
-            time.sleep(5)
 
     logging.info('Ready!')
 

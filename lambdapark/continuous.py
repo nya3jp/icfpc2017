@@ -30,6 +30,18 @@ def setup_logging():
         datefmt='%Y-%m-%d %H:%M:%S')
 
 
+def build_requirements():
+    args = [
+        'bazel',
+        'build',
+        '-c',
+        'opt',
+        '//stadium',
+        '//punter',
+    ]
+    subprocess.check_call(args, cwd=BASE_DIR)
+
+
 def load_settings():
     with open(os.path.join(BASE_DIR, 'lambdapark/settings.yaml')) as f:
         return yaml.load(f)
@@ -67,11 +79,6 @@ def wait_for_idle(db):
 
 
 def get_snapshot():
-    returncode = subprocess.call(
-        ['bazel', 'build', '-c', 'opt', '//punter'],
-        cwd=BASE_DIR)
-    if returncode != 0:
-        return None
     try:
         with open(os.path.join(BASE_DIR, 'bazel-bin/punter/punter')) as f:
             punter_bin = f.read()
@@ -150,13 +157,14 @@ def main(unused_argv):
 
     db = pymongo.MongoClient().lambdapark
     ensure_index(db)
+    last_revision = get_revision()
     try:
+        build_requirements()
         maybe_schedule(db)
     except Exception:
-        logging.exception('maybe_schedule failed')
+        logging.exception('failed to schedule. waiting for next push...')
     if FLAGS.oneoff:
         return
-    last_revision = get_revision()
     wait_for_idle(db)
     while True:
         subprocess.call(['git', 'pull'])
