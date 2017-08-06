@@ -34,7 +34,6 @@ def build_requirements():
         '-c',
         'opt',
         '//stadium',
-        '//punter',
     ]
     subprocess.check_call(args, cwd=BASE_DIR)
 
