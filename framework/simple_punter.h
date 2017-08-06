@@ -30,9 +30,7 @@ class SimplePunter : public Punter {
 
   // API for sub classes.
   int num_sites() const { return sites_->size(); }
-  int dist_to_mine(int site, int mine) const {
-    return sites_->Get(site).to_mine(mine).distance();
-  }
+  int dist_to_mine(int site, int mine) const;
 
  protected:
   struct Edge {
@@ -74,10 +72,6 @@ class SimplePunter : public Punter {
   int FindSiteIdxFromSiteId(int id) const;
 
   void GenerateAdjacencyList();
-  void ComputeDistanceToMine();
-  void set_dist_to_mine(int site, int mine, int dist) const {
-    return sites_->Mutable(site)->mutable_to_mine(mine)->set_distance(dist);
-  }
 
   bool can_splurge_ = false;
 

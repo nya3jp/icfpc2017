@@ -10,7 +10,7 @@ message SiteToMineProto {
 
 message SiteProto {
   optional int32 id = 1;
-  repeated SiteToMineProto to_mine = 2;
+  repeated SiteToMineProto deprecated_to_mine = 2;  // DistanceMap in Scorer.
 }
 
 message RiverProto {

@@ -348,4 +348,13 @@ std::vector<int> Scorer::Simulate(const std::vector<GameMove>& moves) const {
   return result;
 }
 
+int Scorer::GetDistanceToMine(int mine_site_id, int target_site_id) const {
+  int mine_site_index = GetIndex(data_->site_ids(), mine_site_id);
+  int mine_index = GetIndex(data_->mine_index_list(), mine_site_index);
+  int target_site_index = GetIndex(data_->site_ids(), target_site_id);
+
+  DistanceMap distance_map(data_->mutable_distance_map());
+  return distance_map.GetDistance(mine_index, target_site_index);
+}
+
 }  // namespace stadium

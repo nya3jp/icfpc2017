@@ -22,6 +22,8 @@ class Scorer {
   int TryClaim(size_t punter_id, int site_id1, int site_id2) const;
   bool IsConnected(size_t punter_id, int site_id1, int site_id2) const;
 
+  int GetDistanceToMine(int mine_site_id, int target_site_id) const;
+
   std::vector<int> GetConnectedMineList(size_t punter_id, int site_id) const;
   std::vector<int> GetConnectedSiteList(size_t punter_id, int site_id) const;
 

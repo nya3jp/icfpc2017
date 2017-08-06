@@ -77,9 +77,6 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
   for (const Site& s : game_map.sites) {
     SiteProto* site_proto = game_map_proto->add_sites();
     site_proto->set_id(s.id);
-    for (size_t i = 0; i < game_map.mines.size(); ++i) {
-      site_proto->add_to_mine()->set_distance(-1);
-    }
   }
   sites_ = proto_.mutable_game_map()->mutable_sites();
 
@@ -113,7 +110,6 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
   }
 
   GenerateAdjacencyList();
-  ComputeDistanceToMine();
 
   proto_.set_punter_id(punter_id_);
   proto_.set_num_punters(num_punters_);
@@ -139,34 +135,6 @@ void SimplePunter::GenerateAdjacencyList() {
     int b = river.target();
     edges_[a].push_back(Edge{b, i});
     edges_[b].push_back(Edge{a, i});
-  }
-}
-
-void SimplePunter::ComputeDistanceToMine() {
-  size_t num_sites = sites_->size();
-  size_t num_mines = mines_->size();
-
-  for (size_t i = 0; i < num_mines; ++i) {
-    int mine = mines_->Get(i).site();
-
-    std::queue<std::pair<int, int>> q;  // {(site_idx, dist)}
-    set_dist_to_mine(mine, i, 0);
-    q.push(std::make_pair(mine, 0));
-    while(q.size()) {
-      int site = q.front().first;
-      int dist = q.front().second;
-      q.pop();
-      for (Edge edge : edges_[site]) {
-        int next_site = edge.site;
-        if (dist_to_mine(next_site, i) != -1) continue;
-        set_dist_to_mine(next_site, i, dist + 1);
-        q.push(std::make_pair(next_site, dist + 1));
-      }
-    }
-    for (size_t k = 0; k < num_sites; ++k) {
-      DLOG(INFO) << "distance to mine " << mines_->Get(i).site() << " from "
-                 << sites_->Get(k).id() << ": " << dist_to_mine(k, i);
-    }
   }
 }
 
@@ -311,6 +279,13 @@ std::vector<int> SimplePunter::Simulate(const std::vector<GameMove>& moves)
     orig_move.push_back(m);
   }
   return common::Scorer(proto_.mutable_scorer()).Simulate(orig_move);
+}
+
+int SimplePunter::dist_to_mine(int site, int mine) const {
+  int mine_site_id = sites_->Get(proto_.game_map().mines(mine).site()).id();
+  int site_id = sites_->Get(site).id();
+  return common::Scorer(proto_.mutable_scorer()).GetDistanceToMine(
+      mine_site_id, site_id);
 }
 
 int SimplePunter::GetClaimingPunter(int site_index1, int site_index2) const {
