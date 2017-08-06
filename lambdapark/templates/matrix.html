@@ -49,6 +49,16 @@
       </th>
       {% endfor %}
     </tr>
+    <tr>
+      <th class="punter"></th>
+      {% for info in infos %}
+      <th class="cell">
+        S={{ info.num_sites }}<br>
+        R={{ info.num_rivers }}<br>
+        M={{ info.num_mines }}
+      </th>
+      {% endfor %}
+    </tr>
   </thead>
   <tbody>
     {% for punter in punters %}

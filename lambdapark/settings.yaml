@@ -91,3 +91,105 @@ continuous_configs:
   - map: oxford-sparse
     num_punters: 2
     num_rounds: 10
+
+maps:
+  - name: sample
+    num_sites: 8
+    num_rivers: 12
+    num_mines: 2
+  - name: circle
+    num_sites: 27
+    num_rivers: 65
+    num_mines: 4
+  - name: gen1
+    num_sites: 27
+    num_rivers: 39
+    num_mines: 1
+  - name: gen2
+    num_sites: 26
+    num_rivers: 52
+    num_mines: 1
+  - name: gen3
+    num_sites: 27
+    num_rivers: 52
+    num_mines: 1
+  - name: gen4
+    num_sites: 27
+    num_rivers: 52
+    num_mines: 1
+  - name: lambda
+    num_sites: 38
+    num_rivers: 60
+    num_mines: 4
+  - name: randomMedium
+    num_sites: 97
+    num_rivers: 187
+    num_mines: 4
+  - name: randomSparse
+    num_sites: 86
+    num_rivers: 123
+    num_mines: 4
+  - name: Sierpinski-triangle
+    num_sites: 42
+    num_rivers: 81
+    num_mines: 3
+  - name: spider_web
+    num_sites: 27
+    num_rivers: 65
+    num_mines: 1
+  - name: t1
+    num_sites: 21
+    num_rivers: 45
+    num_mines: 1
+  - name: tube
+    num_sites: 301
+    num_rivers: 386
+    num_mines: 5
+  - name: boston-sparse
+    num_sites: 488
+    num_rivers: 945
+    num_mines: 8
+  - name: van-city-sparse
+    num_sites: 1986
+    num_rivers: 3601
+    num_mines: 12
+  - name: edinburgh-sparse2
+    num_sites: 961
+    num_rivers: 1751
+    num_mines: 1
+  - name: edinburgh-sparse
+    num_sites: 961
+    num_rivers: 1751
+    num_mines: 32
+  - name: gothenburg-sparse
+    num_sites: 1175
+    num_rivers: 2234
+    num_mines: 8
+  - name: nara-sparse
+    num_sites: 1560
+    num_rivers: 2197
+    num_mines: 12
+  - name: oxford2-scaled
+    num_sites: 10203
+    num_rivers: 11110
+    num_mines: 1
+  - name: oxford2-sparse-2
+    num_sites: 2389
+    num_rivers: 3632
+    num_mines: 16
+  - name: oxford2-sparse
+    num_sites: 3209
+    num_rivers: 6631
+    num_mines: 1
+  - name: oxford-center-sparse
+    num_sites: 1425
+    num_rivers: 2020
+    num_mines: 12
+  - name: oxford-sparse2
+    num_sites: 614
+    num_rivers: 1132
+    num_mines: 1
+  - name: oxford-sparse
+    num_sites: 614
+    num_rivers: 1132
+    num_mines: 1

@@ -26,6 +26,11 @@ def ensure_index():
     pass
 
 
+def load_settings():
+    with open(os.path.join(BASE_DIR, 'lambdapark/settings.yaml')) as f:
+        return yaml.load(f)
+
+
 def render_template(template_name, template_dict):
     return bottle.jinja2_template(
         template_name, template_dict,
@@ -59,7 +64,7 @@ def matrix_handler():
             else:
                 points.append(len(ranking) - len(points))
         for (punter, _), point in zip(ranking, points):
-            config = '%s[%d]' % (report['job']['map'], len(report['job']['punters']))
+            config = '%s [%d]' % (report['job']['map'], len(report['job']['punters']))
             key = (config, punter)
             bucketed_points[key].append(point)
 
@@ -88,12 +93,20 @@ def matrix_handler():
             cell = matrix[(config, punter)]
             cell['best'] = (cell['avg'] == best_avg)
 
+    settings = load_settings()
+    info_map = {
+        map['name']: map
+        for map in settings['maps']
+    }
+    infos = [info_map.get(config.split()[0], {}) for config in configs]
+
     template_dict = {
         'label': label,
         'configs': configs,
         'punters': punters,
         'matrix': matrix,
         'labels': labels,
+        'infos': infos,
     }
     return render_template('matrix.html', template_dict)
 
