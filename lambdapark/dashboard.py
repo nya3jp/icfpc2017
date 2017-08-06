@@ -98,6 +98,8 @@ def matrix_handler():
         map['name']: map
         for map in settings['maps']
     }
+
+    configs.sort(key=lambda c: info_map.get(c.split()[0], {}).get('num_sites', 0))
     infos = [info_map.get(config.split()[0], {}) for config in configs]
 
     template_dict = {
