@@ -17,13 +17,14 @@ def calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distance
         return 0
 
     visited[v] = True
-    score = distances[mine][v] * distances[mine][v]
+    base_score = distances[mine][v]
+    score = base_score ** 2
     for j in punter_specific_adj[v]:
         score += calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distances, j)
     return score
 
 
-def calculate_score_for_punter(punter, sites, mines, rivers, distances):
+def calculate_score_for_punter(punter, sites, mines, rivers, distances, futures):
     punter_specific_adj = []
     for site in sites:
         punter_specific_adj.append([])
@@ -35,11 +36,22 @@ def calculate_score_for_punter(punter, sites, mines, rivers, distances):
 
     score = 0
     for mine in mines:
-        score += calculate_score_for_punter_mine({}, punter_specific_adj, mine, distances, mine)
+        visited = {}
+        score += calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distances, mine)
+        if futures is None:
+            continue
+        for f in futures:
+            if f['source'] == mine:
+                futures_target = f['target']
+                futures_score = distances[mine][futures_target] ** 3
+                if visited.get(futures_target) is None:
+                    score -= futures_score
+                else:
+                    score += futures_score
     return score
 
 
-def calculate_score(num_punters, sites, mines, rivers):
+def calculate_score(num_punters, sites, mines, rivers, futures):
     adj = []
     for site in sites:
         l = []
@@ -71,7 +83,7 @@ def calculate_score(num_punters, sites, mines, rivers):
 
     scores = []
     for punter in range(num_punters):
-        scores.append(calculate_score_for_punter(punter, sites, mines, rivers, distances))
+        scores.append(calculate_score_for_punter(punter, sites, mines, rivers, distances, futures.get(punter)))
     return scores
 
 
@@ -104,6 +116,8 @@ class Arena():
 
         self._punters = {}
 
+        self._futures = {}
+
         self._map = Map(map_data)
         self._num_rivers = len(self._map.rivers)
 
@@ -134,7 +148,8 @@ class Arena():
             punter.prompt_setup(
                 {'punter': i,
                  'punters': self._num_punters,
-                 'map': map_data})
+                 'map': map_data,
+                 'settings': {'futures': True}})
 
         self._step = 0
 
@@ -158,7 +173,11 @@ class Arena():
                     json.dumps(
                         {'moves': self._all_moves,
                          'scores': calculate_score(
-                            self._num_punters, self._map.sites, self._map.mines, self._map.rivers)}))
+                             self._num_punters,
+                             self._map.sites,
+                             self._map.mines,
+                             self._map.rivers,
+                             self._futures)}))
                 sys.stdout.write('\n')
                 sys.stdout.flush()
 
@@ -168,6 +187,9 @@ class Arena():
             punter.prompt_move({'move': {'moves': list(self._moves)}})
 
             self._step += 1
+
+    def done_setup(self, futures, punter_id):
+        self._futures[punter_id] = futures
 
     def done_move(self, message, punter_id, is_move, source, target, time_spent_ms):
         if is_move:
@@ -311,6 +333,9 @@ class OfflinePunterHost(FileEndpoint):
                 return
 
             self._game_state = message.get('state')
+
+            #self._arena.done_setup(message.get('futures'), self._punter_id)
+            self._arena.done_setup([{'source': 1, 'target': 5}], self._punter_id)
         elif self._handling_move:
             self._handling_move = False
 
