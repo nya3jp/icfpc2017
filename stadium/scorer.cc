@@ -6,7 +6,6 @@
 
 #include "base/logging.h"
 #include "common/scorer.pb.h"
-#include "stadium/punter.h"
 
 namespace stadium {
 
@@ -205,34 +204,34 @@ class UnionFindSet {
 Scorer::Scorer() = default;
 Scorer::~Scorer() = default;
 
-void Scorer::Initialize(const std::vector<PunterInfo>& punter_info_list,
-                        const Map& game_map) {
+void Scorer::Initialize(size_t num_punters, const Map& game_map) {
   site_id_list_ = CreateSiteIdList(game_map.sites);
   mine_list_ = CreateMineList(game_map.mines, site_id_list_);
 
   DistanceMap distance_map(data_.mutable_distance_map());
   distance_map.Initialize(game_map, site_id_list_, mine_list_);
 
-  for (size_t i = 0; i < punter_info_list.size(); ++i) {
+  for (size_t i = 0; i < num_punters; ++i) {
     UnionFindSet union_find_set(data_.add_scores());
     union_find_set.Initialize(site_id_list_.size());
     union_find_set.SetDistanceMap(distance_map);
   }
+}
 
-  // Set futures.
-  for (size_t punter_id = 0; punter_id < data_.scores_size(); ++punter_id) {
-    UnionFindSet union_find_set(data_.mutable_scores(punter_id));
+void Scorer::AddFuture(
+    size_t punter_id, const std::vector<common::Future>& futures) {
+  UnionFindSet union_find_set(data_.mutable_scores(punter_id));
+  DistanceMap distance_map(data_.mutable_distance_map());
 
-    // Assume futures is valid.
-    for (const auto& future : punter_info_list[punter_id].futures) {
-      int source_index = GetSiteIndex(site_id_list_, future.source);
-      int mine_index = GetSiteIndex(mine_list_, source_index);
-      int target_index = GetSiteIndex(site_id_list_, future.target);
+  // Assume futures is valid.
+  for (const auto& future : futures) {
+    int source_index = GetSiteIndex(site_id_list_, future.source);
+    int mine_index = GetSiteIndex(mine_list_, source_index);
+    int target_index = GetSiteIndex(site_id_list_, future.target);
 
-      union_find_set.AddFuture(
-          mine_index, source_index, target_index,
-          distance_map.GetDistance(mine_index, target_index));
-    }
+    union_find_set.AddFuture(
+        mine_index, source_index, target_index,
+        distance_map.GetDistance(mine_index, target_index));
   }
 }
 

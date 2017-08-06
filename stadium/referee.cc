@@ -120,7 +120,11 @@ void Referee::Setup(const std::vector<PunterInfo>& punter_info_list,
   }
 
   map_state_ = MapState::FromMap(*map);
-  scorer_.Initialize(punter_info_list, *map);
+  scorer_.Initialize(punter_info_list.size(), *map);
+  for (size_t punter_id = 0; punter_id < punter_info_list.size();
+       ++punter_id) {
+    scorer_.AddFuture(punter_id, punter_info_list[punter_id].futures);
+  }
 }
 
 Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {

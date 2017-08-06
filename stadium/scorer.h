@@ -9,15 +9,14 @@
 
 namespace stadium {
 
-struct PunterInfo;
-
 class Scorer {
  public:
   Scorer();
   ~Scorer();
 
-  void Initialize(const std::vector<PunterInfo>& punter_info_list,
-                  const Map& game_map);
+  void Initialize(size_t num_punters, const Map& game_map);
+  void AddFuture(size_t punter_id, const std::vector<common::Future>& futures);
+
   int GetScore(size_t punter_id) const;
   void Claim(size_t punter_id, int site_id1, int site_id2);
 
