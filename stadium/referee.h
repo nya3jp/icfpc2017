@@ -8,6 +8,7 @@
 #include "base/macros.h"
 #include "stadium/game_data.h"
 #include "stadium/punter.h"
+#include "stadium/scorer.h"
 
 namespace stadium {
 
@@ -37,6 +38,7 @@ class Referee {
   MapState map_state_;
   std::vector<Move> move_history_;
 
+  Scorer scorer_;
   DISALLOW_COPY_AND_ASSIGN(Referee);
 };
 

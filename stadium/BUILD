@@ -18,6 +18,7 @@ cc_library(
     "popen.cc",
     "referee.cc",
     "remote_punter.cc",
+    "scorer.cc",
     "stub_punter.cc",
   ],
   hdrs = [
@@ -28,6 +29,7 @@ cc_library(
     "punter.h",
     "referee.h",
     "remote_punter.h",
+    "scorer.h",
     "settings.h",
     "stub_punter.h",
   ],

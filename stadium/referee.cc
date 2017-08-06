@@ -122,6 +122,7 @@ void Referee::Setup(const std::vector<PunterInfo>& punter_info_list,
   }
 
   map_state_ = MapState::FromMap(*map);
+  scorer_.Initialize(punter_info_list, *map);
 }
 
 Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
@@ -166,7 +167,11 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
   } else {
     LOG(INFO) << "LOG: [" << turn_id << "] P" << punter_id
               << ": CLAIM " << move.source << "-" << move.target;
+    scorer_.Claim(punter_id, move.source, move.target);
   }
+
+  ComputeScores();
+
   move_history_.push_back(actual_move);
   return actual_move;
 }
@@ -179,99 +184,12 @@ void Referee::Finish() {
 }
 
 std::vector<int> Referee::ComputeScores() const {
-  std::multimap<int, const RiverState*> edges;
-  for (const auto& entry : map_state_.rivers) {
-    edges.emplace(entry.first.source, &entry.second);
-    edges.emplace(entry.first.target, &entry.second);
-  }
-
-  std::vector<int> mines;
-  for (const auto& entry : map_state_.sites) {
-    if (entry.second.is_mine)
-      mines.push_back(entry.second.id);
-  }
-
-  // For each mine, distance map from each node to the mine.
-  std::vector<std::map<int, int>> dist_map_list(mines.size());
-  for (int i = 0; i < mines.size(); ++i) {
-    auto& dist_map = dist_map_list[i];
-    std::queue<int> q;
-    q.push(mines[i]);
-    dist_map[mines[i]] = 0;
-    while (!q.empty()) {
-      int site_id = q.front();
-      q.pop();
-      DCHECK(dist_map.count(site_id));
-      int dist = dist_map[site_id];
-      for (auto range = edges.equal_range(site_id);
-           range.first != range.second; ++range.first) {
-        const RiverState* river_state = range.first->second;
-        int next_site_id =
-            river_state->source == site_id ?
-            river_state->target : river_state->source;
-        if (dist_map.count(next_site_id))
-          continue;
-        dist_map[next_site_id] = dist + 1;
-        q.push(next_site_id);
-      }
-    }
-  }
-
   std::vector<int> scores;
-  for (int punter_id = 0; punter_id < punter_info_list_.size(); ++punter_id) {
-    int score = 0;
-    for (int j = 0; j < mines.size(); ++j) {
-      int mine = mines[j];
-      const auto& dist_map = dist_map_list[j];
-
-      std::queue<int> q;
-      q.push(mine);
-      std::set<int> visited;
-
-      // Traverse graph.
-      while (!q.empty()) {
-        int site_id = q.front();
-        q.pop();
-
-        for (auto range = edges.equal_range(site_id);
-             range.first != range.second; ++range.first) {
-          const RiverState* river_state = range.first->second;
-          if (river_state->punter_id != punter_id)
-            continue;
-          int next_site_id =
-              river_state->source == site_id ?
-              river_state->target : river_state->source;
-          if (!visited.insert(next_site_id).second)
-            continue;
-
-          // First visit. Accumulate the score.
-          auto it = dist_map.find(next_site_id);
-          DCHECK(it != dist_map.end());
-          int dist = it->second;
-          score += dist * dist;
-
-          q.push(next_site_id);
-        }
-      }
-
-      // Future bonus.
-      for (const auto& future : punter_info_list_[punter_id].futures) {
-        if (future.source != mine)
-          continue;
-        auto it = dist_map.find(future.target);
-        CHECK(it != dist_map.end());  // TODO: FIX ME. ... spec?
-        int dist = it->second;
-        dist = dist * dist * dist;
-        if (!visited.count(future.target)) {
-          dist = -dist;
-        }
-        score += dist;
-      }
-    }
-    scores.push_back(score);
-    LOG(INFO) << "Punter: " << punter_id << ", Score: " << score;
+  for (size_t punter_id = 0; punter_id < punter_info_list_.size();
+       ++punter_id) {
+    scores.push_back(scorer_.GetScore(punter_id));
+    LOG(INFO) << "Punter: " << punter_id << ", Score: " << scores.back();
   }
-
   return scores;
 }
 
