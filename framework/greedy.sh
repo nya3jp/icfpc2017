@@ -1,2 +1,2 @@
 #!/bin/bash
-exec bazel-bin/framework/game_main --name "greedy" --punter="GreedyPunter" "$@" # --logtostderr
+exec bazel-bin/punter/punter --name "greedy" --punter="GreedyPunter" "$@" # --logtostderr

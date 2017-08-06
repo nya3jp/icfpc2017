@@ -484,7 +484,7 @@ if __name__ == '__main__':
 
     if options.commands is None:
         commands = [
-            #['framework/game_main', '--name', 'fooz', '--punter', 'GreedyPunter'],
+            #['punter/punter', '--name', 'fooz', '--punter', 'GreedyPunter'],
              ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'bar'],
              ['/usr/bin/python3', 'punter/pass-py/pass.py', '--bot', 'baz'],
         ]
