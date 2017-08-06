@@ -73,13 +73,7 @@
       {% for config in configs %}
       {% set cell = matrix[(config, punter)] %}
       <td class="cell {{ cell.best and 'info' }}">
-        {% if cell.avg %}
-        {{ '{:.1f}'.format(cell.avg) }}
-        {% else %}
-        -
-        {% endif %}
-        <br>
-        ({{ cell.count }})
+        {% if cell.avg %}{{ '{:.1f}'.format(cell.avg) }}{% else %}-{% endif %}<br>({{ cell.count }})
       </td>
       {% endfor %}
     {% endfor %}
