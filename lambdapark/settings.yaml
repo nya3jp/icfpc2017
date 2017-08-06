@@ -2,8 +2,11 @@ punters:
   - name: irori
     shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
     continuous: true
-  - name: chun
-    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterChun --name=GreedyPunterChun
+#  - name: chun
+#    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterChun --name=GreedyPunterChun
+#    continuous: true
+  - name: benkei
+    shell: bazel-bin/punter/punter --logtostderr --punter=Benkei --name=Benkei
     continuous: true
   - name: mirac
     shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac
