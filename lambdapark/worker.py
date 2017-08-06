@@ -14,8 +14,6 @@ import yaml
 
 FLAGS = gflags.FLAGS
 
-gflags.DEFINE_bool('auto_update', False, 'Enable auto update.')
-
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 LOG_DIR = os.path.join(BASE_DIR, 'lambdapark/logs')
 
@@ -47,18 +45,12 @@ def load_settings():
 
 class SelfUpdater(object):
     def __init__(self):
-        self._last_check = 0
         self._last_rev = self._get_revision()
 
     def _get_revision(self):
         return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
 
     def check_update_and_maybe_restart(self):
-        if not FLAGS.auto_update:
-            return
-        now = time.time()
-        if now - self._last_check < 180:
-            return
         self._last_check = now
         current_rev = self._get_revision()
         if current_rev != self._last_rev:
@@ -163,6 +155,11 @@ def main(unused_argv):
     logging.info('Ready!')
 
     while True:
+        job = db.jobs.find_one({'status': 'pending'})
+        if not job:
+            time.sleep(5)
+            continue
+
         updater.check_update_and_maybe_restart()
 
         job = db.jobs.find_one_and_update(

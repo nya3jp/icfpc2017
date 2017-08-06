@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import logging
 import os
 import random
@@ -38,6 +39,9 @@ def ensure_index(db):
     db.jobs.create_index([
         ('status', pymongo.ASCENDING),
     ])
+    db.snapshots.create_index([
+        ('snapshot', pymongo.ASCENDING),
+    ])
     db.labels.create_index([
         ('label', pymongo.ASCENDING),
     ])
@@ -62,15 +66,32 @@ def wait_for_idle(db):
         break
 
 
+def get_snapshot():
+    subprocess.call(
+        ['bazel', 'build', '-c', 'opt', '//punter'],
+        cwd=BASE_DIR)
+    try:
+        with open(os.path.join(BASE_DIR, 'bazel-bin/punter/punter')) as f:
+            punter_bin = f.read()
+    except OSError:
+        return None
+    return hashlib.md5(punter_bin).hexdigest()
+
+
 def maybe_schedule(db):
+    snapshot = get_snapshot()
+    if not snapshot:
+        logging.error('failed to build punter')
+        return
+    if db.snapshots.find_one({'snapshot': snapshot}):
+        logging.info('snapshot %s already exists', snapshot)
+        return
+
     timestamp = datetime.datetime.now(pytz.utc).astimezone(JST).strftime(
         '%Y%m%d-%H%M%S')
     label = 'continuous-%s-%s' % (timestamp, get_revision())
-    if db.labels.find_one({'label': label}):
-        logging.info('label %s already exists', label)
-        return
 
-    logging.info('creating label %s', label)
+    logging.info('scheduling jobs for %s', label)
 
     settings = load_settings()
     punters = []
@@ -96,6 +117,11 @@ def maybe_schedule(db):
     db.labels.update_one(
         {'label': label},
         {'$set': {'label': label}},
+        upsert=True)
+
+    db.snapshots.update_one(
+        {'snapshot': snapshot},
+        {'$set': {'snapshot': snapshot}},
         upsert=True)
 
     logging.info('scheduled %d jobs', len(jobs))
