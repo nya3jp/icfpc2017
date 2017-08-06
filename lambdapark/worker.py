@@ -167,13 +167,17 @@ def main(unused_argv):
                      job['_id'], job['map'], ', '.join(job['punters']))
 
         try:
+            start_time = time.time()
             report = process_job(job, all_punters)
         except Exception:
+            end_time = time.time()
             error = traceback.format_exc().encode('utf-8')
             report = {
                 'job': job,
                 'error': error,
                 'scores': None,
+                'start_time': start_time,
+                'duration': end_time - start_time,
             }
         except BaseException:
             logging.info('Quitting. Releasing the job %s.', job['_id'])
