@@ -108,9 +108,20 @@ def maybe_schedule(db):
 
     jobs = []
     for config in settings['continuous_configs']:
+        selects = {p: 0 for p in punters}
         for _ in range(config['num_rounds']):
-            random.shuffle(punters)
-            round_punters = punters[:config['num_punters']]
+            min_selects = min(selects.values())
+            min_punters = [p for p in punters if selects[p] == min_selects]
+            max_punters = [p for p in punters if selects[p] != min_selects]
+            random.shuffle(min_punters)
+            random.shuffle(max_punters)
+            round_punters = min_punters[:config['num_punters']]
+            if len(round_punters) < config['num_punters']:
+                round_punters.extend(
+                    max_punters[:(config['num_punters'] - len(round_punters))])
+            random.shuffle(round_punters)
+            for p in round_punters:
+                selects[p] += 1
             jobs.append({
                 'map': config['map'],
                 'punters': round_punters,
