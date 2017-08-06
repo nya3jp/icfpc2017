@@ -67,9 +67,11 @@ def wait_for_idle(db):
 
 
 def get_snapshot():
-    subprocess.call(
+    returncode = subprocess.call(
         ['bazel', 'build', '-c', 'opt', '//punter'],
         cwd=BASE_DIR)
+    if returncode != 0:
+        return None
     try:
         with open(os.path.join(BASE_DIR, 'bazel-bin/punter/punter')) as f:
             punter_bin = f.read()
