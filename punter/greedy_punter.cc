@@ -151,10 +151,10 @@ framework::GameMove GreedyPunter::Run() {
       connected_from_mine_[pair.first].insert(pair.second);
       greedy_ext->mutable_connected_from_mine(pair.first)->add_site(pair.second);
     }
-    return {framework::GameMove::Type::CLAIM, punter_id_,
-        river_with_max_score->source(), river_with_max_score->target()};
+    return CreateClaim(
+        river_with_max_score->source(), river_with_max_score->target());
   }
-  return {framework::GameMove::Type::PASS, punter_id_};
+  return CreatePass();
 }
 
 void GreedyPunter::SetState(std::unique_ptr<base::Value> state_in) {

@@ -44,6 +44,10 @@ class SimplePunter : public Punter {
     return can_splurge_;
   }
 
+  GameMove CreatePass() const;
+  GameMove CreateClaim(int source, int target) const;
+  GameMove CreateSplurge(std::vector<int>* route) const;
+
   int GetScore(int punter_id) const;
   int TryClaim(int punter_id, int site_index1, int site_index2) const;
   bool IsConnected(int punter_id, int site_index1, int site_index2) const;

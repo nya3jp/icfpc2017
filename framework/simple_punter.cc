@@ -220,6 +220,18 @@ std::vector<Future> SimplePunter::GetFutures() {
   return std::move(result);
 }
 
+GameMove SimplePunter::CreatePass() const {
+  return std::move(GameMove::Pass(punter_id_));
+}
+
+GameMove SimplePunter::CreateClaim(int source, int target) const {
+  return std::move(GameMove::Claim(punter_id_, source, target));
+}
+
+GameMove SimplePunter::CreateSplurge(std::vector<int>* route) const {
+  return std::move(GameMove::Splurge(punter_id_, route));
+}
+
 int SimplePunter::GetScore(int punter_id) const {
   return common::Scorer(proto_.mutable_scorer()).GetScore(punter_id);
 }

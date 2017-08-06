@@ -155,9 +155,9 @@ GameMove GameMove::Claim(int punter_id, int source, int target) {
   return {GameMove::Type::CLAIM, punter_id, source, target};
 }
 
-GameMove GameMove::Splurge(int punter_id, std::vector<int> route) {
+GameMove GameMove::Splurge(int punter_id, std::vector<int>* route) {
   GameMove move{GameMove::Type::SPLURGE, punter_id};
-  std::swap(move.route, route);
+  std::swap(move.route, *route);
   return std::move(move);
 }
 
