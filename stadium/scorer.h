@@ -5,6 +5,7 @@
 
 #include "stadium/scorer.h"
 #include "stadium/game_data.h"
+#include "common/scorer.pb.h"
 
 namespace stadium {
 
@@ -26,7 +27,7 @@ class Scorer {
   std::vector<int> site_id_list_;  // index -> site_id mapping.
   std::vector<int> mine_list_;
 
-  std::vector<UnionFindSet> sets_;  // Per punter union cells.
+  mutable common::ScorerProto data_;
 
   DISALLOW_COPY_AND_ASSIGN(Scorer);
 };

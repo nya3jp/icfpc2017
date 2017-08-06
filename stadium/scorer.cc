@@ -5,6 +5,7 @@
 #include <queue>
 
 #include "base/logging.h"
+#include "common/scorer.pb.h"
 #include "stadium/punter.h"
 
 namespace stadium {
@@ -58,14 +59,20 @@ std::vector<std::pair<int, int>> CreateBidirectionalGraph(
 
 class Scorer::UnionFindSet {
  public:
-  explicit UnionFindSet(size_t num_cells) : cells_(num_cells) {
+  UnionFindSet(common::ScorerUnionFindSetProto* proto)
+      : proto_(proto) {}
+
+  void Initialize(size_t num_sites) {
+    proto_->mutable_cells()->Reserve(num_sites);
+    for (size_t i = 0; i < num_sites; ++i)
+      proto_->add_cells();
   }
 
   void AddMine(const std::vector<int>& dist_map) {
-    DCHECK_EQ(cells_.size(), dist_map.size());
+    DCHECK_EQ(proto_->cells_size(), dist_map.size());
     for (size_t site_index = 0; site_index < dist_map.size(); ++site_index) {
-      auto& cell = cells_[site_index];
-      cell.scores.push_back(dist_map[site_index] * dist_map[site_index]);
+      mutable_cells(site_index)->add_scores(
+          dist_map[site_index] * dist_map[site_index]);
     }
   }
 
@@ -73,13 +80,15 @@ class Scorer::UnionFindSet {
       size_t mine_index, int mine_site_index, int target_site_index,
       int distance) {
     int score = distance * distance * distance;
-    cells_[mine_site_index].scores[mine_index] = -score;
-    cells_[target_site_index].scores[mine_index] = 2 * score;
+    DCHECK_EQ(0, cells(mine_site_index).scores(mine_index));
+    mutable_cells(mine_site_index)->set_scores(mine_index, -score);
+    mutable_cells(target_site_index)->set_scores(
+        mine_index, cells(target_site_index).scores(mine_index) + 2 * score);
   }
 
   int GetScore(int site_index, int mine_index) const {
     int index = FindIndex(site_index);
-    return cells_[index].scores[mine_index];
+    return cells(index).scores(mine_index);
   }
 
   bool IsConnected(int site_index1, int site_index2) const {
@@ -95,29 +104,36 @@ class Scorer::UnionFindSet {
       return;
 
     // TODO use rank?
-    auto& cell1 = cells_[site_index1];
-    auto& cell2 = cells_[site_index2];
-    for (size_t i = 0; i < cell1.scores.size(); ++i) {
-      cell1.scores[i] += cell2.scores[i];
+    auto* cell1 = mutable_cells(site_index1);
+    auto* cell2 = mutable_cells(site_index2);
+    for (size_t i = 0; i < cell1->scores_size(); ++i) {
+      cell1->set_scores(i, cell1->scores(i) + cell2->scores(i));
     }
-    cell2.parent_index = site_index1;
+    cell2->set_parent_index(site_index1);
   }
  private:
-  struct Cell {
-    mutable int parent_index = -1;  // -1 is root.
-    std::vector<int> scores;  // Mine index -> score.
-  };
-
   int FindIndex(int site_index) const {
-    if (cells_[site_index].parent_index == -1)
+    if (!cells(site_index).has_parent_index())
       return site_index;
+
     // Short circuit.
-    int root_index = FindIndex(cells_[site_index].parent_index);
-    cells_[site_index].parent_index = root_index;
+    int root_index = FindIndex(cells(site_index).parent_index());
+
+    // Use mutable value.
+    proto_->mutable_cells(site_index)->set_parent_index(root_index);
     return root_index;
   }
 
-  std::vector<Cell> cells_;
+  const common::ScoreCell& cells(size_t index) const {
+    return proto_->cells(index);
+  }
+
+  common::ScoreCell* mutable_cells(size_t index) {
+    return proto_->mutable_cells(index);
+  }
+
+  mutable common::ScorerUnionFindSetProto* proto_;
+  DISALLOW_COPY_AND_ASSIGN(UnionFindSet);
 };
 
 Scorer::Scorer() = default;
@@ -129,7 +145,7 @@ void Scorer::Initialize(const std::vector<PunterInfo>& punter_info_list,
   mine_list_ = CreateMineList(game_map.sites, site_id_list_);
 
   for (size_t i = 0; i < punter_info_list.size(); ++i)
-    sets_.emplace_back(site_id_list_.size());
+    UnionFindSet(data_.add_scores()).Initialize(site_id_list_.size());
 
   // Initialize UFSet instances.
   std::vector<std::pair<int, int>> edges =
@@ -168,8 +184,8 @@ void Scorer::Initialize(const std::vector<PunterInfo>& punter_info_list,
     }
 
     const int mine_site_id = site_id_list_[mine_site_index];
-    for (size_t punter_id = 0; punter_id < sets_.size(); ++punter_id) {
-      auto& ufset = sets_[punter_id];
+    for (size_t punter_id = 0; punter_id < data_.scores_size(); ++punter_id) {
+      UnionFindSet ufset(data_.mutable_scores(punter_id));
       ufset.AddMine(dist_map);
 
       // If future is set, pre calculate it. Only last one is valid.
@@ -190,7 +206,7 @@ void Scorer::Initialize(const std::vector<PunterInfo>& punter_info_list,
 }
 
 int Scorer::GetScore(size_t punter_id) const {
-  auto& ufset = sets_[punter_id];
+  UnionFindSet ufset(data_.mutable_scores(punter_id));
 
   int score = 0;
   for (size_t i = 0; i < mine_list_.size(); ++i)
@@ -200,7 +216,7 @@ int Scorer::GetScore(size_t punter_id) const {
 }
 
 void Scorer::Claim(size_t punter_id, int site_id1, int site_id2) {
-  auto& ufset = sets_[punter_id];
+  UnionFindSet ufset(data_.mutable_scores(punter_id));
   int site_index1 = GetSiteIndex(site_id_list_, site_id1);
   int site_index2 = GetSiteIndex(site_id_list_, site_id2);
   ufset.Merge(site_index1, site_index2);

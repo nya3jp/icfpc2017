@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package common;
+
+message ScoreCell {
+  optional int32 parent_index = 1;  // UFSet parent if it has.
+  repeated int32 scores = 2;  // mine index -> current score.
+}
+
+message ScorerUnionFindSetProto {
+  repeated ScoreCell cells = 1;  // site_index -> ScoreCell
+}
+
+message ScorerProto {
+  // TODO: Share with Game.
+  repeated int32 site_ids = 1;  // site_index -> site_id mapping.
+  repeated int32 mine_index_list = 2;  // mine_index -> mine_site_index
+  repeated ScorerUnionFindSetProto scores = 3;  // punter_id -> UFSet.
+}
