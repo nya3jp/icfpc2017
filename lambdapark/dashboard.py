@@ -53,7 +53,7 @@ def matrix_handler():
         ranking.sort(key=(lambda (punter, score): score), reverse=True)
         points = []
         for i, (_, score) in enumerate(ranking):
-            if i > 0 and ranking[i][1] == score:
+            if i > 0 and ranking[i - 1][1] == score:
                 points.append(points[-1])
             else:
                 points.append(len(ranking) - len(points))
