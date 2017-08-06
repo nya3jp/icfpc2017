@@ -46,6 +46,7 @@ class SimplePunter : public Punter {
   std::vector<int> GetConnectedSiteList(int punter_id, int site_index) const;
 
   bool IsConnectable(int punter_id, int site_index1, int site_index2) const;
+  std::vector<int> Simulate(const std::vector<GameMove>& moves) const;
 
   int num_punters_ = -1;
   int punter_id_ = -1;

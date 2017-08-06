@@ -309,4 +309,43 @@ std::vector<int> Scorer::GetConnectedSiteList(size_t punter_id, int site_id)
   return result;
 }
 
+std::vector<int> Scorer::Simulate(const std::vector<GameMove>& moves) const {
+  ::google::protobuf::RepeatedPtrField<ScorerUnionFindSetProto> scores;
+  scores.CopyFrom(data_->scores());
+
+  for (const auto& m : moves) {
+    UnionFindSet ufset(scores.Mutable(m.punter_id));
+    switch (m.type) {
+      case GameMove::Type::CLAIM: {
+        int site_index1 = GetIndex(data_->site_ids(), m.source);
+        int site_index2 = GetIndex(data_->site_ids(), m.target);
+        ufset.Merge(site_index1, site_index2);
+      }
+      case GameMove::Type::SPLURGE: {
+        for (size_t i = 1; i < m.route.size(); ++i) {
+          int site_index1 = GetIndex(data_->site_ids(), m.route[i - 1]);
+          int site_index2 = GetIndex(data_->site_ids(), m.route[i]);
+          ufset.Merge(site_index1, site_index2);
+        }
+        break;
+      }
+      case GameMove::Type::PASS: {
+        // Do nothing.
+        break;
+      }
+    }
+  }
+
+  std::vector<int> result;
+  for (int punter_id = 0; punter_id < scores.size(); ++punter_id) {
+    UnionFindSet ufset(scores.Mutable(punter_id));
+    int score = 0;
+    for (int i = 0; i < data_->mine_index_list_size(); ++i) {
+      score += ufset.GetScore(data_->mine_index_list(i), i);
+    }
+    result.push_back(score);
+  }
+  return result;
+}
+
 }  // namespace stadium

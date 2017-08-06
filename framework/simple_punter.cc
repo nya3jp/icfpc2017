@@ -254,4 +254,16 @@ bool SimplePunter::IsConnectable(
   return false;
 }
 
+std::vector<int> SimplePunter::Simulate(const std::vector<GameMove>& moves)
+    const {
+  std::vector<GameMove> orig_move;
+  for (auto m : moves) {
+    // TODO: support splurge.
+    m.source = sites_->Get(m.source).id();
+    m.target = sites_->Get(m.target).id();
+    orig_move.push_back(m);
+  }
+  return common::Scorer(proto_.mutable_scorer()).Simulate(orig_move);
+}
+
 }  // namespace framework

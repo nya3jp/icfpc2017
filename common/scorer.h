@@ -25,6 +25,8 @@ class Scorer {
   std::vector<int> GetConnectedMineList(size_t punter_id, int site_id) const;
   std::vector<int> GetConnectedSiteList(size_t punter_id, int site_id) const;
 
+  std::vector<int> Simulate(const std::vector<GameMove>& moves) const;
+
  private:
   mutable ScorerProto* data_;
 
