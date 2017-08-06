@@ -47,11 +47,12 @@ bool Game::RunImpl() {
     CHECK_EQ(FLAGS_name, you_name);
   }
 
-  // Set up or play.
   auto input = base::DictionaryValue::From(
       common::ReadMessage(stdin, base::TimeDelta(), base::TimeTicks()));
+
   if (input->HasKey("punter")) {
     // Set up.
+
     int punter_id;
     CHECK(input->GetInteger("punter", &punter_id));
 
@@ -60,31 +61,44 @@ bool Game::RunImpl() {
 
     const base::DictionaryValue* game_map_value;
     CHECK(input->GetDictionary("map", &game_map_value));
-
     GameMap game_map = GameMap::FromJson(*game_map_value);
+
     punter_->SetUp(punter_id, num_punters, game_map);
 
-    bool is_splurges = false;
-    if (input->GetBoolean("settings.splurges", &is_splurges) &&
-        is_splurges) {
+    std::unique_ptr<base::Value> futures;
+    bool is_futures_enabled = false;
+    if (input->GetBoolean("settings.futures", &is_futures_enabled) &&
+        is_futures_enabled) {
+      // Signal the punter that the futures feature is enabled and get the
+      // futures to send.
+      futures = common::Futures::ToJson(punter_->GetFutures());
+    }
+
+    bool is_splurges_enabled = false;
+    if (input->GetBoolean("settings.splurges", &is_splurges_enabled) &&
+        is_splurges_enabled) {
+      // Signal the punter that the splurges feature is enabled.
       punter_->EnableSplurges();
     }
 
     base::DictionaryValue output;
+
     output.SetInteger("ready", punter_id);
-    bool is_futures = false;
-    if (input->GetBoolean("settings.futures", &is_futures) &&
-        is_futures) {
-      output.Set("futures", common::Futures::ToJson(punter_->GetFutures()));
+
+    if (is_futures_enabled) {
+      output.Set("futures", std::move(futures));
     }
+
     if (FLAGS_persistent) {
       output.Set("state", base::MakeUnique<base::Value>());
     } else {
       output.Set("state", punter_->GetState());
     }
+
     common::WriteMessage(stdout, output);
   } else if (input->HasKey("stop")) {
     // Game was over.
+
 #if DCHECK_IS_ON()
     const base::ListValue* moves_value;
     CHECK(input->GetList("stop.moves", &moves_value));
@@ -120,6 +134,7 @@ bool Game::RunImpl() {
     return true;
   } else {
     // Play.
+
     const base::ListValue* moves_value;
     CHECK(input->GetList("move.moves", &moves_value));
     std::vector<GameMove> moves = common::GameMoves::FromJson(*moves_value);
