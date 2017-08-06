@@ -58,9 +58,21 @@ cc_library(
   ],
 
   deps = [
+    ":greedy_punter_cc_proto",
     "//third_party/chromiumbase",
     "//framework:simple_punter",
   ],
+)
+
+proto_library(
+  name = "greedy_punter_proto",
+  srcs = ["greedy_punter.proto"],
+  deps = [ "//framework:game_proto_proto" ],
+)
+
+cc_proto_library(
+  name = "greedy_punter_cc_proto",
+  deps = ["greedy_punter_proto"],
 )
 
 cc_library(

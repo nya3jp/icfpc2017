@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+import "framework/game_proto.proto";
+
+package punter;
+
+message SiteSetProto {
+  repeated int32 site = 1;
+}
+
+message GreedyPunterProto {
+  repeated int32 longest_path = 1;
+  optional int32 longest_path_index = 2;
+  repeated SiteSetProto connected_from_mine = 3;
+
+  extend framework.GameStateProto {
+    optional GreedyPunterProto greedy_ext = 101;
+  }
+}
+
