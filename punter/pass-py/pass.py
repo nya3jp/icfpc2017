@@ -34,6 +34,7 @@ def on_setup(punter_id, num_punters, map, options):
         'punter_id': punter_id,
         'num_punters': num_punters,
         'map': map,
+        'pass_count': 0,
     }
     return {'ready': punter_id, 'state': state}
 
@@ -42,6 +43,12 @@ def on_play(last_moves, state, options):
     delay = options.sleep_ms_in_play
     if delay is not None:
         time.sleep(delay / 1000.0)
+
+    if options.test_splurge:
+        if state['pass_count'] >= 4:
+            state['pass_count'] = 0
+            return {'splurge': {'punter': state['punter_id'], 'route': [1, 3, 5, 7, 0]}, 'state': state}
+        state['pass_count'] = state['pass_count'] + 1
 
     return {'pass': {'punter': state['punter_id']}, 'state': state}
 
@@ -56,6 +63,7 @@ def main():
     parser.add_option('--persistent', dest='persistent', default=None, action='store_true')
     parser.add_option('--sleep_ms_in_setup', dest='sleep_ms_in_setup', type='int', default=None)
     parser.add_option('--sleep_ms_in_play', dest='sleep_ms_in_play', type='int', default=None)
+    parser.add_option('--test_splurge', dest='test_splurge', action='store_true', default=None)
     options, args = parser.parse_args(sys.argv[1:])
 
     while True:
