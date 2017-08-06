@@ -75,7 +75,12 @@ def get_snapshot():
             punter_bin = f.read()
     except OSError:
         return None
-    return hashlib.md5(punter_bin).hexdigest()
+    punter_hash = hashlib.md5(punter_bin).hexdigest()
+
+    with open(os.path.join(BASE_DIR, 'lambdapark/settings.yaml')) as f:
+        settings_text = f.read()
+    settings_hash = hashlib.md5(settings_text).hexdigest()
+    return punter_hash + settings_hash
 
 
 def maybe_schedule(db):
