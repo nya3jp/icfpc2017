@@ -22,21 +22,7 @@ cc_library(
   deps = [
     "//third_party/chromiumbase",
   ],
-)
-
-cc_library(
-  name = "pass_punter",
-  srcs = [
-    "pass_punter.cc",
-  ],
-  hdrs = [
-    "pass_punter.h",
-  ],
-
-  deps = [
-    "//third_party/chromiumbase",
-    ":game",
-  ]
+  visibility = ["//visibility:public"]
 )
 
 cc_library(
@@ -54,24 +40,4 @@ cc_library(
     ":game_proto_cc_proto",
   ],
   visibility = ["//visibility:public"]
-)
-
-cc_binary(
-  name = "game_main",
-  srcs = [
-    "game_main.cc",
-  ],
-
-  deps = [
-    "//third_party/chromiumbase",
-    ":game",
-    ":pass_punter",
-    ":simple_punter",
-    "//punter:extension_example_punter",
-    "//punter:greedy_punter",
-    "//punter:greedy_punter_chun",
-    "//punter:greedy_to_jam",
-    "//punter:greedy_punter_mirac",
-    "//punter:random_punter",
-  ],
 )

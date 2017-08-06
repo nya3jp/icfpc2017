@@ -1,3 +1,38 @@
+cc_binary(
+  name = "punter",
+  srcs = [
+    "punter.cc",
+  ],
+
+  deps = [
+    ":extension_example_punter",
+    ":greedy_punter",
+    ":greedy_punter_chun",
+    ":greedy_punter_mirac",
+    ":greedy_to_jam",
+    ":pass_punter",
+    ":random_punter",
+    "//framework:game",
+    "//framework:simple_punter",
+    "//third_party/chromiumbase",
+  ],
+)
+
+cc_library(
+  name = "pass_punter",
+  srcs = [
+    "pass_punter.cc",
+  ],
+  hdrs = [
+    "pass_punter.h",
+  ],
+
+  deps = [
+    "//framework:game",
+    "//third_party/chromiumbase",
+  ],
+)
+
 cc_library(
   name = "random_punter",
   srcs = [
@@ -11,7 +46,6 @@ cc_library(
     "//third_party/chromiumbase",
     "//framework:simple_punter",
   ],
-  visibility = ["//visibility:public"]
 )
 
 cc_library(
@@ -27,7 +61,6 @@ cc_library(
     "//third_party/chromiumbase",
     "//framework:simple_punter",
   ],
-  visibility = ["//visibility:public"]
 )
 
 cc_library(
@@ -44,7 +77,6 @@ cc_library(
     "//third_party/chromiumbase",
     "//framework:simple_punter",
   ],
-  visibility = ["//visibility:public"]
 )
 
 cc_library(
@@ -60,7 +92,6 @@ cc_library(
     "//third_party/chromiumbase",
     "//framework:simple_punter",
   ],
-  visibility = ["//visibility:public"]
 )
 
 proto_library(
@@ -83,7 +114,6 @@ cc_library(
     "//framework:simple_punter",
     "//third_party/chromiumbase",
   ],
-  visibility = ["//visibility:public"]
 )
 
 cc_library(
@@ -100,5 +130,4 @@ cc_library(
     "//third_party/chromiumbase",
     "//framework:simple_punter",
   ],
-  visibility = ["//visibility:public"]
 )

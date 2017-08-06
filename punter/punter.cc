@@ -1,18 +1,16 @@
-#include "base/memory/ptr_util.h"
-
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "gflags/gflags.h"
 #include "base/logging.h"
-
+#include "base/memory/ptr_util.h"
 #include "framework/game.h"
-#include "framework/pass_punter.h"
+#include "gflags/gflags.h"
 #include "punter/extension_example_punter.h"
 #include "punter/greedy_punter.h"
 #include "punter/greedy_punter_chun.h"
 #include "punter/greedy_punter_mirac.h"
 #include "punter/greedy_to_jam.h"
+#include "punter/pass_punter.h"
 #include "punter/random_punter.h"
 
 using namespace framework;
