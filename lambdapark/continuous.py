@@ -135,9 +135,9 @@ def main(unused_argv):
     maybe_schedule(db)
     if FLAGS.oneoff:
         return
+    last_revision = get_revision()
     wait_for_idle(db)
     while True:
-        last_revision = get_revision()
         subprocess.call(['git', 'pull'])
         next_revision = get_revision()
         if next_revision != last_revision:
