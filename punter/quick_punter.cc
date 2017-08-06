@@ -24,8 +24,10 @@ void QuickPunter::SetUp(int punter_id, int num_punters, const framework::GameMap
   }
   for (auto& m : game_map.mines) {
     game_map_proto->add_mines()->set_site(m);
-    proto_.add_sites_connected_to_mine(m);
-    sites_connected_to_mine_.insert(m);
+    QuickPunterNodeColor* color_proto = proto_.add_node_color();
+    color_proto->set_site(m);
+    color_proto->set_mine(m);
+    node_color_.insert(std::make_pair(m, m));
   }
 }
 
@@ -41,11 +43,22 @@ framework::GameMove QuickPunter::Run(const std::vector<framework::GameMove>& mov
           (r->source() == move.target && r->target() == move.source)) {
         DCHECK(r->punter() == -1);
         r->set_punter(move.punter_id);
-        if (move.punter_id == proto_.punter_id()) {
-          if (sites_connected_to_mine_.insert(move.source).second)
-            proto_.add_sites_connected_to_mine(move.source);
-          if (sites_connected_to_mine_.insert(move.target).second)
-            proto_.add_sites_connected_to_mine(move.target);
+        if (move.punter_id != proto_.punter_id())
+          continue;
+        auto src_color = node_color_.find(move.source);
+        auto tgt_color = node_color_.find(move.target);
+        if (src_color != node_color_.end() &&
+            tgt_color == node_color_.end()) {
+          node_color_.insert(std::make_pair(move.target, src_color->second));
+          QuickPunterNodeColor* color_proto = proto_.add_node_color();
+          color_proto->set_site(move.target);
+          color_proto->set_mine(src_color->second);
+        } else if (src_color == node_color_.end() &&
+                   tgt_color != node_color_.end()) {
+          node_color_.insert(std::make_pair(move.source, tgt_color->second));
+          QuickPunterNodeColor* color_proto = proto_.add_node_color();
+          color_proto->set_site(move.source);
+          color_proto->set_mine(tgt_color->second);
         }
       }
     }
@@ -55,8 +68,13 @@ framework::GameMove QuickPunter::Run(const std::vector<framework::GameMove>& mov
   for (auto& r : game_map_proto->rivers()) {
     if (r.punter() != -1)
       continue;
-    if (sites_connected_to_mine_.count(r.source()) ||
-        sites_connected_to_mine_.count(r.target())) {
+    auto src_color = node_color_.find(r.source());
+    auto tgt_color = node_color_.find(r.target());
+
+    if ((src_color == node_color_.end() && tgt_color != node_color_.end()) ||
+        (src_color != node_color_.end() && tgt_color == node_color_.end()) ||
+        (src_color != node_color_.end() && tgt_color != node_color_.end() &&
+         src_color->second != tgt_color->second)) {
       return {framework::GameMove::Type::CLAIM, proto_.punter_id(),
           r.source(), r.target()};
     }
@@ -73,8 +91,8 @@ void QuickPunter::SetState(std::unique_ptr<base::Value> state_in) {
   CHECK(base::Base64Decode(b64_proto, &serialized));
   CHECK(proto_.ParseFromString(serialized));
 
-  for (int site : proto_.sites_connected_to_mine()) {
-    sites_connected_to_mine_.insert(site);
+  for (auto& node_color : proto_.node_color()) {
+    node_color_.insert(std::make_pair(node_color.site(), node_color.mine()));
   }
 }
 

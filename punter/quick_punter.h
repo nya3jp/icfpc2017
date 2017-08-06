@@ -1,7 +1,7 @@
 #ifndef PUNTER_QUICK_PUNTER_H_
 #define PUNTER_QUICK_PUNTER_H_
 
-#include <set>
+#include <map>
 #include "framework/game.h"
 #include "punter/quick_punter.pb.h"
 
@@ -18,8 +18,8 @@ class QuickPunter : public framework::Punter {
   std::unique_ptr<base::Value> GetState() override;
 
  private:
-  QuickPunerProto proto_;
-  std::set<int> sites_connected_to_mine_;
+  QuickPunterProto proto_;
+  std::map<int,int> node_color_;  // site-id -> mine-id
   
   DISALLOW_COPY_AND_ASSIGN(QuickPunter);
 };

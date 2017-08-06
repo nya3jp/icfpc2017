@@ -62,7 +62,7 @@ cc_library(
   deps = [
     ":quick_punter_cc_proto",
     "//third_party/chromiumbase",
-    "//framework:simple_punter",
+    "//framework:game",
   ],
 )
 
