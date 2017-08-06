@@ -70,16 +70,24 @@ class Map():
     def set_num_punters(self, num_punters):
         self._num_punters = num_punters
         for i in range(num_punters):
-            self.scores.append(0)
+            self.scores.append((0, 0))
 
     def set_futures(self, futures, punter_id):
         self._futures[punter_id] = futures
 
-    def calculate_score(self):
+    def calculate_score(self, done):
         for i in range(self._num_punters):
-            self.scores[i] = self._calculate_score_for_punter(i, self._futures.get(i))
+            self.scores[i] = self._calculate_score_for_punter(i, self._futures.get(i), done)
 
-    def _calculate_score_for_punter(self, punter, futures):
+        log = []
+        for x, y in self.scores:
+            if done:
+                log.append('%d' % x)
+            else:
+                log.append('%d+-%d' % (x, y))
+        self._debug('scores: %s' % ' '.join(log))
+
+    def _calculate_score_for_punter(self, punter, futures, done):
         punter_specific_adj = []
         for site in self.sites:
             punter_specific_adj.append([])
@@ -90,6 +98,7 @@ class Map():
                 punter_specific_adj[river[1]].append(river[0])
 
         score = 0
+        potential_change = 0
         for mine in self.mines:
             visited = {}
             score += self._calculate_score_for_punter_mine(visited, punter_specific_adj, mine, mine)
@@ -99,11 +108,15 @@ class Map():
                 if f['source'] == mine:
                     futures_target = f['target']
                     futures_score = self.distances[mine][futures_target] ** 3
-                    if visited.get(futures_target) is None:
-                        futures_score *= -1
                     self._debug('futures (punter %d, mine %d, target %d): %d' % (punter, mine, futures_target, futures_score))
-                    score += futures_score
-        return score
+                    if visited.get(futures_target) is None:
+                        if done:
+                            score -= futures_score
+                        else:
+                            potential_change += futures_score
+                    else:
+                        score += futures_score
+        return score, potential_change
 
     def _calculate_score_for_punter_mine(self, visited, punter_specific_adj, mine, v):
         if visited.get(v) is not None:
@@ -179,12 +192,12 @@ class Arena():
                     result += ('  %r\n' % (river,))
                 self._debug(result)
 
-                self._map.calculate_score()
+                self._map.calculate_score(True)
 
                 sys.stdout.write(
                     json.dumps(
                         {'moves': self._all_moves,
-                         'scores': self._map.scores}))
+                         'scores': [x for x, y in self._map.scores]}))
                 sys.stdout.write('\n')
                 sys.stdout.flush()
 
@@ -193,11 +206,14 @@ class Arena():
             punter = self._get_current_punter()
             punter.prompt_move({'move': {'moves': list(self._moves)}})
 
+            if self._options.log_score_every_step:
+                self._map.calculate_score(False)
+
             self._step += 1
 
     def done_setup(self, futures, punter_id):
-        #self._map.set_futures([{'source': 1, 'target': 6}], 1)
-        self._map.set_futures(futures, punter_id)
+        self._map.set_futures([{'source': 1, 'target': 6}], 1)
+        #self._map.set_futures(futures, punter_id)
 
     def done_move(self, message, punter_id, is_move, source, target, time_spent_ms):
         if is_move:
@@ -433,21 +449,28 @@ class OfflinePunterHost(FileEndpoint):
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
+
     parser.add_option('--map', dest='map_file')
     parser.add_option('--commands', type='string', dest='commands', default=None)
+
     # Include state in the move history to be output.
     parser.add_option('--include_state', action='store_true', dest='include_state')
     # Include time spent for each move in the move history.
     parser.add_option('--include_time', action='store_true', dest='include_time')
     # Include the original move in the move history when conflict happens.
     parser.add_option('--include_cause', action='store_true', dest='include_cause')
+
     parser.add_option('--feature_negotiation', action='store_true', dest='feature_negotiation')
     parser.add_option('--persistent', action='store_true', dest='persistent')
+
     parser.add_option('--log-level', '--log_level', type='choice',
                       dest='log_level', default='debug',
                       choices=['debug', 'info', 'warning', 'error',
                                'critical'],
                       help='Log level.')
+
+    parser.add_option('--log_score_every_step', action='store_true', dest='log_score_every_step')
+
     options, args = parser.parse_args(sys.argv[1:])
 
     logging.basicConfig()
