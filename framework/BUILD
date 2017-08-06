@@ -21,6 +21,7 @@ cc_library(
 
   deps = [
     "//third_party/chromiumbase",
+    "//common",
   ],
   visibility = ["//visibility:public"]
 )

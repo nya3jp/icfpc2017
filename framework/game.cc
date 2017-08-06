@@ -8,6 +8,7 @@
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/optional.h"
+#include "common/protocol.h"
 #include "gflags/gflags.h"
 
 DEFINE_string(name, "", "Punter name.");
@@ -16,40 +17,6 @@ DEFINE_bool(persistent, false, "If true, messages are repeatedly recieved");
 namespace framework {
 
 namespace {
-
-int ReadLeadingInt(FILE* file) {
-  char buf[10];
-  for (size_t i = 0; ; ++i) {
-    int c = fgetc(file);
-    if (!std::isdigit(c)) {
-      buf[i] = '\0';
-      break;
-    }
-    buf[i] = static_cast<char>(c);
-  }
-  return std::atoi(buf);
-}
-
-std::unique_ptr<base::Value> ReadContent(FILE* file) {
-  size_t size = ReadLeadingInt(file);
-  DLOG(INFO) << "size: " << size;
-  std::unique_ptr<char[]> buf(new char[size + 1]);
-  size_t len = fread(buf.get(), 1, size, file);
-  if (len != size)
-    return nullptr;
-  buf[size] = 0;
-  return base::JSONReader::Read(buf.get());
-}
-
-void WriteContent(FILE* file, const base::Value& content) {
-  std::string output;
-  CHECK(base::JSONWriter::Write(content, &output));
-  std::string length = std::to_string(output.size());
-  CHECK_EQ(length.size(), fwrite(length.c_str(), 1, length.size(), file));
-  fputc(':', file);
-  CHECK_EQ(output.size(), fwrite(output.c_str(), 1, output.size(), file));
-  fflush(file);
-}
 
 template<typename T>
 std::unique_ptr<base::Value> ToJson(const std::vector<T>& elements) {
@@ -220,9 +187,9 @@ bool Game::RunImpl() {
     base::DictionaryValue name;
     name.SetString("me", FLAGS_name);
     DLOG(INFO) << "Sending name: " << name;
-    WriteContent(stdout, name);
+    common::WriteMessage(stdout, name);
     DLOG(INFO) << "Reading name";
-    auto input = base::DictionaryValue::From(ReadContent(stdin));
+    auto input = base::DictionaryValue::From(common::ReadMessage(stdin));
     DLOG(INFO) << "Read name: " << *input;
     std::string you_name;
     CHECK(input->GetString("you", &you_name));
@@ -230,7 +197,7 @@ bool Game::RunImpl() {
   }
 
   // Set up or play.
-  auto input = base::DictionaryValue::From(ReadContent(stdin));
+  auto input = base::DictionaryValue::From(common::ReadMessage(stdin));
   if (input->HasKey("punter")) {
     // Set up.
     int punter_id;
@@ -257,7 +224,7 @@ bool Game::RunImpl() {
     } else {
       output.Set("state", punter_->GetState());
     }
-    WriteContent(stdout, output);
+    common::WriteMessage(stdout, output);
   } else if (input->HasKey("stop")) {
     // Game was over.
 #if DCHECK_IS_ON()
@@ -324,7 +291,7 @@ bool Game::RunImpl() {
       output.Set("state", punter_->GetState());
     }
 
-    WriteContent(stdout, output);
+    common::WriteMessage(stdout, output);
   }
 
   return false;
