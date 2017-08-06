@@ -37,7 +37,7 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
       scorer.Splurge(move.punter_id, move.route);
 
       // TODO: This is slow!
-      for (int i = 0; i + 1 < move.route.size(); ++i) {
+      for (size_t i = 0; i + 1U < move.route.size(); ++i) {
         int source = FindSiteIdxFromSiteId(move.route[i]);
         int target = FindSiteIdxFromSiteId(move.route[i + 1]);
 
@@ -58,7 +58,7 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
     out_move.source = sites_->Get(out_move.source).id();
     out_move.target = sites_->Get(out_move.target).id();
   } else if (out_move.type != GameMove::Type::SPLURGE) {
-    for (int i = 0; i < out_move.route.size(); ++i) {
+    for (size_t i = 0; i < out_move.route.size(); ++i) {
       out_move.route[i] = sites_->Get(out_move.route[i]).id();
     }
   } else {
@@ -71,7 +71,9 @@ void SimplePunter::SetUp(
     int punter_id, int num_punters, const GameMap& game_map) {
   punter_id_ = punter_id;
   num_punters_ = num_punters;
+
   GameMapProto* game_map_proto = proto_.mutable_game_map();
+
   for (const Site& s : game_map.sites) {
     SiteProto* site_proto = game_map_proto->add_sites();
     site_proto->set_id(s.id);
@@ -80,6 +82,7 @@ void SimplePunter::SetUp(
     }
   }
   sites_ = proto_.mutable_game_map()->mutable_sites();
+
   for (const River& r : game_map.rivers) {
     RiverProto* river_proto = game_map_proto->add_rivers();
     river_proto->set_source(r.source);
@@ -87,6 +90,7 @@ void SimplePunter::SetUp(
     river_proto->set_punter(-1);
   }
   rivers_ = proto_.mutable_game_map()->mutable_rivers();
+
   for (const int mine : game_map.mines) {
     MineProto* mine_proto = game_map_proto->add_mines();
     mine_proto->set_site(mine);
@@ -98,17 +102,21 @@ void SimplePunter::SetUp(
               return lhs.id() < rhs.id();
             });
   for (int i = 0; i < rivers_->size(); ++i) {
-    rivers_->Mutable(i)->set_source(FindSiteIdxFromSiteId(rivers_->Get(i).source()));
-    rivers_->Mutable(i)->set_target(FindSiteIdxFromSiteId(rivers_->Get(i).target()));
+    rivers_->Mutable(i)->set_source(
+        FindSiteIdxFromSiteId(rivers_->Get(i).source()));
+    rivers_->Mutable(i)->set_target(
+        FindSiteIdxFromSiteId(rivers_->Get(i).target()));
   }
   for (int i = 0; i < mines_->size(); ++i) {
-    mines_->Mutable(i)->set_site(FindSiteIdxFromSiteId(mines_->Get(i).site()));
+    mines_->Mutable(i)->set_site(
+        FindSiteIdxFromSiteId(mines_->Get(i).site()));
   }
 
   GenerateAdjacencyList();
   ComputeDistanceToMine();
 
-  SaveToProto();
+  proto_.set_punter_id(punter_id_);
+  proto_.set_num_punters(num_punters_);
 
   common::Scorer(proto_.mutable_scorer()).Initialize(num_punters, game_map);
 }
@@ -120,11 +128,6 @@ int SimplePunter::FindSiteIdxFromSiteId(int id) const {
       });
   DCHECK(it != sites_->end() && it->id() == id);
   return it - sites_->begin();
-}
-
-void SimplePunter::SaveToProto() {
-  proto_.set_punter_id(punter_id_);
-  proto_.set_num_punters(num_punters_);
 }
 
 void SimplePunter::GenerateAdjacencyList() {

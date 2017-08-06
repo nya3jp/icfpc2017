@@ -34,17 +34,22 @@ bool Game::RunImpl() {
   // Exchange name.
   DLOG(INFO) << "Exchanging name";
   {
-    base::DictionaryValue name;
-    name.SetString("me", FLAGS_name);
-    DLOG(INFO) << "Sending name: " << name;
-    common::WriteMessage(stdout, name);
-    DLOG(INFO) << "Reading name";
-    auto input = base::DictionaryValue::From(
-        common::ReadMessage(stdin, base::TimeDelta(), base::TimeTicks()));
-    DLOG(INFO) << "Read name: " << *input;
-    std::string you_name;
-    CHECK(input->GetString("you", &you_name));
-    CHECK_EQ(FLAGS_name, you_name);
+    {
+      base::DictionaryValue me_name;
+      me_name.SetString("me", FLAGS_name);
+      DLOG(INFO) << "Sending name: " << me_name;
+      common::WriteMessage(stdout, me_name);
+    }
+
+    {
+      DLOG(INFO) << "Reading name";
+      auto input = base::DictionaryValue::From(
+          common::ReadMessage(stdin, base::TimeDelta(), base::TimeTicks()));
+      DLOG(INFO) << "Read name: " << *input;
+      std::string you_name;
+      CHECK(input->GetString("you", &you_name));
+      CHECK_EQ(FLAGS_name, you_name);
+    }
   }
 
   auto input = base::DictionaryValue::From(

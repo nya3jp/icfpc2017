@@ -29,7 +29,6 @@ class SimplePunter : public Punter {
     return sites_->Get(site).to_mine(mine).distance();
   }
   int FindSiteIdxFromSiteId(int id) const;
-  void SaveToProto();
   void GenerateAdjacencyList();
   void GenerateSiteIdToSiteIndex();
   void ComputeDistanceToMine();
@@ -68,6 +67,7 @@ class SimplePunter : public Punter {
   }
 
   google::protobuf::RepeatedPtrField<SiteProto>* sites_;
+
   DISALLOW_COPY_AND_ASSIGN(SimplePunter);
 };
 
