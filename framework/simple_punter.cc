@@ -224,4 +224,33 @@ std::vector<int> SimplePunter::GetConnectedSiteList(
   return result;
 }
 
+bool SimplePunter::IsConnectable(
+    int punter_id, int site_index1, int site_index2) const {
+  std::vector<int> visited(edges_.size());
+  std::queue<int> q;
+  q.push(site_index1);
+  while (!q.empty()) {
+    int site_index = q.front();
+    q.pop();
+    for (const auto& edge : edges_[site_index]) {
+      const RiverProto& river = rivers_->Get(edge.river);
+      if (river.has_punter() && river.punter() != punter_id) {
+        // This river is already used. Skip it.
+        continue;
+      }
+      if (visited[edge.site]) {
+        // Already visited.
+        continue;
+      }
+      if (edge.site == site_index2) {
+        // Reached site_index2.
+        return true;
+      }
+      visited[edge.site] = true;
+      q.push(edge.site);
+    }
+  }
+  return false;
+}
+
 }  // namespace framework

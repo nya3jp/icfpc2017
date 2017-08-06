@@ -34,21 +34,9 @@ class SimplePunter : public Punter {
   void ComputeDistanceToMine();
 
  protected:
-  struct RiverWithPunter {
-    RiverWithPunter() = default;
-    RiverWithPunter(const River& r)
-      : source(r.source),
-        target(r.target),
-        punter(-1) {
-    }
-
-    int source;
-    int target;
-    int punter;
-  };
   struct Edge {
-    int site;
-    int river;
+    int site;  // site_index
+    int river;  // Index to RiverProto.
   };
 
   int GetScore(int punter_id) const;
@@ -56,6 +44,8 @@ class SimplePunter : public Punter {
   bool IsConnected(int punter_id, int site_index1, int site_index2) const;
   std::vector<int> GetConnectedMineList(int punter_id, int site_index) const;
   std::vector<int> GetConnectedSiteList(int punter_id, int site_index) const;
+
+  bool IsConnectable(int punter_id, int site_index1, int site_index2) const;
 
   int num_punters_ = -1;
   int punter_id_ = -1;
