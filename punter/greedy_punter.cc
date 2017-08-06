@@ -78,10 +78,10 @@ void GreedyPunter::ComputeLongestPath() {
 
       int site = last;
       for (int i = 0; i < length; i++) {
-        longest_path[length - i] = sites_[site].id;
+        longest_path[length - i] = site;
         site = dist_and_prev[site].second;
       }
-      longest_path[0] = sites_[site].id;
+      longest_path[0] = site;
     }
   }
   auto greedy_ext = proto_.MutableExtension(GreedyPunterProto::greedy_ext);
