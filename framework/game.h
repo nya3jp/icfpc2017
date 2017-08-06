@@ -80,9 +80,11 @@ class Game {
   Game(std::unique_ptr<Punter> punter);
   ~Game();
 
-  bool Run();
+  void Run();
 
  private:
+  bool RunImpl();
+
   std::unique_ptr<Punter> punter_;
 
   DISALLOW_COPY_AND_ASSIGN(Game);
