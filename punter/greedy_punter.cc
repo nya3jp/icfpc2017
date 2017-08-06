@@ -18,6 +18,20 @@ void GreedyPunter::SetUp(int punter_id, int num_punters, const framework::GameMa
   ComputeLongestPath();
 }
 
+std::vector<framework::Future> GreedyPunter::GetFutures() {
+  std::vector<framework::Future> futures;
+  int source = longest_path_[0];
+  // Target is the farthest non-mine site
+  for (int i = longest_path_.size() - 1; i > 0; i--) {
+    int target = longest_path_[i];
+    if (std::find(mines_.begin(), mines_.end(), target) == mines_.end()) {
+      futures.push_back({source, target});
+      break;
+    }
+  }
+  return futures;
+}
+
 void GreedyPunter::ComputeLongestPath() {
   size_t num_sites = sites_.size();
   size_t num_mines = mines_.size();
