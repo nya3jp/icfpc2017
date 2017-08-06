@@ -12,6 +12,7 @@
 #include "punter/greedy_to_jam.h"
 #include "punter/lazy_punter.h"
 #include "punter/pass_punter.h"
+#include "punter/quick_punter.h"
 #include "punter/random_punter.h"
 
 using namespace framework;
@@ -44,6 +45,8 @@ int main(int argc, char* argv[]) {
     punter = base::MakeUnique<RandomPunter>();
   else if (FLAGS_punter == "PassPunter")
     punter = base::MakeUnique<PassPunter>();
+  else if (FLAGS_punter == "QuickPunter")
+    punter = base::MakeUnique<QuickPunter>();
   else if (FLAGS_punter == "GreedyPunter")
     punter = base::MakeUnique<GreedyPunter>();
   else if (FLAGS_punter == "GreedyPunterChun")

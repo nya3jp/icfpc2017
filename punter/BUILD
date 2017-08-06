@@ -12,6 +12,7 @@ cc_binary(
     ":greedy_to_jam",
     ":lazy_punter",
     ":pass_punter",
+    ":quick_punter",
     ":random_punter",
     "//framework:game",
     "//framework:simple_punter",
@@ -47,6 +48,33 @@ cc_library(
     "//third_party/chromiumbase",
     "//framework:simple_punter",
   ],
+)
+
+cc_library(
+  name = "quick_punter",
+  srcs = [
+    "quick_punter.cc",
+  ],
+  hdrs = [
+    "quick_punter.h",
+  ],
+
+  deps = [
+    ":quick_punter_cc_proto",
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+)
+
+proto_library(
+  name = "quick_punter_proto",
+  srcs = ["quick_punter.proto"],
+  deps = [ "//framework:game_proto_proto" ],
+)
+
+cc_proto_library(
+  name = "quick_punter_cc_proto",
+  deps = ["quick_punter_proto"],
 )
 
 cc_library(

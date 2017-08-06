@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+import "framework/game_proto.proto";
+
+package punter;
+
+message QuickPunerProto {
+  optional int32 punter_id = 1;
+  optional framework.GameMapProto game_map = 2;
+  repeated int32 sites_connected_to_mine = 3;
+}
