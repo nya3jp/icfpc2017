@@ -229,4 +229,10 @@ int SimplePunter::TryClaim(
       punter_id, sites_[site_index1].id, sites_[site_index2].id);
 }
 
+bool SimplePunter::IsConnected(
+    int punter_id, int site_index1, int site_index2) const {
+  return common::Scorer(proto_.mutable_scorer()).IsConnected(
+      punter_id, sites_[site_index1].id, sites_[site_index2].id);
+}
+
 }  // namespace framework

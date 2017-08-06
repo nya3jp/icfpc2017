@@ -270,4 +270,10 @@ int Scorer::TryClaim(size_t punter_id, int site_id1, int site_id2) const {
   return score;
 }
 
+bool Scorer::IsConnected(size_t punter_id, int site_id1, int site_id2) const {
+  return UnionFindSet(data_->mutable_scores(punter_id)).IsConnected(
+      GetIndex(data_->site_ids(), site_id1),
+      GetIndex(data_->site_ids(), site_id2));
+}
+
 }  // namespace stadium
