@@ -17,7 +17,7 @@
   padding: 0 8px;
 }
 .punter {
-  width: 200px;
+  vertical-align: middle !important;
 }
 .cell {
   text-align: center;
@@ -38,7 +38,7 @@ a.textlike {
   <button>Go</button>
 </form>
 
-<table class="table table-bordered">
+<table class="table table-bordered table-condensed">
   <thead>
     <tr>
       <th class="punter"></th>
@@ -62,9 +62,9 @@ a.textlike {
       <th class="punter"></th>
       {% for info in infos %}
       <td class="cell" style="font-size: 10px">
-        S={{ info.num_sites }}<br>
-        R={{ info.num_rivers }}<br>
-        M={{ info.num_mines }}
+        {{ info.num_sites }}<br>
+        {{ info.num_rivers }}<br>
+        {{ info.num_mines }}
       </td>
       {% endfor %}
     </tr>
