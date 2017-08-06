@@ -12,81 +12,6 @@ def serialize(o):
     return ('%d:%s' % (len(data), data)).encode('utf-8')
 
 
-def calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distances, v):
-    if visited.get(v) is not None:
-        return 0
-
-    visited[v] = True
-    base_score = distances[mine][v]
-    score = base_score ** 2
-    for j in punter_specific_adj[v]:
-        score += calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distances, j)
-    return score
-
-
-def calculate_score_for_punter(punter, sites, mines, rivers, distances, futures):
-    punter_specific_adj = []
-    for site in sites:
-        punter_specific_adj.append([])
-
-    for river in rivers:
-        if river[2] is not None and river[2] == punter:
-            punter_specific_adj[river[0]].append(river[1])
-            punter_specific_adj[river[1]].append(river[0])
-
-    score = 0
-    for mine in mines:
-        visited = {}
-        score += calculate_score_for_punter_mine(visited, punter_specific_adj, mine, distances, mine)
-        if futures is None:
-            continue
-        for f in futures:
-            if f['source'] == mine:
-                futures_target = f['target']
-                futures_score = distances[mine][futures_target] ** 3
-                if visited.get(futures_target) is None:
-                    score -= futures_score
-                else:
-                    score += futures_score
-    return score
-
-
-def calculate_score(num_punters, sites, mines, rivers, futures):
-    adj = []
-    for site in sites:
-        l = []
-        adj.append(l)
-
-    for river in rivers:
-        adj[river[0]].append(river[1])
-        adj[river[1]].append(river[0])
-
-    distances = {}
-    for mine in mines:
-        l = []
-        for site in sites:
-            l.append(float('inf'))
-        distances[mine] = l
-
-        visited = {}
-        visited[mine] = True
-        distances[mine][mine] = 0
-        queue = collections.deque([(mine, 0)])
-        while len(queue) > 0:
-            v, d = queue.popleft()
-            for j in adj[v]:
-                if visited.get(j) is not None:
-                    continue
-                visited[j] = True
-                distances[mine][j] = d + 1
-                queue.append((j, d + 1))
-
-    scores = []
-    for punter in range(num_punters):
-        scores.append(calculate_score_for_punter(punter, sites, mines, rivers, distances, futures.get(punter)))
-    return scores
-
-
 class Map():
     def __init__(self, map_data):
         self.sites = []
@@ -95,15 +20,87 @@ class Map():
 
         self.mines = map_data['mines']
 
+        adj = []
+        for site in self.sites:
+            l = []
+            adj.append(l)
+
         self.rivers = []
         for river in map_data['rivers']:
             source = river['source']
             target = river['target']
+
+            adj[source].append(target)
+            adj[target].append(source)
+
             if source > target:
                 tmp = source
                 source = target
                 target = tmp
             self.rivers.append((source, target, None))
+
+        self.distances = {}
+        for mine in self.mines:
+            l = []
+            for site in self.sites:
+                l.append(float('inf'))
+            self.distances[mine] = l
+
+            visited = {}
+            visited[mine] = True
+            self.distances[mine][mine] = 0
+            queue = collections.deque([(mine, 0)])
+            while len(queue) > 0:
+                v, d = queue.popleft()
+                for j in adj[v]:
+                    if visited.get(j) is not None:
+                        continue
+                    visited[j] = True
+                    self.distances[mine][j] = d + 1
+                    queue.append((j, d + 1))
+
+        self.scores = []
+
+    def calculate_score(self, num_punters, futures):
+        for i in range(num_punters):
+            self.scores.append(self._calculate_score_for_punter(i, futures.get(punter)))
+
+    def _calculate_score_for_punter(self, punter, futures):
+        punter_specific_adj = []
+        for site in self.sites:
+            punter_specific_adj.append([])
+
+        for river in self.rivers:
+            if river[2] is not None and river[2] == punter:
+                punter_specific_adj[river[0]].append(river[1])
+                punter_specific_adj[river[1]].append(river[0])
+
+        score = 0
+        for mine in self.mines:
+            visited = {}
+            score += self._calculate_score_for_punter_mine(visited, punter_specific_adj, mine, mine)
+            if futures is None:
+                continue
+            for f in futures:
+                if f['source'] == mine:
+                    futures_target = f['target']
+                    futures_score = self.distances[mine][futures_target] ** 3
+                    if visited.get(futures_target) is None:
+                        score -= futures_score
+                    else:
+                        score += futures_score
+        return score
+
+    def _calculate_score_for_punter_mine(self, visited, punter_specific_adj, mine, v):
+        if visited.get(v) is not None:
+            return 0
+
+        visited[v] = True
+        base_score = self.distances[mine][v]
+        score = base_score ** 2
+        for j in punter_specific_adj[v]:
+            score += self._calculate_score_for_punter_mine(visited, punter_specific_adj, mine, j)
+        return score
 
 
 class Arena():
@@ -169,15 +166,12 @@ class Arena():
                     result += ('  %r\n' % (river,))
                 self._debug(result)
 
+                self._map.calculate_score(self._num_punters, self._futures)
+
                 sys.stdout.write(
                     json.dumps(
                         {'moves': self._all_moves,
-                         'scores': calculate_score(
-                             self._num_punters,
-                             self._map.sites,
-                             self._map.mines,
-                             self._map.rivers,
-                             self._futures)}))
+                         'scores': self._map.scores}))
                 sys.stdout.write('\n')
                 sys.stdout.flush()
 
