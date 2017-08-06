@@ -5,6 +5,7 @@
 #include "base/memory/ptr_util.h"
 #include "framework/game.h"
 #include "gflags/gflags.h"
+#include "punter/benkei.h"
 #include "punter/extension_example_punter.h"
 #include "punter/greedy_punter.h"
 #include "punter/greedy_punter_chun.h"
@@ -14,7 +15,7 @@
 #include "punter/pass_punter.h"
 #include "punter/quick_punter.h"
 #include "punter/random_punter.h"
-#include "punter/benkei.h"
+#include "punter/simulating_punter.h"
 
 using namespace framework;
 using namespace punter;
@@ -62,6 +63,8 @@ int main(int argc, char* argv[]) {
     punter = base::MakeUnique<LazyPunter>();
   else if (FLAGS_punter == "Benkei")
     punter = base::MakeUnique<Benkei>();
+  else if (FLAGS_punter == "SimulatingPunter")
+    punter = base::MakeUnique<SimulatingPunter>();
   else
     LOG(FATAL) << "invalid punter name: " << FLAGS_punter;
   Game game(std::move(punter));

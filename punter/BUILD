@@ -10,6 +10,7 @@ cc_binary(
     ":greedy_punter_chun",
     ":greedy_punter_mirac",
     ":greedy_to_jam",
+    ":simulating_punter",
     ":lazy_punter",
     ":pass_punter",
     ":quick_punter",
@@ -214,5 +215,16 @@ cc_library(
     "//third_party/chromiumbase",
     "//framework:simple_punter",
     ":greedy_punter_mirac",
+  ],
+)
+
+cc_library(
+  name = "simulating_punter",
+  srcs = [ "simulating_punter.cc" ],
+  hdrs = [ "simulating_punter.h" ],
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+    ":random_punter"
   ],
 )
