@@ -122,6 +122,7 @@ def process_job(job, all_punters):
 
     result.update({
         'job': job.copy(),
+        'num_punters': len(job['punters']),
         'start_time': start_time,
         'duration': end_time - start_time,
     })
@@ -133,7 +134,7 @@ def process_job(job, all_punters):
 
     report = {
         key: result[key]
-        for key in ('job', 'error', 'scores', 'start_time', 'duration')
+        for key in ('job', 'num_punters', 'error', 'scores', 'start_time', 'duration')
     }
     return report
 
@@ -183,6 +184,7 @@ def main(unused_argv):
             error = traceback.format_exc().encode('utf-8')
             report = {
                 'job': job,
+                'num_punters': len(job['punters']),
                 'error': error,
                 'scores': None,
                 'start_time': start_time,
