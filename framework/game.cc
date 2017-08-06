@@ -31,6 +31,8 @@ void Game::Run() {
 bool Game::RunImpl() {
   DLOG(INFO) << "Game::Run";
 
+  punter_->OnInit();
+
   // Exchange name.
   DLOG(INFO) << "Exchanging name";
   {

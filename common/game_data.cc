@@ -226,6 +226,11 @@ std::vector<GameMove> GameMoves::FromJson(const base::ListValue& value) {
   return result;
 }
 
+std::unique_ptr<base::Value> GameMoves::ToJson(
+    const std::vector<GameMove>& moves) {
+  return common::ToJson(moves);
+}
+
 std::unique_ptr<base::Value> Futures::ToJson(
     const std::vector<Future>& futures) {
   return common::ToJson(futures);

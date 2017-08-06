@@ -12,6 +12,7 @@
 #include "punter/greedy_punter_mirac.h"
 #include "punter/greedy_to_jam.h"
 #include "punter/lazy_punter.h"
+#include "punter/meta_punter.h"
 #include "punter/pass_punter.h"
 #include "punter/quick_punter.h"
 #include "punter/random_punter.h"
@@ -65,6 +66,8 @@ int main(int argc, char* argv[]) {
     punter = base::MakeUnique<Benkei>();
   else if (FLAGS_punter == "SimulatingPunter")
     punter = base::MakeUnique<SimulatingPunter>();
+  else if (FLAGS_punter == "MetaPunter")
+    punter = base::MakeUnique<MetaPunter>();
   else
     LOG(FATAL) << "invalid punter name: " << FLAGS_punter;
   Game game(std::move(punter));

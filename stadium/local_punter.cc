@@ -76,40 +76,7 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
   auto request = base::MakeUnique<base::DictionaryValue>();
   {
     auto action_dict = base::MakeUnique<base::DictionaryValue>();
-    {
-      auto moves_list = base::MakeUnique<base::ListValue>();
-      for (const Move& move : moves) {
-        auto move_dict = base::MakeUnique<base::DictionaryValue>();
-        switch (move.type) {
-          case Move::Type::PASS:
-            {
-              auto pass_dict = base::MakeUnique<base::DictionaryValue>();
-              pass_dict->SetInteger("punter", move.punter_id);
-              move_dict->Set("pass", std::move(pass_dict));
-            }
-            break;
-          case Move::Type::CLAIM:
-            {
-              auto claim_dict = base::MakeUnique<base::DictionaryValue>();
-              claim_dict->SetInteger("punter", move.punter_id);
-              claim_dict->SetInteger("source", move.source);
-              claim_dict->SetInteger("target", move.target);
-              move_dict->Set("claim", std::move(claim_dict));
-            }
-            break;
-          case Move::Type::SPLURGE:
-            {
-              auto splurge_dict = base::MakeUnique<base::DictionaryValue>();
-              splurge_dict->SetInteger("punter", move.punter_id);
-              splurge_dict->Set("route", common::ToJson(move.route));
-              move_dict->Set("splurge", std::move(splurge_dict));
-            }
-            break;
-        }
-        moves_list->Append(std::move(move_dict));
-      }
-      action_dict->Set("moves", std::move(moves_list));
-    }
+    action_dict->Set("moves", GameMoves::ToJson(moves));
     request->Set("move", std::move(action_dict));
     request->Set("state", state_->CreateDeepCopy());
   }

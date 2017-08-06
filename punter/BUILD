@@ -10,6 +10,7 @@ cc_binary(
     ":greedy_punter_chun",
     ":greedy_punter_mirac",
     ":greedy_to_jam",
+    ":meta_punter",
     ":simulating_punter",
     ":lazy_punter",
     ":pass_punter",
@@ -226,5 +227,15 @@ cc_library(
     "//third_party/chromiumbase",
     "//framework:simple_punter",
     ":random_punter"
+  ],
+)
+
+cc_library(
+  name = "meta_punter",
+  srcs = [ "meta_punter.cc" ],
+  hdrs = [ "meta_punter.h" ],
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:game",
   ],
 )

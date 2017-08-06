@@ -21,6 +21,9 @@ class Punter {
  public:
   virtual ~Punter() = default;
 
+  // Called for each run, before ping message exchanging.
+  virtual void OnInit() {}
+
   virtual void SetUp(const common::SetUpData& args) = 0;
   virtual std::vector<Future> GetFutures() {
     return {};
