@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Job {{ job_id }}</h2>
+
+<table class="table">
+  <tbody>
+    <tr>
+      <th>Map</th>
+      <td>
+        {{ report.job.map }}
+      </td>
+    </tr>
+    <tr>
+      <th>Ranking</th>
+      <td>
+        {% if report.injected_sorted_punters %}
+        {% for punter in report.injected_sorted_punters %}
+        {{ punter.name }}: {{ punter.score }}{% if not loop.last %}<br>{% endif %}
+        {% endfor %}
+        {% endif %}
+      </td>
+    </tr>
+    <tr>
+      <th>Start Time</th>
+      <td>
+        <a href="/job/{{ report.job._id }}/">{{ report.injected_start_time }}</a>
+      </td>
+    </tr>
+    <tr>
+      <th>Duration</th>
+      <td>
+        {{ '{:.1f}'.format(report.duration) }}s
+      </td>
+    </tr>
+    <tr>
+      <th>Links</th>
+      <td>
+        <a href="/job/{{ job_id }}.json">Results JSON</a>
+      </td>
+    </tr>
+    <tr>
+      <th>Stadium Log</th>
+      <td>
+        <pre>{{ log }}</pre>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+{% endblock %}
