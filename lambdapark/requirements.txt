@@ -1,5 +1,9 @@
+bottle
+jinja2
+paste
 pymongo
 python-gflags
+pytz
 pyyaml
 six
 ujson

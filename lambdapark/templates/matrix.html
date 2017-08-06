@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th></th>
+      {% for map in maps %}
+      <th>{{ map }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for punter in punters %}
+    <tr>
+      <th>{{ punter }}</th>
+      {% for map in maps %}
+      {% set cell = matrix[(map, punter)] %}
+      <td class="{{ cell.best and 'info' }}">
+        {{ '{:.1f}'.format(cell.avg) }} ({{ cell.count }})
+      </td>
+      {% endfor %}
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

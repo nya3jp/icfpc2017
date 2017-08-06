@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Time</th>
+      <th>Duration</th>
+      <th>Label</th>
+      <th>Map</th>
+      <th>Results</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for report in reports %}
+    <tr>
+      <td>
+        <a href="/job/{{ report.job._id }}/">{{ report.injected_start_time }}</a>
+      </td>
+      <td>
+        {{ '{:.1f}'.format(report.duration) }}s
+      </td>
+      <td>
+        {{ report.job.label }}
+      </td>
+      <td>
+        {{ report.job.map }}
+      </td>
+      <td>
+        {% if report.injected_sorted_punters %}
+        {% for punter in report.injected_sorted_punters %}
+        {{ punter.name }}({{ punter.score }}){% if not loop.last %},{% endif %}
+        {% endfor %}
+        {% else %}
+        {{ error|truncate(60) }}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
