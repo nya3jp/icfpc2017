@@ -13,7 +13,9 @@ def serialize(o):
 
 
 class Map():
-    def __init__(self, map_data):
+    def __init__(self, map_data, logger):
+        self._logger = logger
+
         self.sites = []
         for site in map_data['sites']:
             self.sites.append(site['id'])
@@ -62,6 +64,9 @@ class Map():
         self.scores = []
         self._futures = {}
 
+    def _debug(self, s):
+        self._logger.debug('Map: %s' % s)
+
     def set_num_punters(self, num_punters):
         self._num_punters = num_punters
         for i in range(num_punters):
@@ -72,7 +77,7 @@ class Map():
 
     def calculate_score(self):
         for i in range(self._num_punters):
-            self.scores[i] = self._calculate_score_for_punter(i, self._futures.get(punter))
+            self.scores[i] = self._calculate_score_for_punter(i, self._futures.get(i))
 
     def _calculate_score_for_punter(self, punter, futures):
         punter_specific_adj = []
@@ -95,9 +100,9 @@ class Map():
                     futures_target = f['target']
                     futures_score = self.distances[mine][futures_target] ** 3
                     if visited.get(futures_target) is None:
-                        score -= futures_score
-                    else:
-                        score += futures_score
+                        futures_score *= -1
+                    self._debug('futures (punter %d, mine %d, target %d): %d' % (punter, mine, futures_target, futures_score))
+                    score += futures_score
         return score
 
     def _calculate_score_for_punter_mine(self, visited, punter_specific_adj, mine, v):
@@ -122,7 +127,7 @@ class Arena():
 
         self._punters = {}
 
-        self._map = Map(map_data)
+        self._map = Map(map_data, logger)
         self._num_rivers = len(self._map.rivers)
 
     def _debug(self, s):
@@ -191,6 +196,7 @@ class Arena():
             self._step += 1
 
     def done_setup(self, futures, punter_id):
+        #self._map.set_futures([{'source': 1, 'target': 6}], 1)
         self._map.set_futures(futures, punter_id)
 
     def done_move(self, message, punter_id, is_move, source, target, time_spent_ms):
@@ -337,7 +343,6 @@ class OfflinePunterHost(FileEndpoint):
             self._game_state = message.get('state')
 
             self._arena.done_setup(message.get('futures'), self._punter_id)
-            #self._arena.done_setup([{'source': 1, 'target': 5}], self._punter_id)
         elif self._handling_move:
             self._handling_move = False
 
