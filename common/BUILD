@@ -14,13 +14,15 @@ cc_library(
   name = "common",
   srcs = [
     "game_data.cc",
-    "scorer.cc",
+    "popen.cc",
     "protocol.cc",
+    "scorer.cc",
   ],
   hdrs = [
     "game_data.h",
-    "scorer.h",
+    "popen.h",
     "protocol.h",
+    "scorer.h",
   ],
   deps = [
     "//third_party/chromiumbase",

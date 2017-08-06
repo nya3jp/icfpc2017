@@ -1,5 +1,5 @@
-#ifndef STADIUM_POPEN_H_
-#define STADIUM_POPEN_H_
+#ifndef COMMON_POPEN_H_
+#define COMMON_POPEN_H_
 
 #include <stdio.h>
 #include <unistd.h>
@@ -9,7 +9,7 @@
 #include "base/macros.h"
 #include "base/files/scoped_file.h"
 
-namespace stadium {
+namespace common {
 
 class Popen {
  public:
@@ -29,6 +29,6 @@ class Popen {
   DISALLOW_COPY_AND_ASSIGN(Popen);
 };
 
-}  // namespace stadium
+}  // namespace common
 
-#endif  // STADIUM_POPEN_H_
+#endif  // COMMON_POPEN_H_

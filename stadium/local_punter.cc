@@ -21,7 +21,7 @@ DEFINE_bool(persistent, false, "Do not kill child process for each turn.");
 
 namespace stadium {
 
-void InitializeSubprocess(Popen* subprocess) {
+void InitializeSubprocess(common::Popen* subprocess) {
   base::SetNonBlocking(fileno(subprocess->stdout_read()));
 }
 
@@ -29,7 +29,7 @@ LocalPunter::LocalPunter(const std::string& shell)
     : shell_(shell) {
   if (!FLAGS_persistent)
     return;
-  subprocess_ = base::MakeUnique<Popen>(shell_ + " --persistent");
+  subprocess_ = base::MakeUnique<common::Popen>(shell_ + " --persistent");
   InitializeSubprocess(subprocess_.get());
 }
 
@@ -65,7 +65,7 @@ PunterInfo LocalPunter::Setup(int punter_id,
     response = base::DictionaryValue::From(
         RunProcess(subprocess_.get(), *request, &name, base::TimeDelta::FromSeconds(10)));
   } else {
-    Popen subprocess(shell_);
+    common::Popen subprocess(shell_);
     InitializeSubprocess(&subprocess);
 
     response = base::DictionaryValue::From(
@@ -139,7 +139,7 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
     response = base::DictionaryValue::From(
         RunProcess(subprocess_.get(), *request, nullptr, base::TimeDelta::FromSeconds(1)));
   } else {
-    Popen subprocess(shell_);
+    common::Popen subprocess(shell_);
     InitializeSubprocess(&subprocess);
 
     response = base::DictionaryValue::From(
@@ -155,7 +155,7 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
 }
 
 std::unique_ptr<base::Value> LocalPunter::RunProcess(
-    Popen* subprocess,
+    common::Popen* subprocess,
     const base::DictionaryValue& request,
     std::string* out_name,
     const base::TimeDelta& timeout) {

@@ -7,7 +7,7 @@
 #include "base/macros.h"
 #include "base/values.h"
 #include "base/time/time.h"
-#include "stadium/popen.h"
+#include "common/popen.h"
 #include "stadium/punter.h"
 
 namespace stadium {
@@ -25,7 +25,7 @@ class LocalPunter : public Punter {
 
  private:
   std::unique_ptr<base::Value> RunProcess(
-      Popen* subprocess,
+      common::Popen* subprocess,
       const base::DictionaryValue& request,
       std::string* out_name,
       const base::TimeDelta& timeout);
@@ -34,7 +34,7 @@ class LocalPunter : public Punter {
 
   int punter_id_;
   std::unique_ptr<base::Value> state_;
-  std::unique_ptr<Popen> subprocess_;
+  std::unique_ptr<common::Popen> subprocess_;
 
   DISALLOW_COPY_AND_ASSIGN(LocalPunter);
 };

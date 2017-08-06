@@ -1,4 +1,4 @@
-#include "stadium/popen.h"
+#include "common/popen.h"
 
 #include <signal.h>
 #include <sys/types.h>
@@ -9,7 +9,7 @@
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
 
-namespace stadium {
+namespace common {
 
 namespace {
 
@@ -76,4 +76,4 @@ void Popen::Wait() {
   CHECK_EQ(pid_, waitpid(pid_, &status, 0));
 }
 
-}  // namespace stadium
+}  // namespace common
