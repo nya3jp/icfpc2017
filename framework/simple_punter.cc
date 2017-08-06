@@ -266,4 +266,13 @@ std::vector<int> SimplePunter::Simulate(const std::vector<GameMove>& moves)
   return common::Scorer(proto_.mutable_scorer()).Simulate(orig_move);
 }
 
+int SimplePunter::GetClaimingPunter(int site_index1, int site_index2) const {
+  for (const auto& edge : edges_[site_index1]) {
+    if (edge.site == site_index2) {
+      return rivers_->Get(edge.river).punter();
+    }
+  }
+  return -2;
+}
+
 }  // namespace framework
