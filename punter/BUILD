@@ -14,6 +14,7 @@ cc_binary(
     ":pass_punter",
     ":quick_punter",
     ":random_punter",
+    ":benkei",
     "//framework:game",
     "//framework:simple_punter",
     "//third_party/chromiumbase",
@@ -185,5 +186,33 @@ cc_library(
   deps = [
     "//third_party/chromiumbase",
     "//framework:simple_punter",
+  ],
+)
+
+proto_library(
+  name = "benkei_proto",
+  srcs = ["benkei.proto"],
+  deps = [ "//framework:game_proto_proto" ],
+)
+
+cc_proto_library(
+  name = "benkei_cc_proto",
+  deps = ["benkei_proto"],
+)
+
+cc_library(
+  name = "benkei",
+  srcs = [
+    "benkei.cc",
+  ],
+  hdrs = [
+    "benkei.h",
+  ],
+
+  deps = [
+    ":benkei_cc_proto",
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+    ":greedy_punter_mirac",
   ],
 )

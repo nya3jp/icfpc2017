@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+import "framework/game_proto.proto";
+
+package punter;
+
+message BenkeiProto {
+  repeated int32 chokepoints = 1;
+
+  extend framework.GameStateProto {
+    optional BenkeiProto benkei_ext = 102;
+  }
+}
+

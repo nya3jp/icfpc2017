@@ -14,6 +14,7 @@
 #include "punter/pass_punter.h"
 #include "punter/quick_punter.h"
 #include "punter/random_punter.h"
+#include "punter/benkei.h"
 
 using namespace framework;
 using namespace punter;
@@ -59,6 +60,8 @@ int main(int argc, char* argv[]) {
     punter = base::MakeUnique<GreedyPunterMirac>();
   else if (FLAGS_punter == "LazyPunter")
     punter = base::MakeUnique<LazyPunter>();
+  else if (FLAGS_punter == "Benkei")
+    punter = base::MakeUnique<Benkei>();
   else
     LOG(FATAL) << "invalid punter name: " << FLAGS_punter;
   Game game(std::move(punter));
