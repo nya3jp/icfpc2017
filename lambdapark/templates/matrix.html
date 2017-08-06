@@ -25,14 +25,14 @@
 </style>
 
 <div class="well">
-  {% for l in labels %}
   <form action="/" method="GET">
     <select name="label">
+      {% for l in labels %}
       <option value="{{ l }}" {% if l == label %}selected="selected"{% endif %}>{{ l }}</option>
+      {% endfor %}
     </select>
     <button>Go</button>
   </form>
-  {% endfor %}
 </div>
 
 <table class="table table-bordered">
