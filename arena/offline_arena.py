@@ -334,8 +334,8 @@ class OfflinePunterHost(FileEndpoint):
 
             self._game_state = message.get('state')
 
-            #self._arena.done_setup(message.get('futures'), self._punter_id)
-            self._arena.done_setup([{'source': 1, 'target': 5}], self._punter_id)
+            self._arena.done_setup(message.get('futures'), self._punter_id)
+            #self._arena.done_setup([{'source': 1, 'target': 5}], self._punter_id)
         elif self._handling_move:
             self._handling_move = False
 
