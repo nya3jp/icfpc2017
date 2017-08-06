@@ -11,6 +11,7 @@
 #include "gflags/gflags.h"
 
 DEFINE_string(name, "", "Punter name.");
+DEFINE_bool(persistent, false, "If true, messages are repeatedly recieved");
 
 namespace framework {
 
@@ -203,7 +204,14 @@ Game::Game(std::unique_ptr<Punter> punter)
     : punter_(std::move(punter)) {}
 Game::~Game() = default;
 
-bool Game::Run() {
+void Game::Run() {
+  do {
+    if (RunImpl())
+      break;
+  } while (FLAGS_persistent);
+}
+
+bool Game::RunImpl() {
   DLOG(INFO) << "Game::Run";
 
   // Exchange name.
@@ -244,7 +252,11 @@ bool Game::Run() {
         is_futures) {
       output.Set("futures", framework::ToJson(punter_->GetFutures()));
     }
-    output.Set("state", punter_->GetState());
+    if (FLAGS_persistent) {
+      output.Set("state", base::MakeUnique<base::Value>());
+    } else {
+      output.Set("state", punter_->GetState());
+    }
     WriteContent(stdout, output);
   } else if (input->HasKey("stop")) {
     // Game was over.
@@ -285,9 +297,11 @@ bool Game::Run() {
     std::vector<GameMove> moves;
     FromJson(*moves_value, &moves);
 
-    std::unique_ptr<base::Value> state;
-    CHECK(input->Remove("state", &state));
-    punter_->SetState(std::move(state));
+    if (!FLAGS_persistent) {
+      std::unique_ptr<base::Value> state;
+      CHECK(input->Remove("state", &state));
+      punter_->SetState(std::move(state));
+    }
 
     GameMove result = punter_->Run(moves);
 
@@ -304,7 +318,11 @@ bool Game::Run() {
       pass->SetInteger("punter", result.punter_id);
       output.Set("pass", std::move(pass));
     }
-    output.Set("state", punter_->GetState());
+    if (FLAGS_persistent) {
+      output.Set("state", base::MakeUnique<base::Value>());
+    } else {
+      output.Set("state", punter_->GetState());
+    }
 
     WriteContent(stdout, output);
   }

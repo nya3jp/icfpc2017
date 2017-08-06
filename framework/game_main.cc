@@ -19,7 +19,6 @@ using namespace framework;
 using namespace punter;
 
 DEFINE_string(punter, "RandomPunter", "Punter class.");
-DEFINE_bool(persistent, false, "If true, messages are repeatedly recieved");
 
 namespace {
 
@@ -41,26 +40,23 @@ int main(int argc, char* argv[]) {
   SetBlocking(1);
   SetBlocking(2);
 
-  do {
-    std::unique_ptr<Punter> punter;
-    if (FLAGS_punter == "RandomPunter")
-      punter = base::MakeUnique<RandomPunter>();
-    else if (FLAGS_punter == "PassPunter")
-      punter = base::MakeUnique<PassPunter>();
-    else if (FLAGS_punter == "GreedyPunter")
-      punter = base::MakeUnique<GreedyPunter>();
-    else if (FLAGS_punter == "GreedyPunterChun")
-      punter = base::MakeUnique<GreedyPunterChun>();
-    else if (FLAGS_punter == "ExtensionExamplePunter")
-      punter = base::MakeUnique<ExtensionExamplePunter>();
-    else if (FLAGS_punter == "GreedyToJam")
-      punter = base::MakeUnique<GreedyToJam>();
-    else if (FLAGS_punter == "GreedyPunterMirac")
-      punter = base::MakeUnique<GreedyPunterMirac>();
-    else
-      LOG(FATAL) << "invalid punter name: " << FLAGS_punter;
-    Game game(std::move(punter));
-    if (game.Run())
-      break;
-  } while (FLAGS_persistent);
+  std::unique_ptr<Punter> punter;
+  if (FLAGS_punter == "RandomPunter")
+    punter = base::MakeUnique<RandomPunter>();
+  else if (FLAGS_punter == "PassPunter")
+    punter = base::MakeUnique<PassPunter>();
+  else if (FLAGS_punter == "GreedyPunter")
+    punter = base::MakeUnique<GreedyPunter>();
+  else if (FLAGS_punter == "GreedyPunterChun")
+    punter = base::MakeUnique<GreedyPunterChun>();
+  else if (FLAGS_punter == "ExtensionExamplePunter")
+    punter = base::MakeUnique<ExtensionExamplePunter>();
+  else if (FLAGS_punter == "GreedyToJam")
+    punter = base::MakeUnique<GreedyToJam>();
+  else if (FLAGS_punter == "GreedyPunterMirac")
+    punter = base::MakeUnique<GreedyPunterMirac>();
+  else
+    LOG(FATAL) << "invalid punter name: " << FLAGS_punter;
+  Game game(std::move(punter));
+  game.Run();
 }
