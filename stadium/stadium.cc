@@ -34,7 +34,7 @@ std::unique_ptr<Punter> MakePunterFromCommandLine(const std::string& arg) {
 }
 
 void Main(int argc, char** argv) {
-  Map map = Map::ReadFromFileOrDie(FLAGS_map);
+  Map map = ReadMapFromFileOrDie(FLAGS_map);
 
   if (argc == 1) {
     LOG(FATAL) << "No punter argument specified!";

@@ -17,7 +17,7 @@ PunterInfo RemotePunter::Setup(int punter_id,
 
 Move RemotePunter::OnTurn(const std::vector<Move>& moves) {
   LOG(ERROR) << "NOT IMPLEMENTED";
-  return Move::MakePass(punter_id_);
+  return Move::Pass(punter_id_);
 }
 
 }  // namespace stadium

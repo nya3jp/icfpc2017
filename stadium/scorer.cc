@@ -30,12 +30,11 @@ int GetSiteIndex(const std::vector<int>& site_id_list, int site_id) {
   return static_cast<int>(std::distance(site_id_list.begin(), it));
 }
 
-std::vector<int> CreateMineList(const std::vector<Site>& sites,
+std::vector<int> CreateMineList(const std::vector<int>& mines,
                                 const std::vector<int>& site_id_list) {
   std::vector<int> result;
-  for (const auto& site : sites) {
-    if (site.is_mine)
-      result.push_back(GetSiteIndex(site_id_list, site.id));
+  for (const auto& mine : mines) {
+    result.push_back(GetSiteIndex(site_id_list, mine));
   }
   std::sort(result.begin(), result.end());
   return result;
@@ -142,7 +141,7 @@ Scorer::~Scorer() = default;
 void Scorer::Initialize(const std::vector<PunterInfo>& punter_info_list,
                         const Map& game_map) {
   site_id_list_ = CreateSiteIdList(game_map.sites);
-  mine_list_ = CreateMineList(game_map.sites, site_id_list_);
+  mine_list_ = CreateMineList(game_map.mines, site_id_list_);
 
   for (size_t i = 0; i < punter_info_list.size(); ++i)
     UnionFindSet(data_.add_scores()).Initialize(site_id_list_.size());

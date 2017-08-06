@@ -44,7 +44,7 @@ PunterInfo LocalPunter::Setup(int punter_id,
   auto request = base::MakeUnique<base::DictionaryValue>();
   request->SetInteger("punter", punter_id);
   request->SetInteger("punters", num_punters);
-  request->Set("map", map->raw_value->CreateDeepCopy());
+  request->Set("map", Map::ToJson(*map));
   if (settings.futures) {
     auto settings_value = base::MakeUnique<base::DictionaryValue>();
     settings_value->SetBoolean("futures", true);
@@ -130,31 +130,11 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
   }
   if (!response) {
     LOG(INFO) << "LOG: P" << punter_id_ << " timeout";
-    return Move::MakePass(punter_id_);
+    return Move::Pass(punter_id_);
   }
 
   CHECK(response->Remove("state", &state_));
-
-  if (response->HasKey("pass")) {
-    base::DictionaryValue* action_dict;
-    CHECK(response->GetDictionary("pass", &action_dict));
-    int punter_id;
-    CHECK(action_dict->GetInteger("punter", &punter_id));
-    return Move::MakePass(punter_id);
-  } else if (response->HasKey("claim")) {
-    base::DictionaryValue* action_dict;
-    CHECK(response->GetDictionary("claim", &action_dict));
-    int punter_id, source, target;
-    CHECK(action_dict->GetInteger("punter", &punter_id));
-    CHECK(action_dict->GetInteger("source", &source));
-    CHECK(action_dict->GetInteger("target", &target));
-    return Move::MakeClaim(punter_id, source, target);
-  } else {
-    std::string text;
-    CHECK(base::JSONWriter::Write(*response, &text));
-    LOG(FATAL) << "Broken response: " << text;
-    return Move::MakePass(punter_id_);
-  }
+  return Move::FromJson(*response);
 }
 
 std::unique_ptr<base::Value> LocalPunter::RunProcess(

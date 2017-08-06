@@ -32,7 +32,7 @@ Move StubPunter::OnTurn(const std::vector<Move>& moves) {
     }
   }
   auto iter = unclaimed_rivers_.begin();
-  Move move = Move::MakeClaim(punter_id_, iter->first, iter->second);
+  Move move = Move::Claim(punter_id_, iter->first, iter->second);
   unclaimed_rivers_.erase(iter);
   return move;
 }

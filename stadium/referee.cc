@@ -65,9 +65,7 @@ void WriteResults(const std::string& path,
 
 struct Referee::SiteState {
   int id;
-  bool is_mine;
-
-  SiteState(int id, bool is_mine) : id(id), is_mine(is_mine) {}
+  // bool is_mine;
 };
 
 struct Referee::RiverKey {
@@ -98,7 +96,7 @@ Referee::MapState Referee::MapState::FromMap(const Map& map) {
   MapState map_state;
   for (const Site& site : map.sites) {
     auto result = map_state.sites.insert(
-        std::make_pair(site.id, SiteState(site.id, site.is_mine)));
+        std::make_pair(site.id, SiteState{site.id}));
     CHECK(result.second) << "Duplicated site: " << site.id;
   }
   for (const River& river : map.rivers) {
@@ -145,7 +143,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
                  << "tried to claim a non-existence river "
                  << move.source << "-" << move.target
                  << ". Forcing to PASS.";
-      actual_move = Move::MakePass(punter_id);
+      actual_move = Move::Pass(punter_id);
     } else {
       RiverState& river = iter->second;
       if (river.punter_id >= 0) {
@@ -154,7 +152,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
                    << "\" tried to claim a already-used river "
                    << move.source << "-" << move.target
                    << ". Forcing to PASS.";
-        actual_move = Move::MakePass(punter_id);
+        actual_move = Move::Pass(punter_id);
       } else {
         river.punter_id = punter_id;
       }

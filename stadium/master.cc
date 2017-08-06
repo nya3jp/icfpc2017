@@ -36,7 +36,7 @@ void Master::Initialize(Map map, const Settings& settings) {
 
   last_moves_.clear();
   for (int punter_id = 0; punter_id < punters_.size(); ++punter_id) {
-    last_moves_.emplace_back(Move::MakePass(punter_id));
+    last_moves_.emplace_back(Move::Pass(punter_id));
   }
 }
 
