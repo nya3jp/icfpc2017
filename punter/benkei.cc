@@ -20,21 +20,21 @@ framework::GameMove Benkei::Run() {
     if(IsRiverClaimed(ix)) {
       continue;
     }
-    return framework::GameMove({framework::GameMove::Type::CLAIM, punter_id_, rivers_[ix].source, rivers_[ix].target});
+    return framework::GameMove({framework::GameMove::Type::CLAIM, punter_id_, rivers_->Get(ix).source(), rivers_->Get(ix).target()});
   }
   
   return GreedyPunterMirac::Run();
 }
 
 bool Benkei::IsRiverClaimed(int river_ix) {
-  return rivers_[river_ix].punter != -1;
+  return rivers_->Get(river_ix).punter() != -1;
 }
 
 bool Benkei::IsRiverClaimed(int source, int dest) {
   for(const auto &e: edges_[source]) {
     int ix = e.river;
-    if((rivers_[ix].source == source && rivers_[ix].target == dest) ||
-       (rivers_[ix].source == dest && rivers_[ix].target == source)) {
+    if((rivers_->Get(ix).source() == source && rivers_->Get(ix).target() == dest) ||
+       (rivers_->Get(ix).source() == dest && rivers_->Get(ix).target() == source)) {
       return IsRiverClaimed(ix);
     }
   }
@@ -51,16 +51,20 @@ void Benkei::SetUp(int punter_id, int num_punters, const framework::GameMap& gam
   // V = 5000 , E = 20000, M=100
   // O(E M) (bfs) + O(M * M * radius) (traceback). radius ~= sqrt(V))
 
-  vector<int> freqs(rivers_.size(), 0);
-  for(size_t i = 0; i < mines_.size(); ++i) {
-    frequentpaths(mines_[i], mines_, &freqs);
+  vector<int> freqs(rivers_->size(), 0);
+  vector<int> mines_copy;
+  for(int i = 0; i < mines_->size(); ++i) {
+    mines_copy.push_back(mines_->Get(i).site());
+  }
+  for(int i = 0; i < mines_->size(); ++i) {
+    frequentpaths(mines_->Get(i).site(), mines_copy, &freqs);
   }
 
-  int threshold = mines_.size() * (mines_.size() - 1) / 4;
+  int threshold = mines_->size() * (mines_->size() - 1) / 4;
 
   for(size_t i = 0; i < freqs.size(); ++i) {
     if(freqs[i] >= threshold) {
-      LOG(INFO) << "Bridge ix = " << i << ": " << rivers_[i].source << "->" << rivers_[i].target;
+      LOG(INFO) << "Bridge ix = " << i << ": " << rivers_->Get(i).source() << "->" << rivers_->Get(i).target();
       getBenkeiProto()->add_chokepoints(i);
     }
   }
@@ -70,7 +74,7 @@ void Benkei::SetUp(int punter_id, int num_punters, const framework::GameMap& gam
 
 void Benkei::frequentpaths(int origin, const vector<int>& target_sites, vector<int>* freqs)
 {
-  CHECK(freqs->size() == rivers_.size());
+  CHECK(freqs->size() == (size_t)rivers_->size());
   
   vector<bool> visited(num_sites(), false);
   vector<pair<int, int> > bp(num_sites(), make_pair(-1, -1));
