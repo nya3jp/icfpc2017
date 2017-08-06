@@ -13,22 +13,26 @@ class SimplePunter : public Punter {
   SimplePunter();
   ~SimplePunter() override;
 
+  // To be implemented by sub classes.
   virtual GameMove Run() = 0;
   virtual std::vector<Future> GetFuturesImpl() { return {}; };
 
   // Punter overrides
+
   void SetUp(int punter_id, int num_punters, const GameMap& game_map) override;
   GameMove Run(const std::vector<GameMove>& moves) override;
+
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
-  void EnableSplurges() override final;
-  std::vector<Future> GetFutures() override final;
 
+  std::vector<Future> GetFutures() override final;
+  void EnableSplurges() override final;
+
+  // API for sub classes.
   int num_sites() const { return sites_->size(); }
   int dist_to_mine(int site, int mine) const {
     return sites_->Get(site).to_mine(mine).distance();
   }
-  int FindSiteIdxFromSiteId(int id) const;
 
  protected:
   struct Edge {
@@ -63,6 +67,8 @@ class SimplePunter : public Punter {
   google::protobuf::RepeatedPtrField<MineProto>* mines_;
 
  private:
+  int FindSiteIdxFromSiteId(int id) const;
+
   void GenerateAdjacencyList();
   void ComputeDistanceToMine();
   void set_dist_to_mine(int site, int mine, int dist) const {
