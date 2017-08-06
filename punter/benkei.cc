@@ -60,7 +60,7 @@ void Benkei::SetUp(int punter_id, int num_punters, const framework::GameMap& gam
     frequentpaths(mines_->Get(i).site(), mines_copy, &freqs);
   }
 
-  int threshold = mines_->size() * (mines_->size() - 1) / 4;
+  int threshold = mines_->size() * (mines_->size() - 1) / 4 + 1;
 
   for(size_t i = 0; i < freqs.size(); ++i) {
     if(freqs[i] >= threshold) {
