@@ -53,7 +53,7 @@ PunterInfo LocalPunter::Setup(int punter_id,
     empty_settings = false;
   }
   if (settings.splurge) {
-    settings_value->SetBoolean("splurge", true);
+    settings_value->SetBoolean("splurges", true);
     empty_settings = false;
   }
   if (!empty_settings)
