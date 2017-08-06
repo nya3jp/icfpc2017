@@ -253,9 +253,9 @@ bool Game::RunImpl() {
       output.Set("futures", framework::ToJson(punter_->GetFutures()));
     }
     if (FLAGS_persistent) {
-      output.Set("state", punter_->GetState());
-    } else {
       output.Set("state", base::MakeUnique<base::Value>());
+    } else {
+      output.Set("state", punter_->GetState());
     }
     WriteContent(stdout, output);
   } else if (input->HasKey("stop")) {
