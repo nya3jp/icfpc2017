@@ -2,12 +2,30 @@
 
 {% block content %}
 
+<style>
+th.rotate {
+  height: 180px;
+  white-space: nowrap;
+}
+th.rotate > div {
+  transform: rotate(-90deg);
+  width: 30px;
+}
+th.rotate > div > span {
+  padding: 0 8px;
+}
+</style>
+
 <table class="table table-bordered">
   <thead>
     <tr>
       <th></th>
       {% for map in maps %}
-      <th>{{ map }}</th>
+      <th class="rotate">
+        <div>
+          <span>{{ map }}</span>
+        </div>
+      </th>
       {% endfor %}
     </tr>
   </thead>
