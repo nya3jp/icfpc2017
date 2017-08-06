@@ -78,7 +78,7 @@ void SimplePunter::SetUp(
   common::Scorer(proto_.mutable_scorer()).Initialize(num_punters, game_map);
 }
 
-int SimplePunter::FindSiteIdxFromSiteId(int id) {
+int SimplePunter::FindSiteIdxFromSiteId(int id) const {
   auto it = std::lower_bound(sites_.begin(), sites_.end(), id,
       [](const Site& site, int val) {
         return site.id < val;
@@ -233,6 +233,17 @@ bool SimplePunter::IsConnected(
     int punter_id, int site_index1, int site_index2) const {
   return common::Scorer(proto_.mutable_scorer()).IsConnected(
       punter_id, sites_[site_index1].id, sites_[site_index2].id);
+}
+
+std::vector<int> SimplePunter::GetConnectedMineList(
+    int punter_id, int site_index) const {
+  std::vector<int> result =
+      common::Scorer(proto_.mutable_scorer()).GetConnectedMineList(
+          punter_id, sites_[site_index].id);
+  for (auto& site : result) {
+    site = FindSiteIdxFromSiteId(site);
+  }
+  return result;
 }
 
 }  // namespace framework

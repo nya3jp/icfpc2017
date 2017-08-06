@@ -22,6 +22,8 @@ class Scorer {
   int TryClaim(size_t punter_id, int site_id1, int site_id2) const;
   bool IsConnected(size_t punter_id, int site_id1, int site_id2) const;
 
+  std::vector<int> GetConnectedMineList(size_t punter_id, int site_id) const;
+
  private:
   mutable ScorerProto* data_;
 

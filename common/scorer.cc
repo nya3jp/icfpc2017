@@ -281,4 +281,18 @@ bool Scorer::IsConnected(size_t punter_id, int site_id1, int site_id2) const {
       GetIndex(data_->site_ids(), site_id2));
 }
 
+std::vector<int> Scorer::GetConnectedMineList(size_t punter_id, int site_id)
+    const {
+  std::vector<int> result;
+  int site_index = GetIndex(data_->site_ids(), site_id);
+  UnionFindSet ufset(data_->mutable_scores(punter_id));
+  for (int i = 0; i < data_->mine_index_list_size(); ++i) {
+    int mine_index = data_->mine_index_list(i);
+    if (ufset.IsConnected(mine_index, site_index)) {
+      result.push_back(data_->site_ids(mine_index));
+    }
+  }
+  return result;
+}
+
 }  // namespace stadium
