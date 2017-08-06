@@ -116,6 +116,7 @@ bool Game::RunImpl() {
       DLOG(INFO) << "score: " << punter_id << ", " << score;
     }
 #endif
+
     return true;
   } else {
     // Play.
@@ -131,31 +132,15 @@ bool Game::RunImpl() {
 
     GameMove result = punter_->Run(moves);
 
-    base::DictionaryValue output;
-    if (result.type == GameMove::Type::CLAIM) {
-      auto claim = base::MakeUnique<base::DictionaryValue>();
-      claim->SetInteger("punter", result.punter_id);
-      claim->SetInteger("source", result.source);
-      claim->SetInteger("target", result.target);
-      output.Set("claim", std::move(claim));
-    } else if (result.type == GameMove::Type::PASS) {
-      auto pass = base::MakeUnique<base::DictionaryValue>();
-      pass->SetInteger("punter", result.punter_id);
-      output.Set("pass", std::move(pass));
-    } else {
-      CHECK(result.type == GameMove::Type::SPLURGE);
-      auto splurge = base::MakeUnique<base::DictionaryValue>();
-      splurge->SetInteger("punter", result.punter_id);
-      splurge->Set("route", common::ToJson(result.route));
-      output.Set("splurge", std::move(splurge));
-    }
+    std::unique_ptr<base::DictionaryValue> output = GameMove::ToJson(result);
+
     if (FLAGS_persistent) {
-      output.Set("state", base::MakeUnique<base::Value>());
+      output->Set("state", base::MakeUnique<base::Value>());
     } else {
-      output.Set("state", punter_->GetState());
+      output->Set("state", punter_->GetState());
     }
 
-    common::WriteMessage(stdout, output);
+    common::WriteMessage(stdout, *output);
   }
 
   return false;

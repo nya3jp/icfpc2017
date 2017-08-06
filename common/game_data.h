@@ -51,7 +51,7 @@ struct GameMove {
   static GameMove Splurge(int punter_id, std::vector<int> route);
 
   static GameMove FromJson(const base::Value& value);
-  static std::unique_ptr<base::Value> ToJson(const GameMove& game_move);
+  static std::unique_ptr<base::DictionaryValue> ToJson(const GameMove& game_move);
 };
 
 struct GameMoves {

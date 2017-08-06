@@ -149,10 +149,10 @@ GameMove GameMove::FromJson(const base::Value& value_in) {
   return result;
 }
 
-std::unique_ptr<base::Value> GameMove::ToJson(const GameMove& game_move) {
+std::unique_ptr<base::DictionaryValue> GameMove::ToJson(const GameMove& game_move) {
+  auto result = base::MakeUnique<base::DictionaryValue>();
   switch (game_move.type) {
     case GameMove::Type::CLAIM: {
-      auto result = base::MakeUnique<base::DictionaryValue>();
       auto content = base::MakeUnique<base::DictionaryValue>();
       content->SetInteger("punter", game_move.punter_id);
       content->SetInteger("source", game_move.source);
@@ -161,14 +161,12 @@ std::unique_ptr<base::Value> GameMove::ToJson(const GameMove& game_move) {
       return result;
     }
     case GameMove::Type::PASS: {
-      auto result = base::MakeUnique<base::DictionaryValue>();
       auto content = base::MakeUnique<base::DictionaryValue>();
       content->SetInteger("punter", game_move.punter_id);
       result->Set("pass", std::move(content));
       return result;
     }
     case GameMove::Type::SPLURGE: {
-      auto result = base::MakeUnique<base::DictionaryValue>();
       auto content = base::MakeUnique<base::DictionaryValue>();
       content->SetInteger("punter", game_move.punter_id);
       content->Set("route", common::ToJson(game_move.route));
