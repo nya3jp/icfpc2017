@@ -24,8 +24,6 @@
 }
 </style>
 
-</div>
-
 <img src="/static/logo.png" style="height: 100px; width: auto">
 
 <form action="/" method="GET" class="well pull-right" style="margin: 20px">
@@ -78,5 +76,9 @@
     {% endfor %}
   </tbody>
 </table>
+
+<div style="text-align: right">
+  Jobs: {{ num_all_jobs - num_finished_jobs }} / {{ num_all_jobs }}
+</div>
 
 {% endblock %}

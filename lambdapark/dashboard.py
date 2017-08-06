@@ -102,6 +102,13 @@ def matrix_handler():
     configs.sort(key=lambda c: info_map.get(c.split()[0], {}).get('num_sites', 0))
     infos = [info_map.get(config.split()[0], {}) for config in configs]
 
+    query = {}
+    if label:
+        query['label'] = label
+    num_all_jobs = db.jobs.count(query)
+    query['status'] = 'finished'
+    num_finished_jobs = db.jobs.count(query)
+
     template_dict = {
         'label': label,
         'configs': configs,
@@ -109,6 +116,8 @@ def matrix_handler():
         'matrix': matrix,
         'labels': labels,
         'infos': infos,
+        'num_all_jobs': num_all_jobs,
+        'num_finished_jobs': num_finished_jobs,
     }
     return render_template('matrix.html', template_dict)
 
