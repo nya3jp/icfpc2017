@@ -10,6 +10,7 @@ cc_binary(
     ":greedy_punter_chun",
     ":greedy_punter_mirac",
     ":greedy_to_jam",
+    ":lazy_punter",
     ":pass_punter",
     ":random_punter",
     "//framework:game",
@@ -138,6 +139,21 @@ cc_library(
     "greedy_to_jam.h",
     "gamemapforai.h"
   ],
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+)
+
+cc_library(
+  name = "lazy_punter",
+  srcs = [
+    "lazy_punter.cc",
+  ],
+  hdrs = [
+    "lazy_punter.h",
+  ],
+
   deps = [
     "//third_party/chromiumbase",
     "//framework:simple_punter",

@@ -10,6 +10,7 @@
 #include "punter/greedy_punter_chun.h"
 #include "punter/greedy_punter_mirac.h"
 #include "punter/greedy_to_jam.h"
+#include "punter/lazy_punter.h"
 #include "punter/pass_punter.h"
 #include "punter/random_punter.h"
 
@@ -53,6 +54,8 @@ int main(int argc, char* argv[]) {
     punter = base::MakeUnique<GreedyToJam>();
   else if (FLAGS_punter == "GreedyPunterMirac")
     punter = base::MakeUnique<GreedyPunterMirac>();
+  else if (FLAGS_punter == "LazyPunter")
+    punter = base::MakeUnique<LazyPunter>();
   else
     LOG(FATAL) << "invalid punter name: " << FLAGS_punter;
   Game game(std::move(punter));
