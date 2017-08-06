@@ -39,7 +39,7 @@ a.textlike {
 <table class="table table-bordered table-condensed">
   <thead>
     <tr>
-      <th class="punter"></th>
+      <th class="punter">Map</th>
       {% for config in configs %}
       <th class="config {{ (config in error_configs) and 'danger' }}">
         <div>
@@ -49,7 +49,7 @@ a.textlike {
       {% endfor %}
     </tr>
     <tr>
-      <th class="punter"></th>
+      <th class="punter">#Punters</th>
       {% for config in configs %}
       <th class="cell">
         {{ config.split()[1] }}
@@ -57,7 +57,15 @@ a.textlike {
       {% endfor %}
     </tr>
     <tr>
-      <th class="punter"></th>
+      <th class="punter">Extensions</th>
+      {% for config in configs %}
+      <td class="cell" style="font-size: 8px; vertical-align: middle">
+        {{ config.split()[2].replace(',', ', ') }}
+      </td>
+      {% endfor %}
+    </tr>
+    <tr>
+      <th class="punter">Map Stats</th>
       {% for info in infos %}
       <td class="cell" style="font-size: 10px">
         {{ info.num_sites }}<br>

@@ -21,10 +21,42 @@ punters:
 continuous_configs:
   - map: sample
     num_punters: 2
-    num_rounds: 10
+    num_rounds: 40
+  - map: sample
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - futures
+  - map: sample
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - splurges
+  - map: sample
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - futures
+      - splurges
   - map: circle
     num_punters: 2
-    num_rounds: 10
+    num_rounds: 40
+  - map: circle
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - futures
+  - map: circle
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - splurges
+  - map: circle
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - futures
+      - splurges
   - map: gen1
     num_punters: 2
     num_rounds: 10
@@ -39,10 +71,42 @@ continuous_configs:
     num_rounds: 10
   - map: lambda
     num_punters: 2
-    num_rounds: 10
+    num_rounds: 40
+  - map: lambda
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - futures
+  - map: lambda
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - splurges
+  - map: lambda
+    num_punters: 2
+    num_rounds: 40
+    extensions:
+      - futures
+      - splurges
   - map: lambda
     num_punters: 3
-    num_rounds: 10
+    num_rounds: 40
+  - map: lambda
+    num_punters: 3
+    num_rounds: 40
+    extensions:
+      - futures
+  - map: lambda
+    num_punters: 3
+    num_rounds: 40
+    extensions:
+      - splurges
+  - map: lambda
+    num_punters: 3
+    num_rounds: 40
+    extensions:
+      - futures
+      - splurges
   - map: randomMedium
     num_punters: 2
     num_rounds: 10
@@ -65,8 +129,40 @@ continuous_configs:
     num_punters: 2
     num_rounds: 10
   - map: boston-sparse
+    num_punters: 2
+    num_rounds: 10
+    extensions:
+      - futures
+  - map: boston-sparse
+    num_punters: 2
+    num_rounds: 10
+    extensions:
+      - splurges
+  - map: boston-sparse
+    num_punters: 2
+    num_rounds: 10
+    extensions:
+      - futures
+      - splurges
+  - map: boston-sparse
     num_punters: 3
     num_rounds: 10
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: 10
+    extensions:
+      - futures
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: 10
+    extensions:
+      - splurges
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: 10
+    extensions:
+      - futures
+      - splurges
   - map: van-city-sparse
     num_punters: 2
     num_rounds: 10

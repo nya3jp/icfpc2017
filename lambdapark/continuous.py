@@ -136,6 +136,7 @@ def maybe_schedule(db):
                 selects[p] += 1
             jobs.append({
                 'map': config['map'],
+                'extensions': ','.join(sorted(config.get('extensions', []))),
                 'punters': round_punters,
                 'priority': 0,
                 'user': 'continuous',

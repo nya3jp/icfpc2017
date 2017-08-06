@@ -63,7 +63,11 @@ def matrix_handler():
     bucketed_points = collections.defaultdict(list)
     for report in all_reports:
         punters = report['job']['punters']
-        config = '%s %d' % (report['job']['map'], len(punters))
+        config = '%s %d %s' % (
+            report['job']['map'],
+            len(punters),
+            ','.join([s[0].upper() for s in filter(None, report['job'].get('extensions', '').split(','))]) or '-',
+        )
         if report['error']:
             for punter in punters:
                 bucketed_points[(config, punter)]
@@ -112,7 +116,7 @@ def matrix_handler():
     }
 
     configs.sort(key=lambda c: (
-        info_map.get(c.split()[0], {}).get('num_sites', 0), int(c.split()[1])))
+        info_map.get(c.split()[0], {}).get('num_sites', 0), c))
     infos = [info_map.get(config.split()[0], {}) for config in configs]
 
     query = {}

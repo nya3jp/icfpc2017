@@ -44,7 +44,7 @@ class SelfUpdater(object):
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
-def run_stadium(map_name, punter_shells, log_path):
+def run_stadium(map_name, punter_shells, extensions, log_path):
     map_path = os.path.join(BASE_DIR, 'maps/%s.json' % map_name)
     args = [
         'bazel-bin/stadium/stadium',
@@ -52,7 +52,10 @@ def run_stadium(map_name, punter_shells, log_path):
         '--map=%s' % map_path,
         '--result_json=/dev/stdout',
         '--persistent',
-    ] + punter_shells
+    ]
+    for ext in extensions:
+        args.append('--%s' % ext)
+    args.extend(punter_shells)
     with tempfile.TemporaryFile() as stdout:
         with open(log_path, 'w') as stderr:
             stderr.write(
@@ -85,11 +88,14 @@ def process_job(job, all_punters):
         punters.append(all_punters_map[name])
     punter_shells = [p['shell'] for p in punters]
 
+    extensions_str = job.get('extensions', '')
+    extensions = extensions_str.split(',') if extensions_str else []
+
     log_path = os.path.join(LOG_DIR, '%s.log' % job_id)
 
     start_time = time.time()
     try:
-        result = run_stadium(map_name, punter_shells, log_path)
+        result = run_stadium(map_name, punter_shells, extensions, log_path)
         result['error'] = None
     except Exception:
         result = {
