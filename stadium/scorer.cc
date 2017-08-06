@@ -129,16 +129,6 @@ class UnionFindSet {
     }
   }
 
-#if 0
-  void AddMine(const std::vector<int>& dist_map) {
-    DCHECK_EQ(proto_->cells_size(), dist_map.size());
-    for (size_t site_index = 0; site_index < dist_map.size(); ++site_index) {
-      mutable_cells(site_index)->add_scores(
-          dist_map[site_index] * dist_map[site_index]);
-    }
-  }
-#endif
-
   void AddFuture(
       size_t mine_index, int mine_site_index, int target_site_index,
       int distance) {
