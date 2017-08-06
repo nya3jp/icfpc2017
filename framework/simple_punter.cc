@@ -177,12 +177,15 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   std::string serialized;
   CHECK(base::Base64Decode(b64_proto, &serialized));
   CHECK(proto_.ParseFromString(serialized));
+
   sites_ = proto_.mutable_game_map()->mutable_sites();
   rivers_ = proto_.mutable_game_map()->mutable_rivers();
   mines_ = proto_.mutable_game_map()->mutable_mines();
 
   punter_id_ = proto_.punter_id();
   num_punters_ = proto_.num_punters();
+
+  can_splurge_ = proto_.has_can_splurge() && proto_.can_splurge();
 
   GenerateAdjacencyList();
 }
@@ -198,7 +201,9 @@ std::unique_ptr<base::Value> SimplePunter::GetState() {
 }
 
 void SimplePunter::EnableSplurges() {
-  // :)
+  can_splurge_ = true;
+
+  proto_.set_can_splurge(can_splurge_);
 }
 
 std::vector<Future> SimplePunter::GetFutures() {

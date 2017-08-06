@@ -39,6 +39,10 @@ class SimplePunter : public Punter {
     int river;  // Index to RiverProto.
   };
 
+  bool CanSplurge() const {
+    return can_splurge_;
+  }
+
   int GetScore(int punter_id) const;
   int TryClaim(int punter_id, int site_index1, int site_index2) const;
   bool IsConnected(int punter_id, int site_index1, int site_index2) const;
@@ -65,6 +69,8 @@ class SimplePunter : public Punter {
   void set_dist_to_mine(int site, int mine, int dist) const {
     return sites_->Mutable(site)->mutable_to_mine(mine)->set_distance(dist);
   }
+
+  bool can_splurge_ = false;
 
   google::protobuf::RepeatedPtrField<SiteProto>* sites_;
 

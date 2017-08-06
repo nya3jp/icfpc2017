@@ -34,6 +34,7 @@ message GameStateProto {
   optional int32 num_punters = 2;
   optional GameMapProto game_map = 3;
   optional common.ScorerProto scorer = 4;
+  optional bool can_splurge = 5;
 
   extensions 100 to 199;
 }
