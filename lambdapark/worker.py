@@ -47,6 +47,10 @@ def load_settings():
 class SelfUpdater(object):
     def __init__(self):
         self._last_check = 0
+        self._last_rev = self._get_revision()
+
+    def _get_revision(self):
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
 
     def check_update_and_maybe_restart(self):
         if not FLAGS.auto_update:
@@ -55,10 +59,8 @@ class SelfUpdater(object):
         if now - self._last_check < 180:
             return
         self._last_check = now
-        last_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-        subprocess.call(['git', 'pull'])
-        next_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-        if next_rev != last_rev:
+        current_rev = self._get_revision()
+        if current_rev != self._last_rev:
             logging.info('Detected an update. Restarting...')
             os.execv(sys.executable, [sys.executable] + sys.argv)
 
