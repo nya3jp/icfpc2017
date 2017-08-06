@@ -21,9 +21,6 @@ class Scorer {
   void Claim(size_t punter_id, int site_id1, int site_id2);
 
  private:
-  std::vector<int> site_id_list_;  // index -> site_id mapping.
-  std::vector<int> mine_list_;
-
   mutable common::ScorerProto data_;
 
   DISALLOW_COPY_AND_ASSIGN(Scorer);

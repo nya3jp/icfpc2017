@@ -11,41 +11,42 @@ namespace stadium {
 
 namespace {
 
-std::vector<int> CreateSiteIdList(const std::vector<Site>& sites) {
-  std::vector<int> result;
-  result.reserve(sites.size());
+void CreateSiteIdList(const std::vector<Site>& sites,
+                      ::google::protobuf::RepeatedField<int>* output) {
+  output->Reserve(sites.size());
   for (const auto& site : sites) {
-    result.push_back(site.id);
+    output->Add(site.id);
   }
-  std::sort(result.begin(), result.end());
-  return result;
+  std::sort(output->begin(), output->end());
 }
 
 // site_id_list must be sorted array.
-int GetSiteIndex(const std::vector<int>& site_id_list, int site_id) {
-  auto it =
-      std::lower_bound(site_id_list.begin(), site_id_list.end(), site_id);
-  DCHECK_EQ(*it, site_id);
-  return static_cast<int>(std::distance(site_id_list.begin(), it));
+int GetIndex(const ::google::protobuf::RepeatedField<int>& sorted_container,
+             int value) {
+  auto it = std::lower_bound(
+      sorted_container.begin(), sorted_container.end(), value);
+  DCHECK_EQ(*it, value);
+  return static_cast<int>(std::distance(sorted_container.begin(), it));
 }
 
-std::vector<int> CreateMineList(const std::vector<int>& mines,
-                                const std::vector<int>& site_id_list) {
-  std::vector<int> result;
-  for (const auto& mine : mines) {
-    result.push_back(GetSiteIndex(site_id_list, mine));
+void CreateMineIndexList(
+    const std::vector<int>& mines,
+    const ::google::protobuf::RepeatedField<int>& site_id_list,
+    ::google::protobuf::RepeatedField<int>* output) {
+  output->Reserve(mines.size());
+  for (int mine : mines) {
+    output->Add(GetIndex(site_id_list, mine));
   }
-  std::sort(result.begin(), result.end());
-  return result;
+  std::sort(output->begin(), output->end());
 }
 
 std::vector<std::pair<int, int>> CreateBidirectionalGraph(
     const std::vector<River>& rivers,
-    const std::vector<int>& site_id_list) {
+    const ::google::protobuf::RepeatedField<int>& site_id_list) {
   std::vector<std::pair<int, int>> result;
   for (const auto& river : rivers) {
-    int source = GetSiteIndex(site_id_list, river.source);
-    int target = GetSiteIndex(site_id_list, river.target);
+    int source = GetIndex(site_id_list, river.source);
+    int target = GetIndex(site_id_list, river.target);
     result.emplace_back(source, target);
     result.emplace_back(target, source);
   }
@@ -58,8 +59,8 @@ class DistanceMap {
   explicit DistanceMap(common::DistanceMapProto* proto) : proto_(proto) {}
 
   void Initialize(const Map& game_map,
-                  const std::vector<int>& site_id_list,
-                  const std::vector<int>& mine_list) {
+                  const ::google::protobuf::RepeatedField<int>& site_id_list,
+                  const ::google::protobuf::RepeatedField<int>& mine_list) {
     std::vector<std::pair<int, int>> edges =
         CreateBidirectionalGraph(game_map.rivers, site_id_list);
 
@@ -195,15 +196,16 @@ Scorer::Scorer() = default;
 Scorer::~Scorer() = default;
 
 void Scorer::Initialize(size_t num_punters, const Map& game_map) {
-  site_id_list_ = CreateSiteIdList(game_map.sites);
-  mine_list_ = CreateMineList(game_map.mines, site_id_list_);
+  CreateSiteIdList(game_map.sites, data_.mutable_site_ids());
+  CreateMineIndexList(
+      game_map.mines, data_.site_ids(), data_.mutable_mine_index_list());
 
   DistanceMap distance_map(data_.mutable_distance_map());
-  distance_map.Initialize(game_map, site_id_list_, mine_list_);
+  distance_map.Initialize(game_map, data_.site_ids(), data_.mine_index_list());
 
   for (size_t i = 0; i < num_punters; ++i) {
     UnionFindSet union_find_set(data_.add_scores());
-    union_find_set.Initialize(site_id_list_.size());
+    union_find_set.Initialize(data_.site_ids_size());
     union_find_set.SetDistanceMap(distance_map);
   }
 }
@@ -215,9 +217,9 @@ void Scorer::AddFuture(
 
   // Assume futures is valid.
   for (const auto& future : futures) {
-    int source_index = GetSiteIndex(site_id_list_, future.source);
-    int mine_index = GetSiteIndex(mine_list_, source_index);
-    int target_index = GetSiteIndex(site_id_list_, future.target);
+    int source_index = GetIndex(data_.site_ids(), future.source);
+    int mine_index = GetIndex(data_.mine_index_list(), source_index);
+    int target_index = GetIndex(data_.site_ids(), future.target);
 
     union_find_set.AddFuture(
         mine_index, source_index, target_index,
@@ -229,16 +231,16 @@ int Scorer::GetScore(size_t punter_id) const {
   UnionFindSet ufset(data_.mutable_scores(punter_id));
 
   int score = 0;
-  for (size_t i = 0; i < mine_list_.size(); ++i)
-    score += ufset.GetScore(mine_list_[i], i);
+  for (size_t i = 0; i < data_.mine_index_list_size(); ++i)
+    score += ufset.GetScore(data_.mine_index_list(i), i);
 
   return score;
 }
 
 void Scorer::Claim(size_t punter_id, int site_id1, int site_id2) {
   UnionFindSet ufset(data_.mutable_scores(punter_id));
-  int site_index1 = GetSiteIndex(site_id_list_, site_id1);
-  int site_index2 = GetSiteIndex(site_id_list_, site_id2);
+  int site_index1 = GetIndex(data_.site_ids(), site_id1);
+  int site_index2 = GetIndex(data_.site_ids(), site_id2);
   ufset.Merge(site_index1, site_index2);
 }
 
