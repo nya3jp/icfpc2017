@@ -60,10 +60,19 @@ class Map():
                     queue.append((j, d + 1))
 
         self.scores = []
+        self._futures = {}
 
-    def calculate_score(self, num_punters, futures):
+    def set_num_punters(self, num_punters):
+        self._num_punters = num_punters
         for i in range(num_punters):
-            self.scores.append(self._calculate_score_for_punter(i, futures.get(punter)))
+            self.scores.append(0)
+
+    def set_futures(self, futures, punter_id):
+        self._futures[punter_id] = futures
+
+    def calculate_score(self):
+        for i in range(self._num_punters):
+            self.scores[i] = self._calculate_score_for_punter(i, self._futures.get(punter))
 
     def _calculate_score_for_punter(self, punter, futures):
         punter_specific_adj = []
@@ -113,8 +122,6 @@ class Arena():
 
         self._punters = {}
 
-        self._futures = {}
-
         self._map = Map(map_data)
         self._num_rivers = len(self._map.rivers)
 
@@ -137,6 +144,7 @@ class Arena():
 
     def run(self):
         self._num_punters = len(self._punters)
+        self._map.set_num_punters(self._num_punters)
 
         self._all_moves = []
 
@@ -166,7 +174,7 @@ class Arena():
                     result += ('  %r\n' % (river,))
                 self._debug(result)
 
-                self._map.calculate_score(self._num_punters, self._futures)
+                self._map.calculate_score()
 
                 sys.stdout.write(
                     json.dumps(
@@ -183,7 +191,7 @@ class Arena():
             self._step += 1
 
     def done_setup(self, futures, punter_id):
-        self._futures[punter_id] = futures
+        self._map.set_futures(futures, punter_id)
 
     def done_move(self, message, punter_id, is_move, source, target, time_spent_ms):
         if is_move:
