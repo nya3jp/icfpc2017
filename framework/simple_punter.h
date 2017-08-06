@@ -58,12 +58,12 @@ class SimplePunter : public Punter {
 
   int num_punters_ = -1;
   int punter_id_ = -1;
-  std::vector<int> mines_;
 
   std::vector<std::vector<Edge>> edges_; // site_idx -> {Edge}
 
   mutable GameStateProto proto_;
   google::protobuf::RepeatedPtrField<RiverProto>* rivers_;
+  google::protobuf::RepeatedPtrField<MineProto>* mines_;
 
  private:
   void set_dist_to_mine(int site, int mine, int dist) const {

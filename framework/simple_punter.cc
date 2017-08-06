@@ -65,7 +65,11 @@ void SimplePunter::SetUp(
     river_proto->set_punter(-1);
   }
   rivers_ = proto_.mutable_game_map()->mutable_rivers();
-  mines_ = game_map.mines;
+  for (const int mine : game_map.mines) {
+    MineProto* mine_proto = game_map_proto->add_mines();
+    mine_proto->set_site(mine);
+  }
+  mines_ = proto_.mutable_game_map()->mutable_mines();
 
   std::sort(sites_->begin(), sites_->end(),
             [](const SiteProto& lhs, const SiteProto& rhs) {
@@ -75,8 +79,8 @@ void SimplePunter::SetUp(
     rivers_->Mutable(i)->set_source(FindSiteIdxFromSiteId(rivers_->Get(i).source()));
     rivers_->Mutable(i)->set_target(FindSiteIdxFromSiteId(rivers_->Get(i).target()));
   }
-  for (size_t i = 0; i < mines_.size(); ++i) {
-    mines_[i] = FindSiteIdxFromSiteId(mines_[i]);
+  for (int i = 0; i < mines_->size(); ++i) {
+    mines_->Mutable(i)->set_site(FindSiteIdxFromSiteId(mines_->Get(i).site()));
   }
 
   GenerateAdjacencyList();
@@ -99,10 +103,6 @@ int SimplePunter::FindSiteIdxFromSiteId(int id) const {
 void SimplePunter::SaveToProto() {
   proto_.set_punter_id(punter_id_);
   proto_.set_num_punters(num_punters_);
-  GameMapProto* game_map_proto = proto_.mutable_game_map();
-  for (auto& m : mines_) {
-    game_map_proto->add_mines()->set_site(m);
-  }
 }
 
 void SimplePunter::GenerateAdjacencyList() {
@@ -118,10 +118,10 @@ void SimplePunter::GenerateAdjacencyList() {
 
 void SimplePunter::ComputeDistanceToMine() {
   size_t num_sites = sites_->size();
-  size_t num_mines = mines_.size();
+  size_t num_mines = mines_->size();
 
   for (size_t i = 0; i < num_mines; ++i) {
-    int mine = mines_[i];
+    int mine = mines_->Get(i).site();
 
     std::queue<std::pair<int, int>> q;  // {(site_idx, dist)}
     set_dist_to_mine(mine, i, 0);
@@ -138,7 +138,7 @@ void SimplePunter::ComputeDistanceToMine() {
       }
     }
     for (size_t k = 0; k < num_sites; ++k) {
-      DLOG(INFO) << "distance to mine " << mines_[i] << " from "
+      DLOG(INFO) << "distance to mine " << mines_->Get(i).site() << " from "
                  << sites_->Get(k).id() << ": " << dist_to_mine(k, i);
     }
   }
@@ -154,16 +154,10 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   CHECK(proto_.ParseFromString(serialized));
   sites_ = proto_.mutable_game_map()->mutable_sites();
   rivers_ = proto_.mutable_game_map()->mutable_rivers();
+  mines_ = proto_.mutable_game_map()->mutable_mines();
 
   punter_id_ = proto_.punter_id();
   num_punters_ = proto_.num_punters();
-
-  const GameMapProto& game_map_proto = proto_.game_map();
-  const size_t mines_size = game_map_proto.mines_size();
-  mines_.resize(mines_size);
-  for (size_t i = 0; i < mines_size; ++i) {
-    mines_[i] = game_map_proto.mines(i).site();
-  }
 
   GenerateAdjacencyList();
 }

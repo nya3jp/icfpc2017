@@ -5,6 +5,7 @@
 #include "framework/game_proto.pb.h"
 #include "punter/greedy_punter.pb.h"
 
+using framework::MineProto;
 using framework::RiverProto;
 
 namespace punter {
@@ -20,12 +21,12 @@ void GreedyPunter::SetUp(int punter_id, int num_punters, const framework::GameMa
   auto greedy_ext = proto_.MutableExtension(GreedyPunterProto::greedy_ext);
   greedy_ext->set_longest_path_index(0);
 
-  connected_from_mine_.resize(mines_.size());
-  for (size_t i = 0; i < mines_.size(); i++) {
+  connected_from_mine_.resize(mines_->size());
+  for (int i = 0; i < mines_->size(); i++) {
     SiteSetProto* site_set = greedy_ext->add_connected_from_mine();
-    site_set->add_site(mines_[i]);
+    site_set->add_site(mines_->Get(i).site());
 
-    connected_from_mine_[i].insert(mines_[i]);
+    connected_from_mine_[i].insert(mines_->Get(i).site());
   }
 }
 
@@ -37,7 +38,10 @@ std::vector<framework::Future> GreedyPunter::GetFuturesImpl() {
   // Target is the farthest non-mine site
   for (int i = greedy_ext->longest_path_size() - 1; i > 0; i--) {
     int target = greedy_ext->longest_path(i);
-    if (std::find(mines_.begin(), mines_.end(), target) == mines_.end()) {
+    if (std::find_if(mines_->begin(), mines_->end(),
+                     [target](const MineProto& mine) {
+                       return mine.site() == target;
+                     }) == mines_->end()) {
       futures.push_back({source, target});
       break;
     }
@@ -46,13 +50,13 @@ std::vector<framework::Future> GreedyPunter::GetFuturesImpl() {
 }
 
 void GreedyPunter::ComputeLongestPath() {
-  size_t num_mines = mines_.size();
+  size_t num_mines = mines_->size();
 
   int max_length = 0;
   std::vector<int> longest_path;
 
   for (size_t i = 0; i < num_mines; ++i) {
-    int mine = mines_[i];
+    int mine = mines_->Get(i).site();
 
     std::vector<std::pair<int, int>> dist_and_prev; // site_idx -> (distance, site_idx)
     dist_and_prev.resize(num_sites(), std::make_pair(-1, -1));
@@ -111,7 +115,7 @@ framework::GameMove GreedyPunter::Run() {
 
     int score = 0;
     auto mines = base::MakeUnique<std::set<std::pair<int, int>>>();
-    for (size_t mine_id = 0; mine_id < mines_.size(); mine_id++) {
+    for (int mine_id = 0; mine_id < mines_->size(); mine_id++) {
       int target;
       if (connected_from_mine_[mine_id].count(r.source()) && !connected_from_mine_[mine_id].count(r.target())) {
         target = r.target();

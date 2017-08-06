@@ -14,7 +14,7 @@ GreedyPunterMirac::GreedyPunterMirac() {}
 GreedyPunterMirac::~GreedyPunterMirac() = default;
 
 framework::GameMove GreedyPunterMirac::Run() {
-  size_t num_mines = mines_.size();
+  size_t num_mines = mines_->size();
 
   // site_idx -> mine_idx -> (how many rivers do we need to
   // claim in order to connect the site and the mine, site_idx of
@@ -24,7 +24,7 @@ framework::GameMove GreedyPunterMirac::Run() {
           num_mines, std::make_pair(-1, -1)));
 
   for (size_t i = 0; i < num_mines; ++i) {
-    int mine = mines_[i];
+    int mine = mines_->Get(i).site();
 
     // We may want to implement this with two queues.
     std::priority_queue<std::pair<int, int>> q;  // {(-num_rivers_to_claim, site_idx)}

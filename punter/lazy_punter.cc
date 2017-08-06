@@ -101,7 +101,7 @@ std::vector<double> LazyPunter::ComputeReachability(
 
     // Fill |visited| by dfs from mine
     std::vector<bool> visited(edges_.size(), false);
-    int start_idx = mines_[mine_idx];
+    int start_idx = mines_->Get(mine_idx).site();
     dfs(start_idx, visited, adj, adj2);
 
     // Count up 
@@ -136,7 +136,7 @@ double LazyPunter::Evaluate() {
   }
 
   std::vector<double> scores(edges_.size(), 0.0);
-  for (size_t mine_index = 0; mine_index < mines_.size(); mine_index++) {
+  for (int mine_index = 0; mine_index < mines_->size(); mine_index++) {
     std::vector<double> p = ComputeReachability(mine_index, remaining_edges, adj);
     for (size_t i = 0; i < edges_.size(); i++) {
       int dist = dist_to_mine(i, mine_index);
