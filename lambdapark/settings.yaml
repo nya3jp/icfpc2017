@@ -40,6 +40,9 @@ continuous_configs:
   - map: lambda
     num_punters: 2
     num_rounds: 10
+  - map: lambda
+    num_punters: 3
+    num_rounds: 10
   - map: randomMedium
     num_punters: 2
     num_rounds: 10
@@ -61,6 +64,9 @@ continuous_configs:
   - map: boston-sparse
     num_punters: 2
     num_rounds: 10
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: 10
   - map: van-city-sparse
     num_punters: 2
     num_rounds: 10
@@ -69,6 +75,9 @@ continuous_configs:
     num_rounds: 10
   - map: edinburgh-sparse
     num_punters: 2
+    num_rounds: 10
+  - map: edinburgh-sparse
+    num_punters: 3
     num_rounds: 10
   - map: gothenburg-sparse
     num_punters: 2
@@ -81,6 +90,9 @@ continuous_configs:
     num_rounds: 10
   - map: oxford2-sparse-2
     num_punters: 2
+    num_rounds: 10
+  - map: oxford2-sparse-2
+    num_punters: 3
     num_rounds: 10
   - map: oxford2-sparse
     num_punters: 2
