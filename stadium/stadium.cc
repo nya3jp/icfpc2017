@@ -17,7 +17,7 @@
 
 DEFINE_string(map, "", "Path to a map JSON file.");
 DEFINE_bool(futures, false, "Enable Futures feature.");
-DEFINE_bool(splurge, false, "Enable Splurge feature.");
+DEFINE_bool(splurges, false, "Enable Splurges feature.");
 
 namespace stadium {
 namespace {
@@ -43,7 +43,7 @@ void Main(int argc, char** argv) {
 
   Settings settings;
   settings.futures = FLAGS_futures;
-  settings.splurge = FLAGS_splurge;
+  settings.splurges = FLAGS_splurges;
   std::unique_ptr<Master> master = base::MakeUnique<Master>();
   for (int i = 1; i < argc; ++i) {
     master->AddPunter(MakePunterFromCommandLine(argv[i]));

@@ -64,6 +64,12 @@ bool Game::RunImpl() {
     GameMap game_map = GameMap::FromJson(*game_map_value);
     punter_->SetUp(punter_id, num_punters, game_map);
 
+    bool is_splurges = false;
+    if (input->GetBoolean("settings.splurges", &is_splurges) &&
+        is_splurges) {
+      // punter_->
+    }
+
     base::DictionaryValue output;
     output.SetInteger("ready", punter_id);
     bool is_futures = false;
