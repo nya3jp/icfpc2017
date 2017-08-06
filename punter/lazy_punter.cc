@@ -139,7 +139,7 @@ double LazyPunter::Evaluate() {
   for (size_t mine_index = 0; mine_index < mines_.size(); mine_index++) {
     std::vector<double> p = ComputeReachability(mine_index, remaining_edges, adj);
     for (size_t i = 0; i < edges_.size(); i++) {
-      int dist = dist_to_mine_[i][mine_index];
+      int dist = dist_to_mine(i, mine_index);
       scores[i] += dist * dist * p[i];
     }
   }

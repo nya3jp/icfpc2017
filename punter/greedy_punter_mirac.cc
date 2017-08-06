@@ -46,7 +46,7 @@ framework::GameMove GreedyPunterMirac::Run() {
         q.push(std::make_pair(-next_dist, next_site));
       }
     }
-    for (size_t k = 0; k < num_sites(); ++k) {
+    for (int k = 0; k < num_sites(); ++k) {
       VLOG(10) << " from " << mine << " to " << k << ": distance:" << rivers_to_claim[k][i].first << " via: " << rivers_to_claim[k][i].second;
     }
   }
@@ -55,11 +55,11 @@ framework::GameMove GreedyPunterMirac::Run() {
   int min_dist = -1;
   int max_site_idx = -1;
   int max_mine_idx = -1;
-  for (size_t i = 0; i < num_sites(); ++i) {
+  for (int i = 0; i < num_sites(); ++i) {
     for (size_t k = 0; k < num_mines; ++k) {
       if (rivers_to_claim[i][k].first == -1) continue;
       if (rivers_to_claim[i][k].first == 0) continue;
-      int score = dist_to_mine_[i][k];
+      int score = dist_to_mine(i, k);
       int dist = rivers_to_claim[i][k].first;
       if (max_score < score ||
           (max_score == score && dist < min_dist)) {

@@ -23,7 +23,10 @@ class SimplePunter : public Punter {
   std::unique_ptr<base::Value> GetState() override;
   std::vector<Future> GetFutures() override final;
 
-  size_t num_sites() const { return sites_.size(); }
+  int num_sites() const { return sites_->size(); }
+  int dist_to_mine(int site, int mine) const {
+    return sites_->Get(site).to_mine(mine).distance();
+  }
   int FindSiteIdxFromSiteId(int id) const;
   void SaveToProto();
   void GenerateAdjacencyList();
@@ -58,13 +61,16 @@ class SimplePunter : public Punter {
   std::vector<int> mines_;
 
   std::vector<std::vector<Edge>> edges_; // site_idx -> {Edge}
-  std::vector<std::vector<int>> dist_to_mine_; // site_idx -> mine_idx -> distance
 
   mutable GameStateProto proto_;
   google::protobuf::RepeatedPtrField<RiverProto>* rivers_;
 
  private:
-  std::vector<Site> sites_;
+  void set_dist_to_mine(int site, int mine, int dist) const {
+    return sites_->Mutable(site)->mutable_to_mine(mine)->set_distance(dist);
+  }
+
+  google::protobuf::RepeatedPtrField<SiteProto>* sites_;
   DISALLOW_COPY_AND_ASSIGN(SimplePunter);
 };
 

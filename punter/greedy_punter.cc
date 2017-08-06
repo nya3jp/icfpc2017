@@ -121,7 +121,7 @@ framework::GameMove GreedyPunter::Run() {
         continue;
       }
 
-      int dist = dist_to_mine_[target][mine_id];
+      int dist = dist_to_mine(target, mine_id);
       score += dist * dist;
       mines->insert(std::make_pair(mine_id, target));
     }
