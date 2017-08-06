@@ -126,7 +126,7 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
     response = base::DictionaryValue::From(RunProcess(&subprocess, *request, nullptr, base::TimeDelta::FromSeconds(1)));
   }
   if (!response) {
-    LOG(INFO) << "Punter " << punter_id_ << " timeout";
+    LOG(INFO) << "LOG: P" << punter_id_ << " timeout";
     return Move::MakePass(punter_id_);
   }
 
