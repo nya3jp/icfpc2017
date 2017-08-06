@@ -99,7 +99,8 @@ def matrix_handler():
         for map in settings['maps']
     }
 
-    configs.sort(key=lambda c: info_map.get(c.split()[0], {}).get('num_sites', 0))
+    configs.sort(key=lambda c: (
+        info_map.get(c.split()[0], {}).get('num_sites', 0), int(c.split()[1])))
     infos = [info_map.get(config.split()[0], {}) for config in configs]
 
     query = {}
