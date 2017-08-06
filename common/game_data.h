@@ -7,6 +7,8 @@
 
 namespace common {
 
+std::unique_ptr<base::Value> ToJson(const std::vector<int>& elements);
+
 struct Site {
   int id;
 
@@ -33,16 +35,20 @@ struct GameMap {
 
 struct GameMove {
   enum class Type {
-    CLAIM, PASS,
+    CLAIM, PASS, SPLURGE,
   };
 
   Type type;
   int punter_id;
+
   int source;  // Available only when type is CLAIM.
   int target;  // Available only when type is CLAIM.
 
+  std::vector<int> route;  // Avilable only when type is SPLURGE
+
   static GameMove Pass(int punter_id);
   static GameMove Claim(int punter_id, int source, int target);
+  static GameMove Splurge(int punter_id, std::vector<int> route);
 
   static GameMove FromJson(const base::Value& value);
   static std::unique_ptr<base::Value> ToJson(const GameMove& game_move);

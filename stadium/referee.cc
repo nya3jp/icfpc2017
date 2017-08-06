@@ -4,6 +4,7 @@
 #include <map>
 #include <queue>
 #include <set>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -20,6 +21,14 @@ DEFINE_string(result_json, "", "Path to output result json");
 namespace stadium {
 
 namespace {
+
+std::string PrintVectorInt(const std::vector<int>& v) {
+  std::stringstream ss;
+  ss << v.front();
+  for (int i = 1; i < v.size(); ++i)
+    ss << ", " << v[i];
+  return std::move(ss.str());
+}
 
 void WriteResults(const std::string& path,
                   const std::vector<int>& scores,
@@ -50,6 +59,17 @@ void WriteResults(const std::string& path,
         auto pass_value = base::MakeUnique<base::DictionaryValue>();
         pass_value->SetInteger("punter", move.punter_id);
         move_value->Set("pass", std::move(pass_value));
+        break;
+      }
+      case Move::Type::SPLURGE: {
+        auto splurge_value = base::MakeUnique<base::DictionaryValue>();
+        splurge_value->SetInteger("punter", move.punter_id);
+        auto route_value = base::MakeUnique<base::ListValue>();
+        route_value->Reserve(move.route.size());
+        for (const auto& site : move.route)
+          route_value->Append(base::MakeUnique<base::Value>(site));
+        splurge_value->Set("route", std::move(route_value));
+        move_value->Set("splurge", std::move(splurge_value));
         break;
       }
     }
@@ -120,6 +140,8 @@ void Referee::Setup(const std::vector<PunterInfo>& punter_info_list,
     LOG(INFO) << "P" << punter_id << ": " << punter_info_list[punter_id].name;
   }
 
+  pass_count_.resize(punter_info_list.size());
+
   map_state_ = MapState::FromMap(*map);
   common::Scorer scorer(&scorer_);
   scorer.Initialize(punter_info_list.size(), *map);
@@ -165,13 +187,77 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
     }
   }
 
+  if (actual_move.type == Move::Type::SPLURGE) {
+    if (actual_move.route.size() > pass_count_[punter_id] + 1) {
+      LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                 << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
+                 << "tried to splurge after insufficient number of passes ("
+                 << actual_move.route.size() << " < "
+                 << (pass_count_[punter_id] + 1)
+                 << "). Forcing to PASS.";
+      actual_move = Move::Pass(punter_id);
+    } else if (actual_move.route.size() < 2) {
+      LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                 << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
+                 << "tried to splurge with less than 2 sites "
+                 << PrintVectorInt(actual_move.route)
+                 << ". Forcing to PASS.";
+      actual_move = Move::Pass(punter_id);
+    } else {
+      bool ok = true;
+      for (int i = 0; i + 1 < actual_move.route.size(); ++i) {
+        int s = actual_move.route[i];
+        int t = actual_move.route[i + 1];
+        auto iter = map_state_.rivers.find(RiverKey(s, t));
+        if (iter == map_state_.rivers.end()) {
+          LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                     << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
+                     << "tried to splurge over a non-existence river "
+                     << s << "-" << t
+                     << ". Forcing to PASS.";
+          actual_move = Move::Pass(punter_id);
+          ok = false;
+          break;
+        }
+
+        const RiverState& river = iter->second;
+        if (river.punter_id >= 0) {
+          LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                     << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
+                     << "tried to splurge over a already-used river "
+                     << s << "-" << t
+                     << ". Forcing to PASS.";
+          actual_move = Move::Pass(punter_id);
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        for (int i = 0; i + 1 < actual_move.route.size(); ++i) {
+          int s = actual_move.route[i];
+          int t = actual_move.route[i + 1];
+          auto iter = map_state_.rivers.find(RiverKey(s, t));
+          RiverState& river = iter->second;
+          river.punter_id = punter_id;
+        }
+      }
+    }
+  }
+
   if (actual_move.type == Move::Type::PASS) {
     LOG(INFO) << "LOG: [" << turn_id << "] P" << punter_id
               << ": PASS";
-  } else {
+    ++pass_count_[punter_id];
+  } else if (actual_move.type == Move::Type::CLAIM) {
     LOG(INFO) << "LOG: [" << turn_id << "] P" << punter_id
               << ": CLAIM " << move.source << "-" << move.target;
     common::Scorer(&scorer_).Claim(punter_id, move.source, move.target);
+    pass_count_[punter_id] = 0;
+  } else {
+    LOG(INFO) << "LOG: [" << turn_id << "] P" << punter_id
+              << ": SPLURGE " << PrintVectorInt(move.route);
+    common::Scorer(&scorer_).Splurge(punter_id, move.route);
+    pass_count_[punter_id] = 0;
   }
 
   ComputeScores();

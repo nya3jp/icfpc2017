@@ -5,6 +5,7 @@ namespace stadium {
 
 struct Settings {
   bool futures = false;
+  bool splurge = false;
 };
 
 }  // namespace stadium

@@ -45,11 +45,20 @@ PunterInfo LocalPunter::Setup(int punter_id,
   request->SetInteger("punter", punter_id);
   request->SetInteger("punters", num_punters);
   request->Set("map", Map::ToJson(*map));
+
+  auto settings_value = base::MakeUnique<base::DictionaryValue>();
+  bool empty_settings = true;
   if (settings.futures) {
-    auto settings_value = base::MakeUnique<base::DictionaryValue>();
     settings_value->SetBoolean("futures", true);
-    request->Set("settings", std::move(settings_value));
+    empty_settings = false;
   }
+  if (settings.splurge) {
+    settings_value->SetBoolean("splurge", true);
+    empty_settings = false;
+  }
+  if (!empty_settings)
+    request->Set("settings", std::move(settings_value));
+
   std::string name;
   std::unique_ptr<base::DictionaryValue> response;
   if (FLAGS_persistent) {
@@ -105,6 +114,14 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
               claim_dict->SetInteger("source", move.source);
               claim_dict->SetInteger("target", move.target);
               move_dict->Set("claim", std::move(claim_dict));
+            }
+            break;
+          case Move::Type::SPLURGE:
+            {
+              auto splurge_dict = base::MakeUnique<base::DictionaryValue>();
+              splurge_dict->SetInteger("punter", move.punter_id);
+              splurge_dict->Set("route", common::ToJson(move.route));
+              move_dict->Set("splurge", std::move(splurge_dict));
             }
             break;
         }

@@ -10,25 +10,6 @@ namespace common {
 namespace {
 
 template<typename T>
-std::unique_ptr<base::Value> ToJson(const std::vector<T>& elements) {
-  auto result = base::MakeUnique<base::ListValue>();
-  result->Reserve(elements.size());
-  for (const auto& element : elements) {
-    result->Append(T::ToJson(element));
-  }
-  return result;
-}
-
-std::unique_ptr<base::Value> ToJson(const std::vector<int>& elements) {
-  auto result = base::MakeUnique<base::ListValue>();
-  result->Reserve(elements.size());
-  for (int element : elements) {
-    result->AppendInteger(element);
-  }
-  return result;
-}
-
-template<typename T>
 void FromJson(const base::ListValue& values, std::vector<T>* output) {
   output->reserve(values.GetSize());
   for (size_t i = 0; i < values.GetSize(); ++i) {
@@ -48,6 +29,25 @@ void FromJson(const base::ListValue& values, std::vector<int>* output) {
 }
 
 }  // namespace
+
+template<typename T>
+std::unique_ptr<base::Value> ToJson(const std::vector<T>& elements) {
+  auto result = base::MakeUnique<base::ListValue>();
+  result->Reserve(elements.size());
+  for (const auto& element : elements) {
+    result->Append(T::ToJson(element));
+  }
+  return result;
+}
+
+std::unique_ptr<base::Value> ToJson(const std::vector<int>& elements) {
+  auto result = base::MakeUnique<base::ListValue>();
+  result->Reserve(elements.size());
+  for (int element : elements) {
+    result->AppendInteger(element);
+  }
+  return result;
+}
 
 Site Site::FromJson(const base::Value& value_in) {
   const base::DictionaryValue* value;
@@ -113,6 +113,12 @@ GameMove GameMove::Claim(int punter_id, int source, int target) {
   return {GameMove::Type::CLAIM, punter_id, source, target};
 }
 
+GameMove GameMove::Splurge(int punter_id, std::vector<int> route) {
+  GameMove move{GameMove::Type::SPLURGE, punter_id};
+  std::swap(move.route, route);
+  return std::move(move);
+}
+
 GameMove GameMove::FromJson(const base::Value& value_in) {
   const base::DictionaryValue* value;
   CHECK(value_in.GetAsDictionary(&value));
@@ -128,6 +134,14 @@ GameMove GameMove::FromJson(const base::Value& value_in) {
   if (value->HasKey("pass")) {
     result.type = GameMove::Type::PASS;
     CHECK(value->GetInteger("pass.punter", &result.punter_id));
+    return result;
+  }
+  if (value->HasKey("splurge")) {
+    result.type = GameMove::Type::SPLURGE;
+    CHECK(value->GetInteger("splurge.punter", &result.punter_id));
+    const base::ListValue* route = nullptr;
+    CHECK(value->GetList("splurge.route", &route));
+    common::FromJson(*route, &result.route);
     return result;
   }
 
@@ -151,6 +165,14 @@ std::unique_ptr<base::Value> GameMove::ToJson(const GameMove& game_move) {
       auto content = base::MakeUnique<base::DictionaryValue>();
       content->SetInteger("punter", game_move.punter_id);
       result->Set("pass", std::move(content));
+      return result;
+    }
+    case GameMove::Type::SPLURGE: {
+      auto result = base::MakeUnique<base::DictionaryValue>();
+      auto content = base::MakeUnique<base::DictionaryValue>();
+      content->SetInteger("punter", game_move.punter_id);
+      content->Set("route", common::ToJson(game_move.route));
+      result->Set("splurge", std::move(content));
       return result;
     }
   }

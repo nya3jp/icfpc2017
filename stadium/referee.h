@@ -35,6 +35,8 @@ class Referee {
   std::vector<int> ComputeScores() const;
 
   std::vector<PunterInfo> punter_info_list_;
+  std::vector<int> pass_count_;
+
   MapState map_state_;
   std::vector<Move> move_history_;
 

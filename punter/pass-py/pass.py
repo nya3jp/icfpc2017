@@ -53,6 +53,7 @@ def on_stop(last_moves, scores, state):
 def main():
     parser = optparse.OptionParser()
     parser.add_option('--bot', dest='bot', default=None)
+    parser.add_option('--persistent', dest='persistent', default=None, action='store_true')
     parser.add_option('--sleep_ms_in_setup', dest='sleep_ms_in_setup', type='int', default=None)
     parser.add_option('--sleep_ms_in_play', dest='sleep_ms_in_play', type='int', default=None)
     options, args = parser.parse_args(sys.argv[1:])

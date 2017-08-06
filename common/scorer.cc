@@ -245,6 +245,11 @@ void Scorer::Claim(size_t punter_id, int site_id1, int site_id2) {
   ufset.Merge(site_index1, site_index2);
 }
 
+void Scorer::Splurge(size_t punter_id, const std::vector<int>& route) {
+  for (int i = 0; i + 1U < route.size(); ++i)
+    Claim(punter_id, i, i + 1);
+}
+
 int Scorer::TryClaim(size_t punter_id, int site_id1, int site_id2) const {
   int score = GetScore(punter_id);
   UnionFindSet ufset(data_->mutable_scores(punter_id));
