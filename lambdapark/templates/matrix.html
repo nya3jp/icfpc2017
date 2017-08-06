@@ -3,27 +3,35 @@
 {% block content %}
 
 <style>
-th.rotate {
+.config {
   height: 180px;
   white-space: nowrap;
+  text-align: center;
 }
-th.rotate > div {
+.config > div {
+  display: inline-block;
   transform: rotate(-90deg);
   width: 30px;
 }
-th.rotate > div > span {
+.config > div > span {
   padding: 0 8px;
+}
+.punter {
+  width: 200px;
+}
+.cell {
+  text-align: center;
 }
 </style>
 
 <table class="table table-bordered">
   <thead>
     <tr>
-      <th></th>
-      {% for map in maps %}
-      <th class="rotate">
+      <th class="punter"></th>
+      {% for config in configs %}
+      <th class="config">
         <div>
-          <span>{{ map }}</span>
+          <span>{{ config }}</span>
         </div>
       </th>
       {% endfor %}
@@ -32,10 +40,10 @@ th.rotate > div > span {
   <tbody>
     {% for punter in punters %}
     <tr>
-      <th>{{ punter }}</th>
-      {% for map in maps %}
-      {% set cell = matrix[(map, punter)] %}
-      <td class="{{ cell.best and 'info' }}">
+      <th class="punter">{{ punter }}</th>
+      {% for config in configs %}
+      {% set cell = matrix[(config, punter)] %}
+      <td class="cell {{ cell.best and 'info' }}">
         {{ '{:.1f}'.format(cell.avg) }} ({{ cell.count }})
       </td>
       {% endfor %}

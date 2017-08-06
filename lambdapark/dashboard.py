@@ -58,37 +58,38 @@ def matrix_handler():
             else:
                 points.append(len(ranking) - len(points))
         for (punter, _), point in zip(ranking, points):
-            key = (report['job']['map'], punter)
+            config = '%s[%d]' % (report['job']['map'], len(report['job']['punters']))
+            key = (config, punter)
             bucketed_points[key].append(point)
 
-    maps = sorted(set(map for map, _ in bucketed_points))
+    configs = sorted(set(config for config, _ in bucketed_points))
     punters = sorted(set(punter for _, punter in bucketed_points))
 
     matrix = {}
     for punter in punters:
-        for map in maps:
-            points = bucketed_points[(map, punter)]
+        for config in configs:
+            points = bucketed_points[(config, punter)]
             avg = float(sum(points)) / len(points) if points else None
             cell = {
                 'avg': avg,
                 'count': len(points),
             }
-            matrix[(map, punter)] = cell
+            matrix[(config, punter)] = cell
 
-    for map in maps:
+    for config in configs:
         best_avg = 0
         for punter in punters:
-            cell = matrix[(map, punter)]
+            cell = matrix[(config, punter)]
             avg = cell['avg']
             if avg is not None and avg > best_avg:
                 best_avg = avg
         for punter in punters:
-            cell = matrix[(map, punter)]
+            cell = matrix[(config, punter)]
             cell['best'] = (cell['avg'] == best_avg)
 
     template_dict = {
         'label': label,
-        'maps': maps,
+        'configs': configs,
         'punters': punters,
         'matrix': matrix,
     }
