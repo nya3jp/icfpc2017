@@ -113,8 +113,13 @@ def maybe_schedule(db):
         if p.get('continuous'):
             punters.append(p['name'])
 
+    maps_map = {m['name']: m for m in settings['maps']}
+
+    configs = settings['continuous_configs'][:]
+    configs.sort(key=lambda c: (maps_map[c['map']]['num_sites'], c['num_punters']))
+
     jobs = []
-    for config in settings['continuous_configs']:
+    for config in configs:
         selects = {p: 0 for p in punters}
         for _ in range(config['num_rounds']):
             min_selects = min(selects.values())
