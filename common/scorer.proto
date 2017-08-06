@@ -11,9 +11,18 @@ message ScorerUnionFindSetProto {
   repeated ScoreCell cells = 1;  // site_index -> ScoreCell
 }
 
+message DistanceMapEntryProto {
+  repeated int32 distance = 1;
+}
+
+message DistanceMapProto {
+  repeated DistanceMapEntryProto entries = 2;
+}
+
 message ScorerProto {
   // TODO: Share with Game.
   repeated int32 site_ids = 1;  // site_index -> site_id mapping.
   repeated int32 mine_index_list = 2;  // mine_index -> mine_site_index
   repeated ScorerUnionFindSetProto scores = 3;  // punter_id -> UFSet.
+  optional DistanceMapProto distance_map = 4;
 }

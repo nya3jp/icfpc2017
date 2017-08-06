@@ -54,9 +54,63 @@ std::vector<std::pair<int, int>> CreateBidirectionalGraph(
   return result;
 }
 
-}  // namespace
+class DistanceMap {
+ public:
+  explicit DistanceMap(common::DistanceMapProto* proto) : proto_(proto) {}
 
-class Scorer::UnionFindSet {
+  void Initialize(const Map& game_map,
+                  const std::vector<int>& site_id_list,
+                  const std::vector<int>& mine_list) {
+    std::vector<std::pair<int, int>> edges =
+        CreateBidirectionalGraph(game_map.rivers, site_id_list);
+
+    for (size_t i = 0; i < mine_list.size(); ++i) {
+      int mine_site_index = mine_list[i];
+      auto* dist_map = proto_->add_entries();
+
+      // Initialize as unreached.
+      dist_map->mutable_distance()->Resize(site_id_list.size(), -1);
+      dist_map->set_distance(mine_site_index, 0);
+
+      std::queue<int> q;
+      q.push(mine_site_index);
+      while (!q.empty()) {
+        int site_index = q.front();
+        q.pop();
+        int dist = dist_map->distance(site_index);
+        DCHECK_GE(dist, 0);
+
+        for (auto range = std::equal_range(
+                 edges.begin(), edges.end(),
+                 std::make_pair(site_index, 0),
+                 [](const std::pair<int, int>& a,
+                    const std::pair<int, int>& b) {
+                   return a.first < b.first;
+                 });
+             range.first != range.second; ++range.first) {
+          int next_site_index = range.first->second;
+          if (dist_map->distance(next_site_index) >= 0)
+            continue;
+          dist_map->set_distance(next_site_index, dist + 1);
+          q.push(next_site_index);
+        }
+      }
+    }
+  }
+
+  size_t mine_size() const {
+    return proto_->entries_size();
+  }
+  int GetDistance(int mine_index, int site_index) const {
+    return proto_->entries(mine_index).distance(site_index);
+  }
+
+ private:
+  common::DistanceMapProto* proto_;
+  DISALLOW_COPY_AND_ASSIGN(DistanceMap);
+};
+
+class UnionFindSet {
  public:
   UnionFindSet(common::ScorerUnionFindSetProto* proto)
       : proto_(proto) {}
@@ -67,6 +121,16 @@ class Scorer::UnionFindSet {
       proto_->add_cells();
   }
 
+  void SetDistanceMap(const DistanceMap& distance_map) {
+    for (size_t i = 0; i < proto_->cells_size(); ++i) {
+      for (size_t j = 0; j < distance_map.mine_size(); ++j) {
+        int dist = distance_map.GetDistance(j, i);
+        mutable_cells(i)->add_scores(dist * dist);
+      }
+    }
+  }
+
+#if 0
   void AddMine(const std::vector<int>& dist_map) {
     DCHECK_EQ(proto_->cells_size(), dist_map.size());
     for (size_t site_index = 0; site_index < dist_map.size(); ++site_index) {
@@ -74,6 +138,7 @@ class Scorer::UnionFindSet {
           dist_map[site_index] * dist_map[site_index]);
     }
   }
+#endif
 
   void AddFuture(
       size_t mine_index, int mine_site_index, int target_site_index,
@@ -135,6 +200,8 @@ class Scorer::UnionFindSet {
   DISALLOW_COPY_AND_ASSIGN(UnionFindSet);
 };
 
+}  // namespace
+
 Scorer::Scorer() = default;
 Scorer::~Scorer() = default;
 
@@ -143,63 +210,28 @@ void Scorer::Initialize(const std::vector<PunterInfo>& punter_info_list,
   site_id_list_ = CreateSiteIdList(game_map.sites);
   mine_list_ = CreateMineList(game_map.mines, site_id_list_);
 
-  for (size_t i = 0; i < punter_info_list.size(); ++i)
-    UnionFindSet(data_.add_scores()).Initialize(site_id_list_.size());
+  DistanceMap distance_map(data_.mutable_distance_map());
+  distance_map.Initialize(game_map, site_id_list_, mine_list_);
 
-  // Initialize UFSet instances.
-  std::vector<std::pair<int, int>> edges =
-      CreateBidirectionalGraph(game_map.rivers, site_id_list_);
+  for (size_t i = 0; i < punter_info_list.size(); ++i) {
+    UnionFindSet union_find_set(data_.add_scores());
+    union_find_set.Initialize(site_id_list_.size());
+    union_find_set.SetDistanceMap(distance_map);
+  }
 
-  std::vector<int> dist_map(site_id_list_.size());
-  for (int i = 0; i < mine_list_.size(); ++i) {
-    int mine_site_index = mine_list_[i];
+  // Set futures.
+  for (size_t punter_id = 0; punter_id < data_.scores_size(); ++punter_id) {
+    UnionFindSet union_find_set(data_.mutable_scores(punter_id));
 
-    // Initialize as unreached.
-    std::fill(dist_map.begin(), dist_map.end(), -1);
-    dist_map[mine_site_index] = 0;
+    // Assume futures is valid.
+    for (const auto& future : punter_info_list[punter_id].futures) {
+      int source_index = GetSiteIndex(site_id_list_, future.source);
+      int mine_index = GetSiteIndex(mine_list_, source_index);
+      int target_index = GetSiteIndex(site_id_list_, future.target);
 
-    std::queue<int> q;
-    q.push(mine_site_index);
-    while (!q.empty()) {
-      int site_index = q.front();
-      q.pop();
-      int dist = dist_map[site_index];
-      DCHECK_GE(dist, 0);
-
-      for (auto range = std::equal_range(
-               edges.begin(), edges.end(),
-               std::make_pair(site_index, 0),
-               [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
-                 return a.first < b.first;
-               });
-           range.first != range.second; ++range.first) {
-        int next_site_index = range.first->second;
-        int& next_dist = dist_map[next_site_index];
-        if (next_dist >= 0)
-          continue;
-        next_dist = dist + 1;
-        q.push(next_site_index);
-      }
-    }
-
-    const int mine_site_id = site_id_list_[mine_site_index];
-    for (size_t punter_id = 0; punter_id < data_.scores_size(); ++punter_id) {
-      UnionFindSet ufset(data_.mutable_scores(punter_id));
-      ufset.AddMine(dist_map);
-
-      // If future is set, pre calculate it. Only last one is valid.
-      int target_site_id = -1;
-      for (const auto& future : punter_info_list[punter_id].futures) {
-        if (future.source == mine_site_id)
-          target_site_id = future.target;
-      }
-
-      if (target_site_id == -1)
-        continue;
-
-      int target_site_index = GetSiteIndex(site_id_list_, target_site_id);
-      ufset.AddFuture(
-          i, mine_site_index, target_site_index, dist_map[target_site_index]);
+      union_find_set.AddFuture(
+          mine_index, source_index, target_index,
+          distance_map.GetDistance(mine_index, target_index));
     }
   }
 }
