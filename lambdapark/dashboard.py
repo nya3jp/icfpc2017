@@ -77,16 +77,14 @@ def matrix_handler():
 
     for map in maps:
         best_avg = 0
-        best_punter = None
         for punter in punters:
             cell = matrix[(map, punter)]
             avg = cell['avg']
             if avg is not None and avg > best_avg:
                 best_avg = avg
-                best_punter = punter
         for punter in punters:
             cell = matrix[(map, punter)]
-            cell['best'] = (punter == best_punter)
+            cell['best'] = (cell['avg'] == best_avg)
 
     template_dict = {
         'label': label,

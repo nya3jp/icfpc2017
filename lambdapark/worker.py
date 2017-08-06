@@ -94,6 +94,9 @@ def process_job(job, all_punters):
 
     map_name = job['map']
     assert '/' not in map_name
+    map_path = os.path.join(BASE_DIR, 'maps/%s.json' % map_name)
+    if not os.path.exists(map_path):
+        raise RuntimeError('map not found: %s' % map_name)
 
     all_punters_map = {p['name']: p for p in all_punters}
     punters = []
