@@ -9,6 +9,7 @@ FLAGS = gflags.FLAGS
 
 gflags.DEFINE_string('user', os.getlogin(), 'User name.')
 gflags.DEFINE_string('map', None, 'Map name.')
+gflags.DEFINE_string('label', None, 'Label.')
 gflags.DEFINE_integer('priority', 0, 'Job priority.')
 gflags.MarkFlagAsRequired('map')
 
@@ -37,6 +38,7 @@ def main(argv):
         'punters': punters,
         'priority': FLAGS.priority,
         'user': FLAGS.user,
+        'label': FLAGS.label,
         'status': 'pending',
     }
     db.jobs.insert(job)
