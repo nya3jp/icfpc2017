@@ -29,20 +29,17 @@ void ExchangePingPong(common::Popen* subprocess) {
 }  // namespace
 
 MetaPunter::MetaPunter() {
-  primary_worker_ = base::MakeUnique<common::Popen>(
-      FLAGS_primary_worker + (FLAGS_persistent ? " --persistent" : ""),
-      true /* kill on parent death */);
-  backup_worker_ = base::MakeUnique<common::Popen>(
-      FLAGS_backup_worker + (FLAGS_persistent ? " --persistent" : ""),
-      true /* kill on parent death */);
-
-  base::SetNonBlocking(fileno(primary_worker_->stdout_read()));
-  base::SetNonBlocking(fileno(backup_worker_->stdout_read()));
 }
 
 MetaPunter::~MetaPunter() = default;
 
 void MetaPunter::OnInit() {
+  primary_worker_ = base::MakeUnique<common::Popen>(
+      FLAGS_primary_worker, true /* kill on parent death */);
+  backup_worker_ = base::MakeUnique<common::Popen>(
+      FLAGS_backup_worker, true /* kill on parent death */);
+  base::SetNonBlocking(fileno(primary_worker_->stdout_read()));
+  base::SetNonBlocking(fileno(backup_worker_->stdout_read()));
   ExchangePingPong(primary_worker_.get());
   ExchangePingPong(backup_worker_.get());
 }
