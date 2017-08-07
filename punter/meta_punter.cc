@@ -100,6 +100,7 @@ common::GameMove MetaPunter::Run(
         timeout_history_.end(), moves.begin(), moves.end());
     request.Set("move.moves", common::GameMoves::ToJson(timeout_history_));
     request.Set("state", primary_state_->CreateDeepCopy());
+    request.SetInteger("timeout_ms", timeout.InMilliseconds());
     common::WriteMessage(primary_worker_->stdin_write(), request);
   }
   {
