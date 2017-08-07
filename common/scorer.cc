@@ -5,6 +5,8 @@
 #include <queue>
 
 #include "base/logging.h"
+#include "base/memory/ptr_util.h"
+#include "base/optional.h"
 #include "common/scorer.pb.h"
 
 namespace common {
@@ -112,8 +114,12 @@ class DistanceMap {
 
 class UnionFindSet {
  public:
-  UnionFindSet(ScorerUnionFindSetProto* proto)
-      : proto_(proto) {}
+  UnionFindSet(ScorerUnionFindSetProto* proto,
+               bool dry_run=false)
+      : proto_(proto) {
+    if (dry_run)
+      dry_run_ = std::map<size_t, ScoreCell>();
+  }
 
   void Initialize(size_t num_sites) {
     proto_->mutable_cells()->Reserve(num_sites);
@@ -179,14 +185,25 @@ class UnionFindSet {
   }
 
   const ScoreCell& cells(size_t index) const {
+    if (dry_run_) {
+      auto it = dry_run_.value().find(index);
+      if (it != dry_run_.value().end())
+        return it->second;
+    }
     return proto_->cells(index);
   }
 
-  ScoreCell* mutable_cells(size_t index) {
+  ScoreCell* mutable_cells(size_t index) const {
+    if (dry_run_) {
+      auto it = dry_run_.value().find(index);
+      if (it != dry_run_.value().end())
+        return &it->second;
+    }
     return proto_->mutable_cells(index);
   }
 
   mutable ScorerUnionFindSetProto* proto_;
+  mutable base::Optional<std::map<size_t, ScoreCell>> dry_run_;
 
   DISALLOW_COPY_AND_ASSIGN(UnionFindSet);
 };
@@ -315,11 +332,14 @@ std::vector<int> Scorer::GetConnectedSiteList(size_t punter_id, int site_id)
 }
 
 std::vector<int> Scorer::Simulate(const std::vector<GameMove>& moves) const {
-  ::google::protobuf::RepeatedPtrField<ScorerUnionFindSetProto> scores;
-  scores.CopyFrom(data_->scores());
+  std::vector<std::unique_ptr<UnionFindSet>> ufsets;
+  for (int i = 0; i < data_->scores_size(); ++i) {
+    ufsets.push_back(base::MakeUnique<UnionFindSet>(
+        data_->mutable_scores(i), true));
+  }
 
   for (const auto& m : moves) {
-    UnionFindSet ufset(scores.Mutable(m.punter_id));
+    UnionFindSet& ufset = *ufsets[m.punter_id];
     switch (m.type) {
       case GameMove::Type::CLAIM: {
         int site_index1 = GetIndex(data_->site_ids(), m.source);
@@ -347,8 +367,8 @@ std::vector<int> Scorer::Simulate(const std::vector<GameMove>& moves) const {
   }
 
   std::vector<int> result;
-  for (int punter_id = 0; punter_id < scores.size(); ++punter_id) {
-    UnionFindSet ufset(scores.Mutable(punter_id));
+  for (int punter_id = 0; punter_id < data_->scores_size(); ++punter_id) {
+    UnionFindSet& ufset = *ufsets[punter_id];
     int score = 0;
     for (int i = 0; i < data_->mine_index_list_size(); ++i) {
       score += ufset.GetScore(data_->mine_index_list(i), i);
