@@ -12,6 +12,7 @@
       <th>Map</th>
       <th>Extensions</th>
       <th>Results</th>
+      <th>Links</th>
     </tr>
   </thead>
   <tbody>
@@ -37,6 +38,9 @@
         {% else %}
         {{ report.error }}
         {% endif %}
+      </td>
+      <td>
+        <a href="/static/visualizer/?map=/static/maps/{{ report.job.map }}.json&amp;moves=/job/{{ report.job._id }}.json&amp;punters={{ report.job.punters|join(',') }}&amp;seek=last">Visualizer</a>
       </td>
     </tr>
     {% endfor %}
