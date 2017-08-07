@@ -267,6 +267,8 @@ std::vector<Future> SimplePunter::GetFutures() {
 }
 
 int SimplePunter::GetOptionsRemaining() const {
+  if (!can_option_)
+    return 0;
   return proto_.options_remaining();
 }
 
