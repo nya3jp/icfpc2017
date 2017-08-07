@@ -52,27 +52,17 @@ continuous_configs:
     num_punters: 2
     num_rounds: *small_rounds
     extensions:
-      - futures
-      - splurges
-  - map: circle
-    num_punters: 2
-    num_rounds: *small_rounds
-  - map: circle
-    num_punters: 2
-    num_rounds: *small_rounds
-    extensions:
-      - futures
-  - map: circle
-    num_punters: 2
-    num_rounds: *small_rounds
-    extensions:
-      - splurges
-  - map: circle
+      - options
+  - map: sample
     num_punters: 2
     num_rounds: *small_rounds
     extensions:
       - futures
       - splurges
+      - options
+  - map: circle
+    num_punters: 2
+    num_rounds: *small_rounds
   - map: gen1
     num_punters: 2
     num_rounds: *small_rounds
@@ -101,6 +91,7 @@ continuous_configs:
     extensions:
       - futures
       - splurges
+      - options
   - map: lambda
     num_punters: 3
     num_rounds: *small_rounds
@@ -120,6 +111,7 @@ continuous_configs:
     extensions:
       - futures
       - splurges
+      - options
   - map: randomMedium
     num_punters: 2
     num_rounds: *small_rounds
@@ -155,63 +147,94 @@ continuous_configs:
     num_punters: 2
     num_rounds: *middle_rounds
     extensions:
-      - futures
-      - splurges
+      - options
   - map: boston-sparse
-    num_punters: 3
-    num_rounds: *middle_rounds
-  - map: boston-sparse
-    num_punters: 3
-    num_rounds: *middle_rounds
-    extensions:
-      - futures
-  - map: boston-sparse
-    num_punters: 3
-    num_rounds: *middle_rounds
-    extensions:
-      - splurges
-  - map: boston-sparse
-    num_punters: 3
-    num_rounds: *middle_rounds
-    extensions:
-      - futures
-      - splurges
-  - map: van-city-sparse
     num_punters: 2
+    num_rounds: *middle_rounds
+    extensions:
+      - futures
+      - splurges
+      - options
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: *middle_rounds
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: *middle_rounds
+    extensions:
+      - futures
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: *middle_rounds
+    extensions:
+      - splurges
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: *middle_rounds
+    extensions:
+      - options
+  - map: boston-sparse
+    num_punters: 3
+    num_rounds: *middle_rounds
+    extensions:
+      - futures
+      - splurges
+      - options
+  - map: boston-sparse
+    num_punters: 6
+    num_rounds: *middle_rounds
+  - map: boston-sparse
+    num_punters: 6
+    num_rounds: *middle_rounds
+    extensions:
+      - futures
+  - map: boston-sparse
+    num_punters: 6
+    num_rounds: *middle_rounds
+    extensions:
+      - splurges
+  - map: boston-sparse
+    num_punters: 6
+    num_rounds: *middle_rounds
+    extensions:
+      - options
+  - map: boston-sparse
+    num_punters: 6
+    num_rounds: *middle_rounds
+    extensions:
+      - futures
+      - splurges
+      - options
+  - map: oxford-sparse
+    num_punters: 4
+    num_rounds: *middle_rounds
+  - map: oxford-sparse2
+    num_punters: 4
+    num_rounds: *middle_rounds
+  - map: van-city-sparse
+    num_punters: 4
+    num_rounds: *large_rounds
+  - map: edinburgh-sparse
+    num_punters: 4
     num_rounds: *large_rounds
   - map: edinburgh-sparse2
-    num_punters: 2
-    num_rounds: *large_rounds
-  - map: edinburgh-sparse
-    num_punters: 2
-    num_rounds: *large_rounds
-  - map: edinburgh-sparse
-    num_punters: 3
+    num_punters: 4
     num_rounds: *large_rounds
   - map: gothenburg-sparse
-    num_punters: 2
+    num_punters: 4
     num_rounds: *large_rounds
   - map: nara-sparse
-    num_punters: 2
-    num_rounds: *large_rounds
-  - map: oxford2-scaled
-    num_punters: 2
-    num_rounds: *huge_rounds
-  - map: oxford2-sparse-2
-    num_punters: 2
+    num_punters: 4
     num_rounds: *large_rounds
   - map: oxford2-sparse-2
-    num_punters: 3
+    num_punters: 4
     num_rounds: *large_rounds
   - map: oxford-center-sparse
-    num_punters: 2
+    num_punters: 4
     num_rounds: *large_rounds
-  - map: oxford-sparse2
-    num_punters: 2
-    num_rounds: *middle_rounds
-  - map: oxford-sparse
-    num_punters: 2
-    num_rounds: *middle_rounds
+  - map: oxford2-scaled
+    num_punters: 4
+    num_rounds: *huge_rounds
 
 maps:
   - name: sample
