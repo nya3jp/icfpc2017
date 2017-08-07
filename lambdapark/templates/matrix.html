@@ -43,7 +43,7 @@ a.textlike {
 <table class="table table-bordered table-condensed">
   <thead>
     <tr>
-      <th class="punter" colspan="2">Map</th>
+      <th class="punter" colspan="2" style="vertical-align: bottom">Map</th>
       {% for config in configs %}
       <th class="config {{ (config in error_configs) and 'danger' }}">
         <div>
@@ -69,9 +69,9 @@ a.textlike {
       {% endfor %}
     </tr>
     <tr>
-      <th class="punter" colspan="2">Map Stats</th>
+      <th class="punter" colspan="2">Map Size</th>
       {% for info in infos %}
-      <td class="cell" style="font-size: 10px">
+      <td class="cell" style="font-size: 8px">
         {{ info.num_sites }}<br>
         {{ info.num_rivers }}<br>
         {{ info.num_mines }}
@@ -91,7 +91,7 @@ a.textlike {
       {% for config in configs %}
       {% set cell = matrix[(config, punter)] %}
       <td class="cell value {{ cell.best and 'info' }}">
-        <a class="textlike" href="/results/?label={{ label }}&amp;map={{ config.split()[0] }}&amp;num_punters={{ config.split()[1] }}&amp;extensions={{ config.split()[3] if config.split()[3] != '-' else '' }}&amp;punter={{ punter }}">{% if cell.avg %}{{ '{:.1f}'.format(cell.avg) }}{% else %}-{% endif %}<br>({{ cell.count }})</a>
+        <a class="textlike" href="/results/?label={{ label }}&amp;map={{ config.split()[0] }}&amp;num_punters={{ config.split()[1] }}&amp;extensions={{ config.split()[3] if config.split()[3] != '-' else '' }}&amp;punter={{ punter }}">{% if cell.avg %}{{ '{:.1f}'.format(cell.avg) }}{% else %}-{% endif %}<br><span style="font-size: 8px">({{ cell.count }})</span></a>
       </td>
       {% endfor %}
     {% endfor %}
@@ -99,10 +99,10 @@ a.textlike {
   <tfoot>
     <tr>
       <th class="punter" colspan="2">
-        Times
+        Max Time
       </th>
       {% for time in times %}
-      <td class="cell value">
+      <td class="cell value" style="font-size: 8px">
         {{ '{:.1f}'.format(time.max) }}
       </td>
       {% endfor %}
