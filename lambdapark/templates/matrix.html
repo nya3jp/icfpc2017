@@ -63,7 +63,7 @@ a.textlike {
     <tr>
       <th class="punter" colspan="2">Extensions</th>
       {% for config in configs %}
-      <td class="cell" style="font-size: 8px">
+      <td class="cell {{ 'N' in config.split()[2] and 'warning' }}" style="font-size: 8px">
         {{ config.split()[2] }}
       </td>
       {% endfor %}
