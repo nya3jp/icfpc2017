@@ -18,7 +18,7 @@ punters:
     shell: bazel-bin/punter/punter --logtostderr --punter=QuickPunter --name=QuickPunter
     continuous: true
   - name: meta
-    shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaPunter --primary_worker="bazel-bin/punter/punter --logtostderr --punter=GreedyPunterMirac" --name=GreedyPunterMirac" --backup_worker="bazel-bin/punter/punter --logtostderr --punter=QuickPunter --name=QuickPunter"
+    shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaPunter --primary_worker="bazel-bin/punter/punter --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac" --backup_worker="bazel-bin/punter/punter --logtostderr --punter=QuickPunter --name=QuickPunter"
     continuous: true
 
 continuous_configs:
