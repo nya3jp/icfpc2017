@@ -123,6 +123,11 @@ History.prototype = {
         this.moves[i].option.target =
             gameMap.getSiteIndex(this.moves[i].option.target);
       }
+      if (this.moves[i].splurge) {
+        for (let j = 0; j < this.moves[i].splurge.route.length; j++) {
+          this.moves[i].splurge.route[j] = gameMap.getSiteIndex(this.moves[i].splurge.route[j]);
+        }
+      }
     }
   },
 };
@@ -282,6 +287,8 @@ Viewer.prototype = {
           punterId = history.moves[i].claim.punter;
         if (history.moves[i].option)
           punterId = history.moves[i].option.punter;
+        if (history.moves[i].splurge)
+          punterId = history.moves[i].splurge.punter;
         else if (history.moves[i].pass)
           punterId = history.moves[i].pass.punter;
 
