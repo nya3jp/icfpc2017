@@ -84,6 +84,7 @@ struct GameMoves {
 using Future = River;
 
 struct Futures {
+  static std::vector<Future> FromJson(const base::ListValue& value);
   static std::unique_ptr<base::Value> ToJson(
       const std::vector<Future>& futures);
 };
