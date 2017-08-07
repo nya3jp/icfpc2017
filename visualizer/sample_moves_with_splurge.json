@@ -1,0 +1,16 @@
+{
+	"moves": [
+		{"claim":{"punter":0,"source":0,"target":1}},
+		{"claim":{"punter":1,"source":1,"target":2}},
+		{"pass":{"punter":0}},
+		{"claim":{"punter":1,"source":3,"target":4}},
+		{"pass":{"punter":0}},
+		{"claim":{"punter":1,"source":5,"target":6}},
+	 	{"pass":{"punter":0}},
+		{"claim":{"punter":1,"source":7,"target":0}},
+		{"splurge":{"punter":0,"route":[0, 7, 6, 5, 4]}},
+		{"claim":{"punter":1,"source":3,"target":5}},
+		{"claim":{"punter":0,"source":5,"target":7}},
+		{"claim":{"punter":1,"source":7,"target":1}}
+	]
+}

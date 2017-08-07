@@ -309,6 +309,9 @@ Viewer.prototype = {
       ctx.stroke();
     }
 
+    const V = sites.length;
+    const taken = {};  // taken[src*V + dst] => true if river(src,tgt) is taken.
+
     // Draw claimed rivers
     for (let i = 0; i < state.step; i++) {
       const claim = history.moves[i].claim;
@@ -321,6 +324,8 @@ Viewer.prototype = {
       ctx.lineTo(sitePX[claim.target], sitePY[claim.target]);
       ctx.lineWidth = i == state.step - 1 ? 5 : 2;
       ctx.stroke();
+      taken[claim.source * V + claim.target] = true;
+      taken[claim.target * V + claim.source] = true;
     }
 
     // Draw option rivers.
@@ -329,23 +334,70 @@ Viewer.prototype = {
       if (!option)
         continue;
 
-      const x1 = sitePX[option.source];
-      const y1 = sitePY[option.source];
-      const x2 = sitePX[option.target];
-      const y2 = sitePY[option.target];
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const len = Math.sqrt(dx*dx + dy*dy);
-      if (len == 0)
+      let x1 = sitePX[option.source];
+      let y1 = sitePY[option.source];
+      let x2 = sitePX[option.target];
+      let y2 = sitePY[option.target];
+      if (x1 == x2 && y1 == y2)
         continue;
-      const dx2 = (dy / len) * 3;
-      const dy2 = (-dx / len) * 3;
+      if (taken[option.source * V + option.target]) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.sqrt(dx*dx + dy*dy);
+        const dx2 = (dy / len) * 3;
+        const dy2 = (-dx / len) * 3;
+        x1 += dx2;
+        y1 += dy2;
+        x2 += dx2;
+        y2 += dy2;
+      } else {
+        taken[option.source * V + option.target] = true;
+        taken[option.target * V + option.source] = true;
+      }
       ctx.beginPath();
       ctx.strokeStyle = colors[option.punter];
-      ctx.moveTo(x1 + dx2, y1 + dy2);
-      ctx.lineTo(x2 + dx2, y2 + dy2);
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
       ctx.lineWidth = i == state.step - 1 ? 5 : 2;
       ctx.stroke();
+    }
+
+    // Draw splurged rivers
+    for (let i = 0; i < state.step; i++) {
+      const splurge = history.moves[i].splurge;
+      if (!splurge)
+        continue;
+
+      for (let j = 0; j < splurge.route.length - 1; j++) {
+        let src = splurge.route[j];
+        let tgt = splurge.route[j+1];
+        let x1 = sitePX[src];
+        let y1 = sitePY[src];
+        let x2 = sitePX[tgt];
+        let y2 = sitePY[tgt];
+        if (x1 == x2 && y1 == y2)
+          continue;
+        if (taken[src * V + tgt]) {
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const len = Math.sqrt(dx*dx + dy*dy);
+          const dx2 = (dy / len) * 3;
+          const dy2 = (-dx / len) * 3;
+          x1 += dx2;
+          y1 += dy2;
+          x2 += dx2;
+          y2 += dy2;
+        } else {
+          taken[src * V + tgt] = true;
+          taken[tgt * V + src] = true;
+        }
+        ctx.beginPath();
+        ctx.strokeStyle = colors[splurge.punter];
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineWidth = i == state.step - 1 ? 5 : 2;
+        ctx.stroke();
+      }
     }
 
     // Draw sites
@@ -374,6 +426,14 @@ Viewer.prototype = {
           const src = history.moves[i].option.source;
           const dst = history.moves[i].option.target;
           edges[punter].push({src: src, dst: dst});
+        }
+        if (history.moves[i].splurge) {
+          const punter = history.moves[i].splurge.punter;
+          for (let j = 0; j < history.moves[i].splurge.route.length-1; j++) {
+            const src = history.moves[i].splurge.route[j];
+            const dst = history.moves[i].splurge.route[j+1];
+            edges[punter].push({src: src, dst: dst});
+          }
         }
       }
 
