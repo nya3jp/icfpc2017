@@ -20,6 +20,8 @@ class Punter {
 
   virtual PunterInfo SetUp(const common::SetUpData& args) = 0;
   virtual base::Optional<Move> OnTurn(const std::vector<Move>& moves) = 0;
+  virtual void OnStop(const std::vector<Move>& moves,
+                      const std::vector<int>& scores) = 0;
 
  protected:
   Punter() {}

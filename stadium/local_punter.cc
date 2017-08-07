@@ -102,11 +102,38 @@ base::Optional<Move> LocalPunter::OnTurn(const std::vector<Move>& moves) {
   return Move::FromJson(*response);
 }
 
+void LocalPunter::OnStop(const std::vector<Move>& moves,
+                         const std::vector<int>& scores) {
+  auto request = base::MakeUnique<base::DictionaryValue>();
+  request->Set("stop.moves", common::GameMoves::ToJson(moves));
+  {
+    auto scores_value = base::MakeUnique<base::ListValue>();
+    for (int punter_id = 0; punter_id < scores.size(); ++punter_id) {
+      auto score = base::MakeUnique<base::DictionaryValue>();
+      score->SetInteger("punter", punter_id);
+      score->SetInteger("score", scores[punter_id]);
+      scores_value->Append(std::move(score));
+    }
+    request->Set("stop.scores", std::move(scores_value));
+  }
+  request->Set("state", state_->CreateDeepCopy());
+
+  if (FLAGS_persistent) {
+    RunProcess(subprocess_.get(), *request, nullptr, base::TimeDelta(),
+               false);
+  } else {
+    common::Popen subprocess(shell_);
+    InitializeSubprocess(&subprocess);
+    RunProcess(&subprocess, *request, nullptr, base::TimeDelta(), false);
+  }
+}
+
 std::unique_ptr<base::Value> LocalPunter::RunProcess(
     common::Popen* subprocess,
     const base::Value& request,
     std::string* out_name,
-    const base::TimeDelta& timeout) {
+    const base::TimeDelta& timeout,
+    bool expect_reply) {
   // Exchange names.
   base::Optional<std::string> name =
       common::ReadPing(subprocess->stdout_read());
@@ -121,6 +148,9 @@ std::unique_ptr<base::Value> LocalPunter::RunProcess(
 
   // Exchange the message.
   common::WriteMessage(subprocess->stdin_write(), request);
+  if (!expect_reply)
+    return nullptr;
+
   std::unique_ptr<base::Value> result =
       common::ReadMessage(subprocess->stdout_read(), timeout, start_time);
 

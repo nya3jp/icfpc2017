@@ -58,7 +58,13 @@ void Master::DoRunGame() {
     CHECK_EQ(actual_move.punter_id, punter_id);
     move_history_.push_back(actual_move);
   }
-  referee_->Finish();
+  std::vector<int> scores = referee_->Finish();
+  for (int punter_id = 0; punter_id < punters_.size(); ++punter_id) {
+    std::vector<Move> last_moves(
+        move_history_.begin() + last_success_[punter_id],
+        move_history_.end());
+    punters_[punter_id]->OnStop(last_moves, scores);
+  }
 }
 
 }  // namespace stadium

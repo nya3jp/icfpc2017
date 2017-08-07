@@ -19,13 +19,16 @@ class LocalPunter : public Punter {
 
   PunterInfo SetUp(const common::SetUpData& args) override;
   base::Optional<Move> OnTurn(const std::vector<Move>& moves) override;
+  void OnStop(const std::vector<Move>& moves,
+              const std::vector<int>& scores) override;
 
  private:
   std::unique_ptr<base::Value> RunProcess(
       common::Popen* subprocess,
       const base::Value& request,
       std::string* out_name,
-      const base::TimeDelta& timeout);
+      const base::TimeDelta& timeout,
+      bool expect_reply=true);
 
   const std::string shell_;
 
