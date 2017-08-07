@@ -423,7 +423,7 @@ Viewer.prototype = {
   },
 };
 
-function Controller(prevButton, playButton, nextButton, slider, inputMap, inputMoves, viewer, mapUrl, movesUrl) {
+function Controller(prevButton, playButton, nextButton, slider, inputMap, inputMoves, viewer, mapUrl, movesUrl, seek) {
   this.playing = false;
   this.prevButton_ = prevButton;
   this.playButton_ = playButton;
@@ -447,6 +447,11 @@ function Controller(prevButton, playButton, nextButton, slider, inputMap, inputM
 
   this.loadMapFromUrl_(mapUrl).then(() => {
     return this.loadMovesFromUrl_(movesUrl);
+  }).catch(() => {}).then(() => {
+    if (seek === 'last') {
+      this.state_.step = this.history_.moves.length;
+      this.updateView_();
+    }
   });
 }
 
@@ -592,5 +597,6 @@ document.addEventListener('DOMContentLoaded', function(event) {
   const viewer = new Viewer($('canvas'), $('scores'), $('prev'), $('next'),
       $('btn_play'), $('slider'), $('moves'), punters);
   const controller = new Controller($('prev'), $('btn_play'), $('next'),
-      $('slider'), $('map'), $('moves'), viewer, query['map'], query['moves']);
+      $('slider'), $('map'), $('moves'), viewer, query['map'], query['moves'],
+      query['seek']);
 });
