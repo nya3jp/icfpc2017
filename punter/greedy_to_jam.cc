@@ -42,6 +42,12 @@ framework::GameMove GreedyToJam::Run(const std::vector<framework::GameMove>& mov
       
       int plusscore = themap.claim(srcix, trgix, color);
       LOG(INFO) << "Plusscore" << plusscore;
+    }else if(move.type == framework::GameMove::Type::SPLURGE) {
+      int p = move.route[0];
+      int color = move.punter_id;
+      for(size_t ix = 1; ix < move.route.size(); ix++) {
+        themap.claim(p, move.route[ix], color);
+      }
     }
   }
   LOG(INFO) << "Scores after update: ";
