@@ -24,7 +24,10 @@ punters:
     shell: bazel-bin/punter/punter --logtostderr --punter=Jammer --name=Jammer
     continuous: true
   - name: mjf
-    shell: bazel-bin/punter/punter --logtostderr --punter=MiracOrJamOrFriendly --name=MiracOrJamOrFriendly
+    shell: bazel-bin/punter/punter --logtostderr --punter=MiracOrJamOrFriendly --name=MiracOrJamOrFriendly --use_option
+    continuous: true
+  - name: mjff
+    shell: bazel-bin/punter/punter --logtostderr --punter=MiracOrJamOrFriendlyOrFuture --name=MiracOrJamOrFriendlyOrFuture --use_option
     continuous: true
   - name: future
     shell: bazel-bin/punter/punter --logtostderr --punter=FuturePunter --name=FuturePunter

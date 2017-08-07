@@ -23,6 +23,7 @@ public:
 
   static std::string BenkeiOrJam(const common::SetUpData& args);
   static std::string MiracOrJamOrFriendly(const common::SetUpData& args);
+  static std::string MiracOrJamOrFutureOrFriendly(const common::SetUpData& args);
 
  private:
   ChooserType f_;
