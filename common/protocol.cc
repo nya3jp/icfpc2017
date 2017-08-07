@@ -38,7 +38,7 @@ class FdWaiter {
     epoll_fd_.reset(epoll_create1(0));
     PCHECK(epoll_fd_.is_valid());
 
-    struct epoll_event ev;
+    struct epoll_event ev = {};
     ev.events = EPOLLIN;
     ev.data.fd = fd;
     PCHECK(epoll_ctl(epoll_fd_.get(), EPOLL_CTL_ADD, fd, &ev) == 0);
