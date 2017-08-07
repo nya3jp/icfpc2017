@@ -22,32 +22,28 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
       move.source = FindSiteIdxFromSiteId(move.source);
       move.target = FindSiteIdxFromSiteId(move.target);
 
-      // TODO: This is slow!
-      for (int i = 0; i < rivers_->size(); ++i) {
-        RiverProto* r = rivers_->Mutable(i);
-        if ((r->source() == move.source && r->target() == move.target) ||
-            (r->source() == move.target && r->target() == move.source)) {
-          DCHECK(r->punter() == -1);
-          r->set_punter(move.punter_id);
-        }
+      for (Edge& edge : edges_[move.source]) {
+        if (edge.site != move.target)
+          continue;
+        RiverProto* r = rivers_->Mutable(edge.river);
+        DCHECK(r->punter() == -1);
+        r->set_punter(move.punter_id);
       }
     }
     if (move.type == GameMove::Type::SPLURGE) {
       // Must use original site ids.
       scorer.Splurge(move.punter_id, move.route);
 
-      // TODO: This is slow!
       for (size_t i = 0; i + 1U < move.route.size(); ++i) {
         int source = FindSiteIdxFromSiteId(move.route[i]);
         int target = FindSiteIdxFromSiteId(move.route[i + 1]);
 
-        for (int i = 0; i < rivers_->size(); ++i) {
-          RiverProto* r = rivers_->Mutable(i);
-          if ((r->source() == source && r->target() == target) ||
-              (r->source() == target && r->target() == source)) {
-            DCHECK(r->punter() == -1);
-            r->set_punter(move.punter_id);
-          }
+        for (Edge& edge : edges_[source]) {
+          if (edge.site != target)
+            continue;
+          RiverProto* r = rivers_->Mutable(edge.river);
+          DCHECK(r->punter() == -1);
+          r->set_punter(move.punter_id);
         }
       }
     }
