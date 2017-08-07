@@ -95,6 +95,9 @@ def spawn_workers():
 def terminate_workers(procs):
     for proc in procs:
         proc.send_signal(signal.SIGINT)
+    time.sleep(3)
+    for proc in procs:
+        proc.kill()
     for proc in procs:
         proc.wait()
 
