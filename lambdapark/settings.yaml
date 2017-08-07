@@ -20,6 +20,9 @@ punters:
   - name: friendly
     shell: bazel-bin/punter/punter --logtostderr --punter=FriendlyPunter --name=FriendlyPunter
     continuous: true
+  - name: benkeiorjam
+    shell: bazel-bin/punter/punter --logtostderr --punter=BenkeiOrJam --name=BenkeiOrJam
+    continuous: true
 #  - name: irori
 #    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
 #    continuous: true
