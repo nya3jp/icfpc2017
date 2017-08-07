@@ -26,16 +26,13 @@ class Shadow : public GreedyPunterMirac {
 public:
   Shadow() = default;
   ~Shadow() override = default;
-  void Init(const common::SetUpData& data,
-            const framework::GameStateProto& proto) {
-    setup_data_ = data;
-    SetUp(setup_data_);
+  void Init(const framework::GameStateProto& proto) {
     SetStateFromProto(base::MakeUnique<framework::GameStateProto>(proto));
   }
 
   std::unique_ptr<Shadow> Clone() const {
     auto res = base::MakeUnique<Shadow>();
-    res->Init(setup_data_, proto_);
+    res->Init(proto_);
     return res;
   }
   void Advance(const GameMove& next) {
@@ -50,8 +47,6 @@ public:
     punter_id_ = old_punter_id;
     return r;
   }
- protected:
-  common::SetUpData setup_data_;
 };
 
 namespace {
@@ -92,6 +87,15 @@ Snapshot SnapshotFromMove(
   return result;
 }
 
+std::string SnapshotScoreStr(const Snapshot& ss) {
+  std::ostringstream oss;
+  oss << "tt:" << ss.total_score << " score:";
+  for (size_t i = 0; i < ss.scores.size(); ++i) {
+    oss << ss.scores[i] << ",";
+  }
+  return oss.str();
+}
+
 void UniqifyByMove(std::vector<Snapshot>* snapshot) {
   std::unordered_map<std::string, const Snapshot*> snapshot_map;
   for (const auto& s : *snapshot) {
@@ -121,13 +125,16 @@ SimulatingPunter::~SimulatingPunter() = default;
 
 void SimulatingPunter::SetUp(const common::SetUpData& args) {
   SimplePunter::SetUp(args);
-  setup_data_ = args;
 }
 
 framework::GameMove SimulatingPunter::Run() {
-  const int kMaxStep = 10;
+  const int kMaxStep = 3;
   std::vector<Snapshot> old_snapshot{GenerateSnapshot({})};
   for (int step = 0; step < kMaxStep; ++step) {
+    for (int i = 0; i < num_punters_; i++ ) {
+      LOG(INFO) << "score(" << i << "):" << GetScore(i);
+    }
+    LOG(INFO) << "step:" << step << " Score:" << old_snapshot.front().total_score << "-" << old_snapshot.back().total_score << " (top:" << SnapshotScoreStr(old_snapshot.front()) << ") count: " << old_snapshot.size();
     std::vector<Snapshot> new_snapshots;
     for (const auto& state : old_snapshot) {
       GenerateNextSnapshots(state, &new_snapshots);
@@ -176,20 +183,21 @@ void SimulatingPunter::GenerateNextSnapshots(
 }
 
 void SimulatingPunter::ShrinkToTop(std::vector<Snapshot>* snapshots) {
-  const int kWidth = 10;
+  const int kWidth = 100;
   UniqifyByMove(snapshots);
   std::sort(snapshots->begin(), snapshots->end(),
             [](const Snapshot& lhs, const Snapshot& rhs) {
       return lhs.total_score < rhs.total_score;});
   std::reverse(snapshots->begin(), snapshots->end());
   if (snapshots->size() > kWidth) {
+    LOG(INFO) << "Shrinking score:" << (*snapshots)[kWidth].total_score << "-" << snapshots->back().total_score << " size: " << snapshots->size();
     snapshots->resize(kWidth);
   }
 }
 
 std::unique_ptr<Shadow> SimulatingPunter::SummonShadow() const {
   auto shadow =  base::MakeUnique<Shadow>();
-  shadow->Init(setup_data_, proto_);
+  shadow->Init(proto_);
   return shadow;
 }
 

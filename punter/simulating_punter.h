@@ -27,7 +27,6 @@ class SimulatingPunter : public framework::SimplePunter {
   void ShrinkToTop(std::vector<Snapshot>* snapshots);
 
  protected:
-  common::SetUpData setup_data_;
   std::unique_ptr<SimplePunter> punter_;
   std::vector<framework::GameMove> old_moves_;
 };
