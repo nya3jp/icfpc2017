@@ -25,10 +25,6 @@ class SimulatingPunter : public framework::SimplePunter {
   void GenerateNextSnapshots(const Snapshot& old,
                              std::vector<Snapshot>* new_snapshots);
   void ShrinkToTop(std::vector<Snapshot>* snapshots);
-
- protected:
-  std::unique_ptr<SimplePunter> punter_;
-  std::vector<framework::GameMove> old_moves_;
 };
 
 }  // namespace punter
