@@ -101,7 +101,7 @@ void UniqifyByMove(std::vector<Snapshot>* snapshot) {
     snapshot_map[s.key] = &s;
   }
   std::vector<Snapshot> new_snapshots;
-  new_snapshots.resize(snapshot_map.size());
+  new_snapshots.reserve(snapshot_map.size());
   for (const auto& kv : snapshot_map) {
     new_snapshots.push_back(*kv.second);
   }
@@ -131,6 +131,10 @@ framework::GameMove SimulatingPunter::Run() {
     std::vector<Snapshot> new_snapshots;
     for (const auto& state : old_snapshot) {
       GenerateNextSnapshots(state, &new_snapshots);
+    }
+    if (new_snapshots.size() == 0) {
+      // Game end.
+      break;
     }
     ShrinkToTop(&new_snapshots);
     old_snapshot.swap(new_snapshots);
@@ -172,7 +176,7 @@ void SimulatingPunter::GenerateNextSnapshots(
 }
 
 void SimulatingPunter::ShrinkToTop(std::vector<Snapshot>* snapshots) {
-  const int kWidth = 400;
+  const int kWidth = 10;
   UniqifyByMove(snapshots);
   std::sort(snapshots->begin(), snapshots->end(),
             [](const Snapshot& lhs, const Snapshot& rhs) {
