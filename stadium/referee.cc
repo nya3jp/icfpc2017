@@ -363,11 +363,12 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
   return actual_move;
 }
 
-void Referee::Finish() {
+std::vector<int> Referee::Finish() {
   LOG(INFO) << "Game finished.";
   std::vector<int> scores = ComputeScores();
   if (!FLAGS_result_json.empty())
     WriteResults(FLAGS_result_json, scores, move_history_);
+  return scores;
 }
 
 std::vector<int> Referee::ComputeScores() const {

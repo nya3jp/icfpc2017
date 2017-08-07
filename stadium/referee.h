@@ -19,7 +19,7 @@ class Referee {
 
   void Setup(const std::vector<PunterInfo>& punter_info_list, const Map* map);
   Move HandleMove(int turn_id, int punter_id, const Move& move);
-  void Finish();
+  std::vector<int> Finish();
 
  private:
   struct SiteState;
