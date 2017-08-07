@@ -13,6 +13,8 @@ SimplePunter::SimplePunter() = default;
 SimplePunter::~SimplePunter() = default;
 
 GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
+  proto_.set_num_remaining_turns(
+      static_cast<int>(proto_.num_remaining_turns() - moves.size()));
   common::Scorer scorer(proto_.mutable_scorer());
   recent_updated_.clear();
   for (const auto& move : moves) {
@@ -176,6 +178,8 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
   proto_.set_pass_count(-1);
 
   proto_.set_options_remaining(game_map.mines.size());
+
+  proto_.set_num_remaining_turns(rivers_->size());
 
   common::Scorer(proto_.mutable_scorer()).Initialize(
       num_punters_, args.game_map);

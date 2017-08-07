@@ -34,6 +34,8 @@ class SimplePunter : public Punter {
   int num_sites() const { return sites_->size(); }
   int dist_to_mine(int site, int mine) const;
 
+  int num_remaining_turns() const { return proto_.num_remaining_turns(); }
+
  protected:
   struct Edge {
     int site;  // site_index
