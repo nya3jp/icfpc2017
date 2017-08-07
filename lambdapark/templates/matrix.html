@@ -7,6 +7,7 @@
   height: 180px;
   white-space: nowrap;
   text-align: center;
+  padding: 2px;
 }
 .config > div {
   display: inline-block;
@@ -22,6 +23,8 @@
 .cell {
   text-align: center;
   vertical-align: middle !important;
+  padding: 2px !important;
+  line-height: 1.2 !important;
 }
 .cell.value {
   font-size: 12px;
@@ -40,7 +43,7 @@ a.textlike {
   <button>Go</button>
 </form>
 
-<table class="table table-bordered table-condensed">
+<table id="matrix" class="table table-bordered table-condensed">
   <thead>
     <tr>
       <th class="punter" colspan="2" style="vertical-align: bottom">Map</th>
