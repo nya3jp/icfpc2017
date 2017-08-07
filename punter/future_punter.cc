@@ -7,10 +7,13 @@
 #include "common/scorer.h"
 #include "framework/game_proto.pb.h"
 #include "framework/simple_punter.h"
+#include "gflags/gflags.h"
 
 using framework::MineProto;
 using framework::RiverProto;
 using framework::FutureProto;
+
+DEFINE_bool(future_aggressive, false, "");
 
 namespace punter {
 
@@ -98,12 +101,13 @@ std::vector<framework::Future> FuturePunter::GetFuturesImpl() {
   std::sort(candidates.begin(), candidates.end(),
             [](const FutureCandidate& a, const FutureCandidate& b) { return (a.score > b.score); });
 
-  if (!candidates.empty()) {
-    // TODO: set multiple futures? consider punter_id?
+  for (int i = 0; i < candidates.size(); i++) {
     FutureProto* future_proto = proto_.add_futures();
-    future_proto->set_mine_index(candidates[0].mine);
-    future_proto->set_target(candidates[0].site);
-    DLOG(INFO) << "future: " << mines_->Get(candidates[0].mine).site() << "-" << candidates[0].site;
+    future_proto->set_mine_index(candidates[i].mine);
+    future_proto->set_target(candidates[i].site);
+    DLOG(INFO) << "future: " << mines_->Get(candidates[i].mine).site() << "-" << candidates[i].site;
+    if (!FLAGS_future_aggressive)
+      break;
   }
 
   std::vector<framework::Future> futures;
