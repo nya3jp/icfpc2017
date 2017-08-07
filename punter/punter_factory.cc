@@ -53,8 +53,8 @@ std::unique_ptr<framework::Punter> PunterByName(const std::string& name) {
     return base::MakeUnique<SwitchingPunter>(SwitchingPunter::BenkeiOrJam);
   else if (name == "FuturePunter")
     return base::MakeUnique<FuturePunter>();
-  else if (name == "BenkeiOrJamOrFriendly")
-    return base::MakeUnique<SwitchingPunter>(SwitchingPunter::BenkeiOrJamOrFriendly);
+  else if (name == "MiracOrJamOrFriendly")
+    return base::MakeUnique<SwitchingPunter>(SwitchingPunter::MiracOrJamOrFriendly);
   else
     LOG(FATAL) << "invalid punter name: " << name;
   return nullptr;
@@ -97,12 +97,12 @@ std::string SwitchingPunter::BenkeiOrJam(const common::SetUpData& args) {
 }
 
 // static
-std::string SwitchingPunter::BenkeiOrJamOrFriendly(const common::SetUpData& args) {
+std::string SwitchingPunter::MiracOrJamOrFriendly(const common::SetUpData& args) {
   if (args.game_map.sites.size() >= 800 &&
       args.game_map.mines.size() >= 8) { return "FriendlyPunter"; }
   if (args.num_punters == 2 &&
       args.game_map.sites.size() <  100) { return "Jammer"; }
-  return "Benkei";
+  return "GreedyPunterMirac";
 }
 
 }  // namespace punter

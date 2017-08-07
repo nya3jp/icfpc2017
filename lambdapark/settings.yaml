@@ -15,19 +15,16 @@ punters:
     shell: bazel-bin/punter/punter --logtostderr --punter=QuickPunter --name=QuickPunter
     continuous: true
   - name: meta
-    shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaPunter --primary_worker_options="--logtostderr --punter=BenkeiOrJamOrFriendly --name=BenkeiOrJamOrFriendly" --backup_worker_options="--logtostderr --punter=QuickPunter --name=QuickPunter"
+    shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaPunter --primary_worker_options="--logtostderr --punter=MiracOrJamOrFriendly --name=MiracOrJamOrFriendly" --backup_worker_options="--logtostderr --punter=QuickPunter --name=QuickPunter"
     continuous: true
   - name: friendly
     shell: bazel-bin/punter/punter --logtostderr --punter=FriendlyPunter --name=FriendlyPunter
     continuous: true
-  - name: benkeiorjam
-    shell: bazel-bin/punter/punter --logtostderr --punter=BenkeiOrJam --name=BenkeiOrJam
-    continuous: true
   - name: jammer
     shell: bazel-bin/punter/punter --logtostderr --punter=Jammer --name=Jammer
     continuous: true
-  - name: bjf
-    shell: bazel-bin/punter/punter --logtostderr --punter=BenkeiOrJamOrFriendly --name=BenkeiOrJamOrFriendly
+  - name: mjf
+    shell: bazel-bin/punter/punter --logtostderr --punter=MiracOrJamOrFriendly --name=MiracOrJamOrFriendly
     continuous: true
   - name: future
     shell: bazel-bin/punter/punter --logtostderr --punter=FuturePunter --name=FuturePunter
