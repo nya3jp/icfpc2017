@@ -6,7 +6,6 @@ cc_binary(
 
   deps = [
     ":punter_factory",
-    "//framework:game",
     "//framework:simple_punter",
     "//third_party/chromiumbase",
   ],
