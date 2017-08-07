@@ -10,6 +10,7 @@
 using framework::RiverProto;
 
 DEFINE_bool(use_option, false, "");
+DEFINE_bool(refine_pos, false, "");
 
 namespace punter {
 
@@ -119,8 +120,32 @@ framework::GameMove GreedyPunterMirac::Run() {
     return {framework::GameMove::Type::PASS, punter_id_};
   }
 
-  int prev_pos = -1;
   int pos = max_site_idx;
+  int best_new_pos = -1;
+  int max_dist = -1;
+  if (FLAGS_refine_pos) {
+    for (int i = 0; i < mines_->size(); ++i) {
+      if (i == max_mine_idx) continue;
+      if (rivers_to_claim[pos][max_mine_idx].options ==
+          rivers_to_claim[pos][i].options +
+          rivers_to_claim[mines_->Get(i).site()][max_mine_idx].options &&
+          rivers_to_claim[pos][max_mine_idx].rivers ==
+          rivers_to_claim[pos][i].rivers +
+          rivers_to_claim[mines_->Get(i).site()][max_mine_idx].rivers &&
+          rivers_to_claim[mines_->Get(i).site()][max_mine_idx].rivers > 0) {
+        int new_dist = rivers_to_claim[pos][i].rivers;
+        if (max_dist < new_dist) {
+          max_dist = new_dist;
+          best_new_pos = mines_->Get(i).site();
+        }
+      }
+    }
+  }
+  if (best_new_pos != -1) {
+    pos = best_new_pos;
+  }
+
+  int prev_pos = -1;
   bool prev_use_option = false;
   while (1) {
     Cost data = rivers_to_claim[pos][max_mine_idx];
