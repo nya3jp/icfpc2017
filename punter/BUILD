@@ -165,6 +165,20 @@ cc_library(
 )
 
 cc_library(
+  name = "jammer",
+  srcs = [
+    "jammer.cc",
+  ],
+  hdrs = [
+    "jammer.h",
+  ],
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+)
+
+cc_library(
   name = "lazy_punter",
   srcs = [
     "lazy_punter.cc",
@@ -257,6 +271,7 @@ cc_library(
     ":greedy_punter_chun",
     ":greedy_punter_mirac",
     ":greedy_to_jam",
+    ":jammer",
     ":meta_punter",
     ":simulating_punter",
     ":lazy_punter",
