@@ -61,6 +61,7 @@ def matrix_handler():
 
     error_configs = set()
     bucketed_points = collections.defaultdict(list)
+    bucketed_times = collections.defaultdict(list)
     for report in all_reports:
         punters = report['job']['punters']
         config = '%s %d %s %s' % (
@@ -84,6 +85,7 @@ def matrix_handler():
                 points.append(len(ranking) - len(points))
         for (punter, _), point in zip(ranking, points):
             bucketed_points[(config, punter)].append(point)
+        bucketed_times[config].append(report['duration'])
 
     configs = sorted(set(config for config, _ in bucketed_points))
     punters = sorted(set(punter for _, punter in bucketed_points))
@@ -126,6 +128,17 @@ def matrix_handler():
             total_map[punter] += cell['avg']
     max_total = max(total_map.values()) if total_map else 0
 
+    times = []
+    for config in configs:
+        ts = bucketed_times[config]
+        if not ts:
+            ts.append(0)
+        times.append({
+            'avg': float(sum(ts)) / len(ts),
+            'max': max(ts),
+            'min': min(ts),
+        })
+
     query = {}
     if label:
         query['label'] = label
@@ -148,6 +161,7 @@ def matrix_handler():
         'error_configs': error_configs,
         'total_map': total_map,
         'max_total': max_total,
+        'times': times,
     }
     return render_template('matrix.html', template_dict)
 

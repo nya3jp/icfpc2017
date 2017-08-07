@@ -96,6 +96,18 @@ a.textlike {
       {% endfor %}
     {% endfor %}
   </tbody>
+  <tfoot>
+    <tr>
+      <th class="punter" colspan="2">
+        Times
+      </th>
+      {% for time in times %}
+      <td class="cell value">
+        {{ '{:.1f}'.format(time.max) }}
+      </td>
+      {% endfor %}
+    </tr>
+  </tfoot>
 </table>
 
 <div style="text-align: right">
