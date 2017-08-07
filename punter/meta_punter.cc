@@ -28,9 +28,11 @@ void ExchangePingPong(common::Popen* subprocess) {
 
 MetaPunter::MetaPunter() {
   primary_worker_ = base::MakeUnique<common::Popen>(
-      FLAGS_primary_worker + (FLAGS_persistent ? " --persistent" : ""));
+      FLAGS_primary_worker + (FLAGS_persistent ? " --persistent" : ""),
+      true /* kill on parent death */);
   backup_worker_ = base::MakeUnique<common::Popen>(
-      FLAGS_backup_worker + (FLAGS_persistent ? " --persistent" : ""));
+      FLAGS_backup_worker + (FLAGS_persistent ? " --persistent" : ""),
+      true /* kill on parent death */);
 }
 
 MetaPunter::~MetaPunter() = default;

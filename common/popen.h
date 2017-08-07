@@ -13,7 +13,7 @@ namespace common {
 
 class Popen {
  public:
-  explicit Popen(const std::string& shell);
+  explicit Popen(const std::string& shell, bool kill_on_parent_death=false);
   ~Popen();
 
   FILE* stdin_write() const { return stdin_write_.get(); }

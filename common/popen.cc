@@ -1,6 +1,7 @@
 #include "common/popen.h"
 
 #include <signal.h>
+#include <sys/prctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -21,7 +22,7 @@ std::pair<base::ScopedFD, base::ScopedFD> CreatePipe(int flags = 0) {
 
 }  // namespace
 
-Popen::Popen(const std::string& shell) {
+Popen::Popen(const std::string& shell, bool kill_on_parent_death) {
   base::ScopedFD stdin_read, stdin_write;
   std::tie(stdin_read, stdin_write) = CreatePipe();
   base::ScopedFD stdout_read, stdout_write;
@@ -30,6 +31,8 @@ Popen::Popen(const std::string& shell) {
   pid_t pid = fork();
   PCHECK(pid >= 0);
   if (pid == 0) {
+    if (kill_on_parent_death)
+      prctl(PR_SET_PDEATHSIG, SIGKILL);
     int max_fd = sysconf(_SC_OPEN_MAX);
 
     PCHECK(HANDLE_EINTR(dup2(stdin_read.get(), 0)) >= 0);
