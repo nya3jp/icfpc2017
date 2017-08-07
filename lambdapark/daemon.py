@@ -17,6 +17,7 @@ import yaml
 FLAGS = gflags.FLAGS
 
 gflags.DEFINE_integer('workers', None, '# workers')
+gflags.DEFINE_bool('cancel_pending_jobs', False, 'cancel pending jobs')
 gflags.MarkFlagAsRequired('workers')
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -121,6 +122,9 @@ def main(unused_argv):
 
     db = pymongo.MongoClient().lambdapark
     ensure_index(db)
+
+    if FLAGS.cancel_pending_jobs:
+        db.jobs.delete_many({'status': 'pending'})
 
     if not is_idle(db):
         logging.info('there are already pending jobs, process them first')
