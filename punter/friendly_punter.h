@@ -16,11 +16,9 @@ class FriendlyPunter : public framework::SimplePunter {
   std::unique_ptr<base::Value> GetState() override;
 
  private:
-  std::vector<double> ComputeReachability(
-      int mineIndex,
-      const std::vector<std::pair<int, int>>& remaining_edges,
-      const std::vector<std::vector<int>>& adj);
-  double Evaluate();
+  std::pair<int, int> FindForMine(int mine_index,
+      const std::vector<std::vector<int>>& adj,
+      const std::vector<std::vector<int>>& value);
 };
   
 

@@ -66,36 +66,63 @@ framework::GameMove FriendlyPunter::Run() {
     adj[r.target()].push_back(r.source());
   }
   
-  // Compute covered nodes from any of mines.
-  std::vector<bool> covered(S, false);
-  for (int i=0; i<M; i++)
-    dfs(mines_->Get(i).site(), adj, covered);
-
   // Compute score from each mine.
   std::vector<int> mine_effect(M, 0);
   for (int i=0; i<M; i++) {
     std::vector<bool> visited(S, false);
     dfs(mines_->Get(i).site(), adj, visited);
     for (int j=0; j<S; j++) {
-      if (visited[j])
+      if (visited[j]) {
         mine_effect[i] += value[j][i];
-    }
-  }
-  
-  // Find the least effective mine.
-  int least_effective_mine = -1;
-  int least_effectiveness = INF;
-  for (int i=0; i<M; i++) {
-    if (mine_effect[i] < least_effectiveness) {
-      least_effective_mine = i;
-      least_effectiveness = mine_effect[i];
+      }
     }
   }
 
-  // BFS from the least effective mine.
+  // Find the least effective mine.
+  std::vector<std::pair<int,int>> vp;
+  for (int i=0; i<M; i++) {
+    vp.push_back(std::make_pair(mine_effect[i], i));
+  }
+  sort(vp.begin(), vp.end());
+
+  for (size_t i=0; i<vp.size(); i++) {
+    std::pair<int, int> result = FindForMine(vp[i].second, adj, value);
+    if (result.first >= 0)
+      return CreateClaim(result.first, result.second);
+  }
+  for (int i=0; i<rivers_->size(); i++) {
+    if (rivers_->Get(i).punter() == -1)
+      return CreateClaim(rivers_->Get(i).source(), rivers_->Get(i).target());
+  }
+  return CreatePass();
+}
+
+void FriendlyPunter::SetState(std::unique_ptr<base::Value> state_in) {
+  auto state = base::DictionaryValue::From(std::move(state_in));
+  SimplePunter::SetState(std::move(state));
+}
+
+std::unique_ptr<base::Value> FriendlyPunter::GetState() {
+  auto state = base::DictionaryValue::From(SimplePunter::GetState());
+  return state;
+}
+
+std::pair<int, int> FriendlyPunter::FindForMine(
+    int mine_index,
+    const std::vector<std::vector<int>>& adj,
+    const std::vector<std::vector<int>>& value) {
+  const int S = edges_.size();
+  const int M = mines_->size();
+
+  // Compute covered nodes from any of mines.
+  std::vector<bool> covered(S, false);
+  for (int i=0; i<M; i++)
+    dfs(mines_->Get(i).site(), adj, covered);
+
+   // BFS from the least effective mine.
   std::vector<bool> visited(S, false);
   std::vector<int> distance(S, INF);
-  dfs(mines_->Get(least_effective_mine).site(), adj, visited);
+  dfs(mines_->Get(mine_index).site(), adj, visited);
   std::vector<bool> covered_by_mine = visited;
   std::queue<std::pair<int, int>> q;
   for (int i=0; i<S; i++) if (visited[i]) {
@@ -128,7 +155,7 @@ framework::GameMove FriendlyPunter::Run() {
     }
   }
   std::vector<bool> reachable(S, false);
-  dfs(mines_->Get(least_effective_mine).site(), adj2, reachable);
+  dfs(mines_->Get(mine_index).site(), adj2, reachable);
 
   // Compute site's value
   std::vector<int> site_values(S, 0);
@@ -163,8 +190,9 @@ framework::GameMove FriendlyPunter::Run() {
     }
   }
 
-  if (best_score == 0)
-    return CreatePass();
+  if (best_score == 0) {
+    return std::make_pair(-1, -1);
+  }
 
   // Construct path from target site to the least effective mine's tree.
   int v = best_target;
@@ -185,91 +213,12 @@ framework::GameMove FriendlyPunter::Run() {
     }
   }
   if (path.empty())
-    return CreatePass();
+    return std::make_pair(-1, -1);
 
   int src = path.back().first;
   int tgt = path.back().second;
   // Claim the river of the last river in the constructed path.
-  return CreateClaim(src, tgt);
-}
-
-void FriendlyPunter::SetState(std::unique_ptr<base::Value> state_in) {
-  auto state = base::DictionaryValue::From(std::move(state_in));
-  SimplePunter::SetState(std::move(state));
-}
-
-std::unique_ptr<base::Value> FriendlyPunter::GetState() {
-  auto state = base::DictionaryValue::From(SimplePunter::GetState());
-  return state;
-}
-
-std::vector<double> FriendlyPunter::ComputeReachability(
-    int mine_idx,
-    const std::vector<std::pair<int, int>>& remaining_edges,
-    const std::vector<std::vector<int>>& adj) {
-  std::random_device rd;
-  std::mt19937 g(rd());
-
-  std::vector<double> p(edges_.size(), 0.0);
-  const int kIterations = 30;
-  std::vector<std::pair<int, int>> edges2 = remaining_edges;
-  for (size_t t = 0; t < kIterations; t++) {
-    
-    // Randomly choose remaining edges
-    std::shuffle(edges2.begin(), edges2.end(), g);
-
-    // Construct graph
-    std::vector<std::vector<int>> adj2(edges_.size(), std::vector<int>());
-    for (size_t j = 0; j < edges2.size() / num_punters_; j++) {
-      adj2[edges2[j].first].push_back(edges2[j].second);
-      adj2[edges2[j].second].push_back(edges2[j].first);
-    }
-
-    // Fill |visited| by dfs from mine
-    std::vector<bool> visited(edges_.size(), false);
-    int start_idx = mines_->Get(mine_idx).site();
-    dfs(start_idx, visited, adj, adj2);
-
-    // Count up 
-    for (size_t j = 0; j < edges_.size(); j++)
-      p[j] += visited[j] ? 1 : 0;
-  }
-
-  for (size_t i = 0; i < p.size(); i++)
-    p[i] /= kIterations;
-
-  return p;
-}
-
-double FriendlyPunter::Evaluate() {
-  std::vector<std::vector<int>> adj(edges_.size(), std::vector<int>());
-  int hoge = 0;
-  for (auto& r : *rivers_) {
-    if (r.punter() != punter_id_)
-      continue;
-    hoge++;
-    adj[r.source()].push_back(r.target());
-    adj[r.target()].push_back(r.source());
-  }
-
-  int fuga = 0;
-  std::vector<std::pair<int, int>> remaining_edges;
-  for (auto& r : *rivers_) {
-    if (r.punter() != -1)
-      continue;
-    fuga++;
-    remaining_edges.push_back(std::make_pair(r.source(), r.target()));
-  }
-
-  std::vector<double> scores(edges_.size(), 0.0);
-  for (int mine_index = 0; mine_index < mines_->size(); mine_index++) {
-    std::vector<double> p = ComputeReachability(mine_index, remaining_edges, adj);
-    for (size_t i = 0; i < edges_.size(); i++) {
-      int dist = dist_to_mine(i, mine_index);
-      scores[i] += dist * dist * p[i];
-    }
-  }
-  return std::accumulate(scores.begin(), scores.end(), 0.0);
+  return std::make_pair(src, tgt);
 }
 
 }  // namespace punter
