@@ -29,6 +29,9 @@ punters:
   - name: bjf
     shell: bazel-bin/punter/punter --logtostderr --punter=BenkeiOrJamOrFriendly --name=BenkeiOrJamOrFriendly
     continuous: true
+  - name: future
+    shell: bazel-bin/punter/punter --logtostderr --punter=FuturePunter --name=FuturePunter
+    continuous: true
 #  - name: irori
 #    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
 #    continuous: true
