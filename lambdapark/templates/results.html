@@ -40,7 +40,7 @@
         {% endif %}
       </td>
       <td>
-        <a href="/static/visualizer/?map=/static/maps/{{ report.job.map }}.json&amp;moves=/job/{{ report.job._id }}.json">Visualizer</a>
+        <a href="/static/visualizer/?map=/static/maps/{{ report.job.map }}.json&amp;moves=/job/{{ report.job._id }}.json&amp;punters={{ report.job.punters|join(',') }}">Visualizer</a>
       </td>
     </tr>
     {% endfor %}

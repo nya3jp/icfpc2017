@@ -210,7 +210,7 @@ function computeScore(mineIndex, edges, punter, V, mines, precomputedData) {
 }
 
 
-function Viewer(canvas, scoreLabelContainer, prevButton, nextButton, autoPlayButton, slider, movesInput) {
+function Viewer(canvas, scoreLabelContainer, prevButton, nextButton, autoPlayButton, slider, movesInput, punters) {
   this.prevButton = prevButton;
   this.nextButton = nextButton;
   this.autoPlayButton = autoPlayButton;
@@ -218,6 +218,7 @@ function Viewer(canvas, scoreLabelContainer, prevButton, nextButton, autoPlayBut
   this.scoreLabelContainer_ = scoreLabelContainer;
   this.slider_ = slider;
   this.movesInput_ = movesInput;
+  this.punters_ = punters;
 }
 
 Viewer.prototype = {
@@ -384,7 +385,7 @@ Viewer.prototype = {
       this.scoreLabelContainer_.textContent = '';
       for (let i = 0; i < scores.length; i++) {
         const el = document.createElement('span');
-        el.textContent = scores[i];
+        el.textContent = (this.punters_ ? this.punters_[i] + ': ' : '') + scores[i];
         el.style.color = colors[i];
         this.scoreLabelContainer_.appendChild(el);
       }
@@ -587,8 +588,9 @@ function parseQuery(search) {
 document.addEventListener('DOMContentLoaded', function(event) {
   const $ = function( id ) { return document.getElementById( id ); };
   const query = parseQuery(location.search);
+  const punters = query['punters'] ? query['punters'].split(',') : null;
   const viewer = new Viewer($('canvas'), $('scores'), $('prev'), $('next'),
-      $('btn_play'), $('slider'), $('moves'));
+      $('btn_play'), $('slider'), $('moves'), punters);
   const controller = new Controller($('prev'), $('btn_play'), $('next'),
       $('slider'), $('map'), $('moves'), viewer, query['map'], query['moves']);
 });
