@@ -133,7 +133,7 @@ framework::GameMove SimulatingPunter::Run() {
   const int kMaxStep = 3;
   std::vector<Snapshot> old_snapshot{GenerateSnapshot({})};
   for (int step = 0; step < kMaxStep; ++step) {
-    LOG(INFO) << "step:" << step << " Score:" << old_snapshot.front().total_score << "-" << old_snapshot.back().total_score << " (top:" << SnapshotScoreStr(old_snapshot.front()) << ") count: " << old_snapshot.size();
+    VLOG(1) << "step:" << step << " Score:" << old_snapshot.front().total_score << "-" << old_snapshot.back().total_score << " (top:" << SnapshotScoreStr(old_snapshot.front()) << ") count: " << old_snapshot.size();
     std::vector<Snapshot> new_snapshots;
     for (const auto& state : old_snapshot) {
       GenerateNextSnapshots(state, &new_snapshots);
@@ -189,7 +189,7 @@ void SimulatingPunter::ShrinkToTop(std::vector<Snapshot>* snapshots) {
       return lhs.total_score < rhs.total_score;});
   std::reverse(snapshots->begin(), snapshots->end());
   if (snapshots->size() > kWidth) {
-    LOG(INFO) << "Shrinking score:" << (*snapshots)[kWidth].total_score << "-" << snapshots->back().total_score << " size: " << snapshots->size();
+    VLOG(1) << "Shrinking score:" << (*snapshots)[kWidth].total_score << "-" << snapshots->back().total_score << " size: " << snapshots->size();
     snapshots->resize(kWidth);
   }
 }
