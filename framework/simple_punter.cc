@@ -93,27 +93,7 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
   GameMove out_move = Run();
 
   // Translate site indexes to the original id.
-  switch (out_move.type) {
-    case GameMove::Type::CLAIM: {
-      out_move.source = sites_->Get(out_move.source).id();
-      out_move.target = sites_->Get(out_move.target).id();
-      break;
-    }
-    case GameMove::Type::OPTION: {
-      out_move.source = sites_->Get(out_move.source).id();
-      out_move.target = sites_->Get(out_move.target).id();
-      break;
-    }
-    case GameMove::Type::SPLURGE: {
-      for (size_t i = 0; i < out_move.route.size(); ++i) {
-        out_move.route[i] = sites_->Get(out_move.route[i]).id();
-      }
-      break;
-    }
-    case GameMove::Type::PASS: {
-      break;
-    }
-  }
+  InternalGameMoveToExternal(&out_move);
 
   if (can_splurge_ && out_move.type == GameMove::Type::CLAIM) {
     if (out_move.source % 2) {
@@ -121,7 +101,6 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
       return CreateSplurge(&route);
     }
   }
-
   return out_move;
 }
 
@@ -377,6 +356,30 @@ int SimplePunter::GetOptioningPunter(int site_index1, int site_index2) const {
     }
   }
   return -2;
+}
+
+void SimplePunter::InternalGameMoveToExternal(GameMove* m) const {
+  switch (m->type) {
+    case GameMove::Type::CLAIM: {
+      m->source = sites_->Get(m->source).id();
+      m->target = sites_->Get(m->target).id();
+      break;
+    }
+    case GameMove::Type::OPTION: {
+      m->source = sites_->Get(m->source).id();
+      m->target = sites_->Get(m->target).id();
+      break;
+    }
+    case GameMove::Type::SPLURGE: {
+      for (size_t i = 0; i < m->route.size(); ++i) {
+        m->route[i] = sites_->Get(m->route[i]).id();
+      }
+      break;
+    }
+    case GameMove::Type::PASS: {
+      break;
+    }
+  }
 }
 
 }  // namespace framework

@@ -68,6 +68,9 @@ class SimplePunter : public Punter {
   int GetClaimingPunter(int site_index1, int site_index2) const;
   int GetOptioningPunter(int site_index1, int site_index2) const;
 
+  // Converts index-based GameMove into site id based GameMove.
+  void InternalGameMoveToExternal(GameMove* m) const;
+  
   int num_punters_ = -1;
   int punter_id_ = -1;
 
