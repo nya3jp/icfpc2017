@@ -1,19 +1,29 @@
-GennAI
-======
+Team "GennAI" for ICFP Programming Contest 2017
+===============================================
 
 Members
 -------
 
-- @chunjp
-- @fuqinho
-- @gusmachine
-- @irori___
-- @miracjp
-- @nya3jp
-- @phoenixstarhiro
-- @riesz
+- [@chunjp](https://twitter.com/chunjp/)
+- [@fuqinho](https://twitter.com/fuqinho/)
+- [@gusmachine](https://twitter.com/gusmachine/)
+- [@irori___](https://twitter.com/irori___/)
+- [@miracjp](https://twitter.com/miracjp/)
+- [@nya3jp](https://twitter.com/nya3jp/)
+- [@phoenixstarhiro](https://twitter.com/phoenixstarhiro/)
+- [@riesz](https://twitter.com/riesz/)
 
-Our Solution
-------------
+Overview
+--------
 
-Simply greedy.
+![arch](https://github.com/nya3jp/icfpc2017/blob/master/images/gennai-arch.png?raw=true)
+
+Solution
+--------
+
+TODO(all): Explain our solution.
+
+Write-ups
+---------
+
+URLs will be added here when we post write-ups.
