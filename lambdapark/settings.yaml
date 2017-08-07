@@ -1,10 +1,4 @@
 punters:
-  - name: irori
-    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
-    continuous: true
-#  - name: chun
-#    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterChun --name=GreedyPunterChun
-#    continuous: true
   - name: benkei
     shell: bazel-bin/punter/punter --logtostderr --punter=Benkei --name=Benkei
     continuous: true
@@ -23,185 +17,201 @@ punters:
   - name: meta
     shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaPunter --primary_worker="bazel-bin/punter/punter --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac" --backup_worker="bazel-bin/punter/punter --logtostderr --punter=QuickPunter --name=QuickPunter"
     continuous: true
+#  - name: irori
+#    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
+#    continuous: true
+#  - name: chun
+#    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterChun --name=GreedyPunterChun
+#    continuous: true
+
+consts:
+  # small: <1s
+  - &small_rounds 100
+  # middle: <10s
+  - &middle_rounds 40
+  # large: <180s
+  - &large_rounds 20
+  # huge: +++
+  - &huge_rounds 10
 
 continuous_configs:
   - map: sample
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
   - map: sample
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - futures
   - map: sample
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - splurges
   - map: sample
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - futures
       - splurges
   - map: circle
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
   - map: circle
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - futures
   - map: circle
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - splurges
   - map: circle
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - futures
       - splurges
   - map: gen1
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *small_rounds
   - map: gen3
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *small_rounds
   - map: gen4
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *small_rounds
   - map: lambda
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
   - map: lambda
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - futures
   - map: lambda
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - splurges
   - map: lambda
     num_punters: 2
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - futures
       - splurges
   - map: lambda
     num_punters: 3
-    num_rounds: 40
+    num_rounds: *small_rounds
   - map: lambda
     num_punters: 3
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - futures
   - map: lambda
     num_punters: 3
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - splurges
   - map: lambda
     num_punters: 3
-    num_rounds: 40
+    num_rounds: *small_rounds
     extensions:
       - futures
       - splurges
   - map: randomMedium
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *small_rounds
   - map: randomSparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *small_rounds
   - map: Sierpinski-triangle
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *small_rounds
   - map: spider_web
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *small_rounds
   - map: t1
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *small_rounds
   - map: tube
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *middle_rounds
   - map: boston-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *middle_rounds
   - map: boston-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *middle_rounds
     extensions:
       - futures
   - map: boston-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *middle_rounds
     extensions:
       - splurges
   - map: boston-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *middle_rounds
     extensions:
       - futures
       - splurges
   - map: boston-sparse
     num_punters: 3
-    num_rounds: 10
+    num_rounds: *middle_rounds
   - map: boston-sparse
     num_punters: 3
-    num_rounds: 10
+    num_rounds: *middle_rounds
     extensions:
       - futures
   - map: boston-sparse
     num_punters: 3
-    num_rounds: 10
+    num_rounds: *middle_rounds
     extensions:
       - splurges
   - map: boston-sparse
     num_punters: 3
-    num_rounds: 10
+    num_rounds: *middle_rounds
     extensions:
       - futures
       - splurges
   - map: van-city-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: edinburgh-sparse2
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: edinburgh-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: edinburgh-sparse
     num_punters: 3
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: gothenburg-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: nara-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: oxford2-scaled
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *huge_rounds
   - map: oxford2-sparse-2
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: oxford2-sparse-2
     num_punters: 3
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: oxford-center-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *large_rounds
   - map: oxford-sparse2
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *middle_rounds
   - map: oxford-sparse
     num_punters: 2
-    num_rounds: 10
+    num_rounds: *middle_rounds
 
 maps:
   - name: sample
