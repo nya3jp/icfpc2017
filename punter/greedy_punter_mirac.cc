@@ -61,11 +61,12 @@ framework::GameMove GreedyPunterMirac::Run() {
         int punter_of_edge = rivers_->Get(edge.river).punter();
         int option_punter_of_edge = rivers_->Get(edge.river).option_punter();
         bool need_option = (punter_of_edge != -1 &&
-                            punter_of_edge != punter_id_);
+                            punter_of_edge != punter_id_ &&
+                            option_punter_of_edge != punter_id_);
         if (need_option && remaining_options == 0) continue;
         if (need_option && option_punter_of_edge != -1) continue;
         int next_option = options + need_option;
-        int next_dist = dist + (punter_of_edge != punter_id_);
+        int next_dist = dist + (punter_of_edge != punter_id_ && option_punter_of_edge != punter_id_);
         int next_site = edge.site;
         if (rivers_to_claim[next_site][i].rivers != -1 &&
             (rivers_to_claim[next_site][i].options < next_option ||
