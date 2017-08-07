@@ -217,8 +217,7 @@ std::pair<int, int> FriendlyPunter::FindForMine(
         continue;
       available_otonari++;
     }
-    //site_values[i] += accumulate(value[i].begin(), value[i].end(), 0) * (1 + available_otonari / 2);
-    site_values[i] += accumulate(value[i].begin(), value[i].end(), 0.0);
+    site_values[i] += accumulate(value[i].begin(), value[i].end(), 0) * (1 + available_otonari / 2);
   }
 
   // Determine the target site.
