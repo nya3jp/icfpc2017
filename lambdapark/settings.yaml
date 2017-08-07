@@ -95,6 +95,11 @@ continuous_configs:
     num_punters: 2
     num_rounds: *small_rounds
     extensions:
+      - options
+  - map: lambda
+    num_punters: 2
+    num_rounds: *small_rounds
+    extensions:
       - futures
       - splurges
       - options
@@ -111,6 +116,11 @@ continuous_configs:
     num_rounds: *small_rounds
     extensions:
       - splurges
+  - map: lambda
+    num_punters: 3
+    num_rounds: *small_rounds
+    extensions:
+      - options
   - map: lambda
     num_punters: 3
     num_rounds: *small_rounds
