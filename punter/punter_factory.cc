@@ -87,7 +87,7 @@ std::unique_ptr<base::Value> SwitchingPunter::GetState() {
 // static
 std::string SwitchingPunter::BenkeiOrJam(const common::SetUpData& args) {
   if (args.num_punters == 2 &&
-      args.game_map.sites.size() <  100) { return "GreedyToJam"; }
+      args.game_map.sites.size() <  100) { return "Jammer"; }
   return "Benkei";
 }
 
