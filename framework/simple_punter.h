@@ -65,6 +65,8 @@ class SimplePunter : public Punter {
   std::vector<int> GetConnectedSiteList(int punter_id, int site_index) const;
 
   bool IsConnectable(int punter_id, int site_index1, int site_index2) const;
+  std::vector<int> GetConnectableSiteTableFromSite(int punter_id,
+                                                   int start_site) const;
   std::vector<int> Simulate(const std::vector<GameMove>& moves) const;
 
   // Returns: punter_id who claims the river between site_index1 and

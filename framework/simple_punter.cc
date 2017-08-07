@@ -354,6 +354,33 @@ bool SimplePunter::IsConnectable(
   return false;
 }
 
+std::vector<int> SimplePunter::GetConnectableSiteTableFromSite(
+    int punter_id, int start_site) const {
+  std::vector<int> visited(num_sites());
+  std::queue<int> q;
+  q.push(start_site);
+  visited[start_site] = 1;
+  while (!q.empty()) {
+    int site_index = q.front();
+    q.pop();
+    for (const auto& edge : edges_[site_index]) {
+      const RiverProto& river = rivers_->Get(edge.river);
+      if (river.has_punter() && river.punter() != -1 &&
+          river.punter() != punter_id) {
+        // This river is already used. Skip it.
+        continue;
+      }
+      if (visited[edge.site]) {
+        // Already visited.
+        continue;
+      }
+      visited[edge.site] = true;
+      q.push(edge.site);
+    }
+  }
+  return visited;
+}
+
 std::vector<int> SimplePunter::Simulate(const std::vector<GameMove>& moves)
     const {
   std::vector<GameMove> orig_move;
