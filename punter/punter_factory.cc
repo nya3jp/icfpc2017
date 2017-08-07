@@ -5,6 +5,7 @@
 #include "punter/benkei.h"
 #include "punter/extension_example_punter.h"
 #include "punter/friendly_punter.h"
+#include "punter/friendly_punter2.h"
 #include "punter/future_punter.h"
 #include "punter/greedy_punter.h"
 #include "punter/greedy_punter_chun.h"
@@ -49,6 +50,8 @@ std::unique_ptr<framework::Punter> PunterByName(const std::string& name) {
     return base::MakeUnique<MetaPunter>();
   else if (name == "FriendlyPunter")
     return base::MakeUnique<FriendlyPunter>();
+  else if (name == "FriendlyPunter2")
+    return base::MakeUnique<FriendlyPunter2>();
   else if (name == "BenkeiOrJam")
     return base::MakeUnique<SwitchingPunter>(SwitchingPunter::BenkeiOrJam);
   else if (name == "FuturePunter")

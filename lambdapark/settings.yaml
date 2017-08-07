@@ -17,6 +17,9 @@ punters:
   - name: friendly
     shell: bazel-bin/punter/punter --logtostderr --punter=FriendlyPunter --name=FriendlyPunter
     continuous: true
+  - name: friendly22
+    shell: bazel-bin/punter/punter --logtostderr --punter=FriendlyPunter2 --name=FriendlyPunter2
+    continuous: true
   - name: jammer
     shell: bazel-bin/punter/punter --logtostderr --punter=Jammer --name=Jammer
     continuous: true

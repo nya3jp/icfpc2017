@@ -208,6 +208,21 @@ cc_library(
   ],
 )
 
+cc_library(
+  name = "friendly_punter2",
+  srcs = [
+    "friendly_punter2.cc",
+  ],
+  hdrs = [
+    "friendly_punter2.h",
+  ],
+
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+)
+
 proto_library(
   name = "benkei_proto",
   srcs = ["benkei.proto"],
@@ -282,6 +297,7 @@ cc_library(
     ":benkei",
     ":extension_example_punter",
     ":friendly_punter",
+    ":friendly_punter2",
     ":future_punter",
     ":greedy_punter",
     ":greedy_punter_chun",
