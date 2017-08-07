@@ -31,19 +31,6 @@ def load_settings():
         return yaml.load(f)
 
 
-class SelfUpdater(object):
-    def __init__(self):
-        self._last_rev = self._get_revision()
-
-    def _get_revision(self):
-        return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-
-    def check_update_and_maybe_restart(self):
-        if self._get_revision() != self._last_rev:
-            logging.info('Detected an update. Restarting...')
-            os.execv(sys.executable, [sys.executable] + sys.argv)
-
-
 def run_stadium(map_name, punter_shells, extensions, log_path):
     map_path = os.path.join(BASE_DIR, 'maps/%s.json' % map_name)
     args = [
@@ -68,7 +55,14 @@ def run_stadium(map_name, punter_shells, extensions, log_path):
                     stdin=null,
                     stdout=stdout,
                     stderr=stderr)
-        proc.wait()
+        try:
+            proc.wait()
+        finally:
+            try:
+                proc.kill()
+                proc.wait()
+            except Exception:
+                pass
         stdout.seek(0)
         return ujson.load(stdout)
 
@@ -137,8 +131,6 @@ def main(unused_argv):
         ('_id', pymongo.ASCENDING),
     ])
 
-    updater = SelfUpdater()
-
     logging.info('Ready!')
 
     while True:
@@ -146,8 +138,6 @@ def main(unused_argv):
         if not job:
             time.sleep(5)
             continue
-
-        updater.check_update_and_maybe_restart()
 
         job = db.jobs.find_one_and_update(
             {'status': 'pending'},

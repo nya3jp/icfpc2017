@@ -15,8 +15,6 @@ import yaml
 
 FLAGS = gflags.FLAGS
 
-gflags.DEFINE_bool('oneoff', False, 'one-off.')
-
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 LOG_DIR = os.path.join(BASE_DIR, 'lambdapark/logs')
 JST = pytz.timezone('Asia/Tokyo')
@@ -28,18 +26,6 @@ def setup_logging():
         format=('%(asctime)s.%(msecs)03d %(levelname)s '
                 '[%(filename)s:%(lineno)d] %(message)s'),
         datefmt='%Y-%m-%d %H:%M:%S')
-
-
-def build_requirements():
-    args = [
-        'bazel',
-        'build',
-        '-c',
-        'opt',
-        '//stadium',
-        '//punter',
-    ]
-    subprocess.check_call(args, cwd=BASE_DIR)
 
 
 def load_settings():
@@ -59,23 +45,8 @@ def ensure_index(db):
     ])
 
 
-def restart():
-    os.execv(sys.executable, [sys.executable] + sys.argv)
-
-
 def get_revision():
     return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
-
-
-def wait_for_idle(db):
-    while True:
-        job = db.jobs.find_one({'status': 'pending'})
-        if job:
-            continue
-        job = db.jobs.find_one({'status': 'running'})
-        if job:
-            continue
-        break
 
 
 def get_snapshot():
@@ -163,22 +134,7 @@ def main(unused_argv):
 
     db = pymongo.MongoClient().lambdapark
     ensure_index(db)
-    last_revision = get_revision()
-    try:
-        build_requirements()
-        maybe_schedule(db)
-    except Exception:
-        logging.exception('failed to schedule. waiting for next push...')
-    if FLAGS.oneoff:
-        return
-    wait_for_idle(db)
-    while True:
-        subprocess.call(['git', 'pull'])
-        next_revision = get_revision()
-        if next_revision != last_revision:
-            break
-        time.sleep(60)
-    restart()
+    maybe_schedule(db)
 
 
 if __name__ == '__main__':
