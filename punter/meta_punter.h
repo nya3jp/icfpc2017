@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "base/macros.h"
+#include "base/time/time.h"
 #include "base/values.h"
 #include "common/popen.h"
 #include "framework/game.h"
@@ -33,6 +34,7 @@ class MetaPunter : public framework::Punter {
   std::unique_ptr<base::Value> primary_state_;
   std::unique_ptr<base::Value> backup_state_;
 
+  base::TimeDelta timeout_;
   std::vector<common::GameMove> timeout_history_;
 
   DISALLOW_COPY_AND_ASSIGN(MetaPunter);

@@ -3,7 +3,6 @@
 #include "base/files/file_util.h"
 #include "base/memory/ptr_util.h"
 #include "base/process/process_handle.h"
-#include "base/time/time.h"
 #include "common/protocol.h"
 #include "gflags/gflags.h"
 
@@ -15,8 +14,12 @@ namespace punter {
 
 namespace {
 
-constexpr base::TimeDelta kPrimaryTimeout =
+constexpr base::TimeDelta kInitialTimeout =
     base::TimeDelta::FromMilliseconds(800);
+constexpr base::TimeDelta kDecreaseTimeoutStep =
+    base::TimeDelta::FromMilliseconds(100);
+constexpr base::TimeDelta kMinimumTimeout =
+    base::TimeDelta::FromMilliseconds(100);
 
 void ExchangePingPong(common::Popen* subprocess) {
   base::Optional<std::string> name =
@@ -69,6 +72,8 @@ void MetaPunter::SetUp(const common::SetUpData& args) {
   if (response1->GetList("futures", &futures_value)) {
     futures_ = common::Futures::FromJson(*futures_value);
   }
+
+  timeout_ = kInitialTimeout;
 }
 
 std::vector<common::Future> MetaPunter::GetFutures() {
@@ -87,11 +92,15 @@ common::GameMove MetaPunter::Run(
   for (const auto& entry : count) {
     max_count = std::max(max_count, entry.second);
   }
-  max_count = std::min(7, max_count);
-  const base::TimeDelta timeout =
-      kPrimaryTimeout
-      - base::TimeDelta::FromMilliseconds((max_count - 1) * 100);
-  DLOG(INFO) << "Timeout: " << timeout;
+
+  int num_passes = max_count - 1;
+  if (num_passes > 0) {
+    timeout_ -= kDecreaseTimeoutStep * num_passes;
+    if (timeout_ < kMinimumTimeout) {
+      timeout_ = kMinimumTimeout;
+    }
+    LOG(WARNING) << "Detected timeout. New timeout set to " << timeout_;
+  }
 
   // Run two workers in parallel.
   {
@@ -100,7 +109,7 @@ common::GameMove MetaPunter::Run(
         timeout_history_.end(), moves.begin(), moves.end());
     request.Set("move.moves", common::GameMoves::ToJson(timeout_history_));
     request.Set("state", primary_state_->CreateDeepCopy());
-    request.SetInteger("timeout_ms", timeout.InMilliseconds());
+    request.SetInteger("timeout_ms", timeout_.InMilliseconds());
     common::WriteMessage(primary_worker_->stdin_write(), request);
   }
   {
@@ -119,7 +128,7 @@ common::GameMove MetaPunter::Run(
 
   auto primary_response =
       base::DictionaryValue::From(common::ReadMessage(
-          primary_worker_->stdout_read(), timeout, start));
+          primary_worker_->stdout_read(), timeout_, start));
 
   if (!primary_response) {
     // TIMEOUT.
@@ -144,6 +153,9 @@ void MetaPunter::SetState(std::unique_ptr<base::Value> state_in) {
   const base::ListValue* history_value;
   CHECK(state->GetList("history", &history_value));
   timeout_history_ = common::GameMoves::FromJson(*history_value);
+  int timeout_ms;
+  CHECK(state->GetInteger("timeout_ms", &timeout_ms));
+  timeout_ = base::TimeDelta::FromMilliseconds(timeout_ms);
 }
 
 std::unique_ptr<base::Value> MetaPunter::GetState() {
@@ -159,6 +171,7 @@ std::unique_ptr<base::Value> MetaPunter::GetState() {
           backup_state_->CreateDeepCopy() :
           std::move(backup_state_));
   state->Set("history", common::GameMoves::ToJson(timeout_history_));
+  state->SetInteger("timeout_ms", timeout_.InMilliseconds());
   return state;
 }
 
