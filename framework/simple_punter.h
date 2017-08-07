@@ -72,10 +72,14 @@ class SimplePunter : public Punter {
   std::vector<std::vector<Edge>> edges_; // site_idx -> {Edge}
 
   mutable GameStateProto proto_;
+
+  // Aliases to proto_.
   google::protobuf::RepeatedPtrField<RiverProto>* rivers_;
   google::protobuf::RepeatedPtrField<MineProto>* mines_;
 
  private:
+  void SetAliasesToProto();
+
   int FindSiteIdxFromSiteId(int id) const;
 
   void GenerateAdjacencyList();
@@ -83,6 +87,7 @@ class SimplePunter : public Punter {
   bool can_splurge_ = false;
   bool can_option_ = false;
 
+  // Alias to proto_.
   google::protobuf::RepeatedPtrField<SiteProto>* sites_;
 
   DISALLOW_COPY_AND_ASSIGN(SimplePunter);

@@ -121,6 +121,12 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
   return out_move;
 }
 
+void SimplePunter::SetAliasesToProto() {
+  sites_ = proto_.mutable_game_map()->mutable_sites();
+  rivers_ = proto_.mutable_game_map()->mutable_rivers();
+  mines_ = proto_.mutable_game_map()->mutable_mines();
+}
+
 void SimplePunter::SetUp(const common::SetUpData& args) {
   punter_id_ = args.punter_id;
   num_punters_ = args.num_punters;
@@ -132,7 +138,6 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
     SiteProto* site_proto = game_map_proto->add_sites();
     site_proto->set_id(s.id);
   }
-  sites_ = proto_.mutable_game_map()->mutable_sites();
 
   for (const River& r : game_map.rivers) {
     RiverProto* river_proto = game_map_proto->add_rivers();
@@ -141,13 +146,13 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
     river_proto->set_punter(-1);
     river_proto->set_option_punter(-1);
   }
-  rivers_ = proto_.mutable_game_map()->mutable_rivers();
 
   for (const int mine : game_map.mines) {
     MineProto* mine_proto = game_map_proto->add_mines();
     mine_proto->set_site(mine);
   }
-  mines_ = proto_.mutable_game_map()->mutable_mines();
+
+  SetAliasesToProto();
 
   std::sort(sites_->begin(), sites_->end(),
             [](const SiteProto& lhs, const SiteProto& rhs) {
@@ -170,7 +175,7 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
   proto_.set_num_punters(num_punters_);
 
   common::Scorer(proto_.mutable_scorer()).Initialize(
-      args.num_punters, args.game_map);
+      num_punters_, args.game_map);
 }
 
 int SimplePunter::FindSiteIdxFromSiteId(int id) const {
@@ -202,9 +207,7 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   CHECK(base::Base64Decode(b64_proto, &serialized));
   CHECK(proto_.ParseFromString(serialized));
 
-  sites_ = proto_.mutable_game_map()->mutable_sites();
-  rivers_ = proto_.mutable_game_map()->mutable_rivers();
-  mines_ = proto_.mutable_game_map()->mutable_mines();
+  SetAliasesToProto();
 
   punter_id_ = proto_.punter_id();
   num_punters_ = proto_.num_punters();
