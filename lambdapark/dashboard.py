@@ -275,7 +275,7 @@ def main(unused_argv):
         '/static/',
         paste.urlparser.StaticURLParser(
             os.path.join(os.path.dirname(__file__), 'static')))
-    bottle.run(port=FLAGS.port, host='0.0.0.0', debug=True)
+    bottle.run(server='paste', port=FLAGS.port, host='0.0.0.0', debug=True)
 
 
 if __name__ == '__main__':
