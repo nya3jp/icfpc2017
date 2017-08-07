@@ -243,7 +243,7 @@ cc_library(
   deps = [
     "//third_party/chromiumbase",
     "//framework:simple_punter",
-    ":random_punter"
+    ":greedy_punter_mirac",
   ],
 )
 

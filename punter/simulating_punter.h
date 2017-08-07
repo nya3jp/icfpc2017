@@ -9,6 +9,7 @@
 namespace punter {
 
 struct Snapshot;
+struct Shadow;
 
 class SimulatingPunter : public framework::SimplePunter {
  public:
@@ -17,11 +18,8 @@ class SimulatingPunter : public framework::SimplePunter {
 
   void SetUp(const common::SetUpData& args) override;
   framework::GameMove Run() override;
-  // void SetState(std::unique_ptr<base::Value> state) override;
-  // std::unique_ptr<base::Value> GetState() override;
 
-  void ScoreFromMoves(const std::vector<framework::GameMove>& moves,
-                      std::vector<int> *scores) const;
+  std::unique_ptr<Shadow> SummonShadow() const;
   Snapshot GenerateSnapshot(const std::vector<framework::GameMove>& moves)
     const;
   void GenerateNextSnapshots(const Snapshot& old,
@@ -29,6 +27,7 @@ class SimulatingPunter : public framework::SimplePunter {
   void ShrinkToTop(std::vector<Snapshot>* snapshots);
 
  protected:
+  common::SetUpData setup_data_;
   std::unique_ptr<SimplePunter> punter_;
   std::vector<framework::GameMove> old_moves_;
 };

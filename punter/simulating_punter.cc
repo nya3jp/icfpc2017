@@ -7,17 +7,51 @@
 #include <vector>
 
 #include "base/memory/ptr_util.h"
-#include "punter/random_punter.h"
+#include "punter/greedy_punter_mirac.h"
 
 namespace punter {
 
 using framework::GameMove;
 
 struct Snapshot {
-  std::vector<GameMove> moves;  // As key.
+  // List of taken moves. Note: source and target are always sorted
+  // by ClaimRiver.
+  std::vector<GameMove> moves;
+  std::string key;  // Generated from sorted move list.
   std::vector<int> scores;
-  std::string key;
   int total_score;
+};
+
+class Shadow : public GreedyPunterMirac {
+public:
+  Shadow() = default;
+  ~Shadow() override = default;
+  void Init(const common::SetUpData& data,
+            const framework::GameStateProto& proto) {
+    setup_data_ = data;
+    SetUp(setup_data_);
+    SetStateFromProto(base::MakeUnique<framework::GameStateProto>(proto));
+  }
+
+  std::unique_ptr<Shadow> Clone() const {
+    auto res = base::MakeUnique<Shadow>();
+    res->Init(setup_data_, proto_);
+    return res;
+  }
+  void Advance(const GameMove& next) {
+    GameMove m(next);
+    InternalGameMoveToExternal(&m);
+    SimplePunter::Run(std::vector<GameMove>{m});
+  }
+  GameMove NextMove(int punter_id) {
+    int old_punter_id = punter_id_;
+    punter_id_ = punter_id;
+    GameMove r = Run();
+    punter_id_ = old_punter_id;
+    return r;
+  }
+ protected:
+  common::SetUpData setup_data_;
 };
 
 namespace {
@@ -29,6 +63,7 @@ std::string MovesToKey(std::vector<GameMove> moves) {
                 lhs.punter_id < rhs.punter_id :
                 lhs.source != rhs.source ? lhs.source < rhs.source :
                 lhs.target < rhs.target; });
+  // TODO: speed this up.
   std::ostringstream oss;
   for (const auto& m : moves) {
     oss << m.punter_id << " " << m.source << " " << m.target;
@@ -86,63 +121,48 @@ SimulatingPunter::~SimulatingPunter() = default;
 
 void SimulatingPunter::SetUp(const common::SetUpData& args) {
   SimplePunter::SetUp(args);
-
-  // TODO: fix this.
-  punter_ = base::MakeUnique<RandomPunter>();
-  punter_->SetUp(args);
+  setup_data_ = args;
 }
 
 framework::GameMove SimulatingPunter::Run() {
-  old_moves_.clear();
-  for (const auto& r : *rivers_) {
-    if (r.punter() >= 0) {
-      old_moves_.push_back(ClaimRiver(r.punter(), r));
-    }
-  }
-  // TODO:
-  // Feed last posts into punters_ when FeedMove is available.
-  const int maxStep = 5;
+  const int kMaxStep = 5;
   std::vector<Snapshot> old_snapshot{GenerateSnapshot({})};
-  for (int step = 0; step < maxStep; ++step) {
-    std::vector<Snapshot> new_state;
+  for (int step = 0; step < kMaxStep; ++step) {
+    std::vector<Snapshot> new_snapshots;
     for (const auto& state : old_snapshot) {
-      GenerateNextSnapshots(state, &new_state);
-      ShrinkToTop(&new_state);
-      old_snapshot.swap(new_state);
+      GenerateNextSnapshots(state, &new_snapshots);
     }
+    ShrinkToTop(&new_snapshots);
+    old_snapshot.swap(new_snapshots);
   }
   return old_snapshot[0].moves[0];
 }
 
-void SimulatingPunter::ScoreFromMoves(
-    const std::vector<GameMove>& moves,
-    std::vector<int> *scores) const {
-  // Todo: call scorerer-san.
-}
-
 Snapshot SimulatingPunter::GenerateSnapshot(
     const std::vector<GameMove>& moves) const {
-  std::vector<int> scores;
-  ScoreFromMoves(moves, &scores);
+  std::vector<int> scores = Simulate(moves);
   return SnapshotFromMove(punter_id_, moves, scores);
 }
 
 void SimulatingPunter::GenerateNextSnapshots(
     const Snapshot& old,
     std::vector<Snapshot>* new_snapshots) {
-  std::vector<GameMove> cur_moves(old_moves_);
-  copy(old.moves.begin(), old.moves.end(),
-       std::back_inserter(cur_moves));
+  std::unique_ptr<Shadow> punter0 = SummonShadow();
+  for (const auto& m : old.moves) {
+    punter0->Advance(m);
+  }
+  // Choose any river.
   for (const auto& r : *rivers_) {
     if (r.punter() >= 0)
       continue;
+    std::unique_ptr<Shadow> punter = punter0->Clone();
     std::vector<GameMove> new_moves{ClaimRiver(punter_id_, r)};
+    punter->Advance(new_moves[0]);
     for (int i = 1; i < num_punters_; ++i) {
-      // int cur_punter = (punter_id_ + i) % num_punters_;
-      // TODO: Reset and run.
-      GameMove next_move = punter_->Run();
-      //Run(cur_moves ++ new_moves);
+      int cur_punter = (punter_id_ + i) % num_punters_;
+      GameMove next_move = punter->NextMove(cur_punter);
       new_moves.push_back(next_move);
+      punter->Advance(next_move);
     }
     std::vector<GameMove> next_moves(old.moves);
     copy(new_moves.begin(), new_moves.end(),
@@ -163,10 +183,10 @@ void SimulatingPunter::ShrinkToTop(std::vector<Snapshot>* snapshots) {
   }
 }
 
-// void SimulatingPunter::SetState(std::unique_ptr<base::Value> state) {
-//   SimplePunter::SetState(std::move(state));
-//   // TODO: proto_->SetProtoState();
-// }
-
+std::unique_ptr<Shadow> SimulatingPunter::SummonShadow() const {
+  auto shadow =  base::MakeUnique<Shadow>();
+  shadow->Init(setup_data_, proto_);
+  return shadow;
+}
 
 }  // namespace punter
