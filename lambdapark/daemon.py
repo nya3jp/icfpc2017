@@ -125,6 +125,8 @@ def main(unused_argv):
 
     if FLAGS.cancel_pending_jobs:
         db.jobs.delete_many({'status': {'$in': ['pending', 'running']}})
+        logging.info('cleared all pending jobs')
+        time.sleep(3)
 
     if not is_idle(db):
         logging.info('there are already pending jobs, process them first')

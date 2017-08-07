@@ -208,8 +208,13 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   CHECK(state->GetString("proto", &b64_proto));
   std::string serialized;
   CHECK(base::Base64Decode(b64_proto, &serialized));
-  CHECK(proto_.ParseFromString(serialized));
+  auto proto_in = base::MakeUnique<GameStateProto>();
+  CHECK(proto_in->ParseFromString(serialized));
+  SetStateFromProto(std::move(proto_in));
+}
 
+void SimplePunter::SetStateFromProto(std::unique_ptr<GameStateProto> state_in) {
+  proto_ = *std::move(state_in);
   SetAliasesToProto();
 
   punter_id_ = proto_.punter_id();
@@ -347,6 +352,33 @@ bool SimplePunter::IsConnectable(
     }
   }
   return false;
+}
+
+std::vector<int> SimplePunter::GetConnectableSiteTableFromSite(
+    int punter_id, int start_site) const {
+  std::vector<int> visited(num_sites());
+  std::queue<int> q;
+  q.push(start_site);
+  visited[start_site] = 1;
+  while (!q.empty()) {
+    int site_index = q.front();
+    q.pop();
+    for (const auto& edge : edges_[site_index]) {
+      const RiverProto& river = rivers_->Get(edge.river);
+      if (river.has_punter() && river.punter() != -1 &&
+          river.punter() != punter_id) {
+        // This river is already used. Skip it.
+        continue;
+      }
+      if (visited[edge.site]) {
+        // Already visited.
+        continue;
+      }
+      visited[edge.site] = true;
+      q.push(edge.site);
+    }
+  }
+  return visited;
 }
 
 std::vector<int> SimplePunter::Simulate(const std::vector<GameMove>& moves)

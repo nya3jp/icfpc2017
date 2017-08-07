@@ -9,6 +9,7 @@
 #include "punter/greedy_punter_chun.h"
 #include "punter/greedy_punter_mirac.h"
 #include "punter/greedy_to_jam.h"
+#include "punter/jammer.h"
 #include "punter/lazy_punter.h"
 #include "punter/meta_punter.h"
 #include "punter/pass_punter.h"
@@ -33,6 +34,8 @@ std::unique_ptr<framework::Punter> PunterByName(const std::string& name) {
     return base::MakeUnique<ExtensionExamplePunter>();
   else if (name == "GreedyToJam")
     return base::MakeUnique<GreedyToJam>();
+  else if (name == "Jammer")
+    return base::MakeUnique<Jammer>();
   else if (name == "GreedyPunterMirac")
     return base::MakeUnique<GreedyPunterMirac>();
   else if (name == "LazyPunter")
