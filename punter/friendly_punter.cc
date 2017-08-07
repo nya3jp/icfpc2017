@@ -50,7 +50,7 @@ framework::GameMove FriendlyPunter::Run() {
   const int M = mines_->size();
 
   int remaining_moves = (num_remaining_turns() + num_punters_ - 1) / num_punters_;
-  if (CanOption() && GetOptionsRemaining() >= remaining_moves) {
+  if (CanOption() && GetOptionsRemaining() > 0 && GetOptionsRemaining() >= remaining_moves) {
     return TryReplace();
   }
 
