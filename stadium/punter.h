@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "base/optional.h"
 #include "stadium/game_data.h"
 
 namespace stadium {
@@ -18,7 +19,7 @@ class Punter {
   virtual ~Punter() {}
 
   virtual PunterInfo SetUp(const common::SetUpData& args) = 0;
-  virtual Move OnTurn(const std::vector<Move>& moves) = 0;
+  virtual base::Optional<Move> OnTurn(const std::vector<Move>& moves) = 0;
 
  protected:
   Punter() {}

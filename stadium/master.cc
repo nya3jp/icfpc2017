@@ -36,19 +36,27 @@ void Master::Initialize(Map map, const common::Settings& settings) {
   referee_ = base::MakeUnique<Referee>();
   referee_->Setup(punter_info_list, &map_);
 
-  last_moves_.clear();
+  move_history_.clear();
   for (int punter_id = 0; punter_id < punters_.size(); ++punter_id) {
-    last_moves_.emplace_back(Move::Pass(punter_id));
+    move_history_.emplace_back(Move::Pass(punter_id));
+    last_success_.push_back(punter_id);
   }
 }
 
 void Master::DoRunGame() {
   for (int turn_id = 0; turn_id < map_.rivers.size(); ++turn_id) {
     int punter_id = turn_id % punters_.size();
-    Move move = punters_[punter_id]->OnTurn(last_moves_);
+    std::vector<Move> last_moves(
+        move_history_.begin() + last_success_[punter_id],
+        move_history_.end());
+    base::Optional<Move> move_opt = punters_[punter_id]->OnTurn(last_moves);
+    if (move_opt) {
+      last_success_[punter_id] = move_history_.size();
+    }
+    Move move = move_opt.value_or(Move::Pass(punter_id));
     Move actual_move = referee_->HandleMove(turn_id, punter_id, move);
     CHECK_EQ(actual_move.punter_id, punter_id);
-    last_moves_[punter_id] = actual_move;
+    move_history_.push_back(actual_move);
   }
   referee_->Finish();
 }

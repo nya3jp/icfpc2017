@@ -72,7 +72,7 @@ PunterInfo LocalPunter::SetUp(const common::SetUpData& args) {
   return {name, futures};
 }
 
-Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
+base::Optional<Move> LocalPunter::OnTurn(const std::vector<Move>& moves) {
   auto request = base::MakeUnique<base::DictionaryValue>();
   {
     auto action_dict = base::MakeUnique<base::DictionaryValue>();
@@ -95,7 +95,7 @@ Move LocalPunter::OnTurn(const std::vector<Move>& moves) {
   }
   if (!response) {
     LOG(INFO) << "LOG: P" << punter_id_ << " timeout";
-    return Move::Pass(punter_id_);
+    return base::nullopt;
   }
 
   CHECK(response->Remove("state", &state_));

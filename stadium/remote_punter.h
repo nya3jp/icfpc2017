@@ -12,7 +12,7 @@ class RemotePunter : public Punter {
   ~RemotePunter() override;
 
   PunterInfo SetUp(const common::SetUpData& args) override;
-  Move OnTurn(const std::vector<Move>& moves) override;
+  base::Optional<Move> OnTurn(const std::vector<Move>& moves) override;
 
  private:
   const int port_;

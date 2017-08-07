@@ -12,7 +12,7 @@ PunterInfo RemotePunter::SetUp(const common::SetUpData& args) {
   return {"not_implemented", {}};
 }
 
-Move RemotePunter::OnTurn(const std::vector<Move>& moves) {
+base::Optional<Move> RemotePunter::OnTurn(const std::vector<Move>& moves) {
   LOG(ERROR) << "NOT IMPLEMENTED";
   return Move::Pass(punter_id_);
 }

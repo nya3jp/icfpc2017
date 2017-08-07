@@ -65,6 +65,22 @@ common::GameMove MetaPunter::Run(
     const std::vector<common::GameMove>& moves) {
   const base::TimeTicks start = base::TimeTicks::Now();
 
+  std::map<int, int> count;
+  for (const auto& m : moves) {
+    count[m.punter_id]++;
+  }
+  int max_count = 0;
+  for (const auto& entry : count) {
+    max_count = std::max(max_count, entry.second);
+  }
+  max_count = std::min(7, max_count);
+  const base::TimeDelta timeout =
+      kPrimaryTimeout
+      - base::TimeDelta::FromMilliseconds((max_count - 1) * 100);
+  LOG(INFO) << "Timeout: " << timeout;
+
+  sleep(2);
+
   // Run two workers in parallel.
   {
     base::DictionaryValue request;
@@ -89,9 +105,8 @@ common::GameMove MetaPunter::Run(
   CHECK(backup_response->Remove("state", &backup_state_));
 
   auto primary_response =
-      base::DictionaryValue::From(
-          common::ReadMessage(
-              primary_worker_->stdout_read(), kPrimaryTimeout, start));
+      base::DictionaryValue::From(common::ReadMessage(
+          primary_worker_->stdout_read(), timeout, start));
 
   if (!primary_response) {
     // TIMEOUT.

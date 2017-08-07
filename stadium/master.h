@@ -26,7 +26,8 @@ class Master {
   Map map_;
   std::unique_ptr<Referee> referee_;
   std::vector<std::unique_ptr<Punter>> punters_;
-  std::vector<Move> last_moves_;
+  std::vector<Move> move_history_;
+  std::vector<int> last_success_;
 
   DISALLOW_COPY_AND_ASSIGN(Master);
 };

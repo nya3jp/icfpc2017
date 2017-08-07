@@ -20,7 +20,7 @@ PunterInfo StubPunter::SetUp(const common::SetUpData& args) {
   return {"STUB", {}};
 }
 
-Move StubPunter::OnTurn(const std::vector<Move>& moves) {
+base::Optional<Move> StubPunter::OnTurn(const std::vector<Move>& moves) {
   for (const auto& move : moves) {
     if (move.type == Move::Type::CLAIM) {
       unclaimed_rivers_.erase(std::make_pair(
