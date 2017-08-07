@@ -38,8 +38,11 @@ def run_stadium(map_name, punter_shells, extensions, log_path):
         '--logtostderr',
         '--map=%s' % map_path,
         '--result_json=/dev/stdout',
-        '--persistent',
     ]
+    if 'non-persistent' in extensions:
+        extensions.remove('non-persistent')
+    else:
+        args.append('--persistent')
     for ext in extensions:
         args.append('--%s' % ext)
     args.extend(punter_shells)

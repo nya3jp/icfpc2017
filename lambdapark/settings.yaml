@@ -128,6 +128,11 @@ continuous_configs:
       - futures
       - splurges
       - options
+  - map: lambda
+    num_punters: 3
+    num_rounds: *small_rounds
+    extensions:
+      - non-persistent
   - map: randomMedium
     num_punters: 2
     num_rounds: *small_rounds
