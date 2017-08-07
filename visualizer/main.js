@@ -108,6 +108,7 @@ History.prototype = {
   },
 
   load: function(moves, gameMap) {
+    this.reset();
     this.moves = moves;
     for (let i = 0; i < this.moves.length; i++) {
       if (this.moves[i].claim) {
@@ -486,6 +487,7 @@ Controller.prototype = {
     reader.onload = function(event) {
       const moves = JSON.parse(event.target.result);
       this.history_.load(moves.moves, this.gameMap_);
+      this.state_.reset();
       this.updateView_();
     }.bind(this);
   },
