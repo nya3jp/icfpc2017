@@ -69,12 +69,23 @@ std::string MovesToKey(std::vector<GameMove> moves) {
 }
 
 int TotalScore(int punter_id, const std::vector<int>& scores) {
-  int rival_score = 0;
+  const int my_score = scores[punter_id];
+  int score_above = my_score - 1;
+  int score_below = my_score + 1;
   for (size_t i = 0; i < scores.size(); ++i) {
     if (static_cast<int>(i) == punter_id) {continue;}
-    rival_score = std::max(scores[i], rival_score);
+    const int s = scores[i];
+    if (s < my_score) {
+      if (score_below > my_score || score_below < s) {
+        score_below = s;
+      }
+    } else if (s > my_score) {
+      if (score_above < my_score || s < score_above) {
+        score_above = s;
+      }
+    }
   }
-  return scores[punter_id] - rival_score;
+  return (my_score - score_below) - (score_above - my_score);
 }
 
 Snapshot SnapshotFromMove(
