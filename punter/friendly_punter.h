@@ -18,7 +18,9 @@ class FriendlyPunter : public framework::SimplePunter {
  private:
   std::pair<int, int> FindForMine(int mine_index,
       const std::vector<std::vector<int>>& adj,
-      const std::vector<std::vector<int>>& value);
+      const std::vector<std::vector<int>>& adj_available,
+      const std::vector<std::vector<int>>& value,
+      const std::vector<std::vector<bool>>& covered);
 };
   
 
