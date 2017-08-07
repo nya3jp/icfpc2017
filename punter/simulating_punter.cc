@@ -125,7 +125,7 @@ void SimulatingPunter::SetUp(const common::SetUpData& args) {
 }
 
 framework::GameMove SimulatingPunter::Run() {
-  const int kMaxStep = 5;
+  const int kMaxStep = 10;
   std::vector<Snapshot> old_snapshot{GenerateSnapshot({})};
   for (int step = 0; step < kMaxStep; ++step) {
     std::vector<Snapshot> new_snapshots;
@@ -172,7 +172,7 @@ void SimulatingPunter::GenerateNextSnapshots(
 }
 
 void SimulatingPunter::ShrinkToTop(std::vector<Snapshot>* snapshots) {
-  const int kWidth = 1000;
+  const int kWidth = 400;
   UniqifyByMove(snapshots);
   std::sort(snapshots->begin(), snapshots->end(),
             [](const Snapshot& lhs, const Snapshot& rhs) {
