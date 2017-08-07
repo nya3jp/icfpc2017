@@ -31,41 +31,54 @@ void QuickPunter::SetUp(const common::SetUpData& args) {
   }
 }
 
+void QuickPunter::ClaimRiver(int punter_id, int source, int target) {
+  framework::GameMapProto* game_map_proto = proto_.mutable_game_map();
+  for (int i = 0; i < game_map_proto->rivers_size(); i++) {
+    framework::RiverProto* r = game_map_proto->mutable_rivers(i);
+    if ((r->source() == source && r->target() == target) ||
+        (r->source() == target && r->target() == source)) {
+      DCHECK(r->punter() == -1);
+      r->set_punter(punter_id);
+      if (punter_id != proto_.punter_id())
+        continue;
+      auto src_color = node_color_.find(source);
+      auto tgt_color = node_color_.find(target);
+      if (src_color != node_color_.end() &&
+          tgt_color == node_color_.end()) {
+        node_color_.insert(std::make_pair(target, src_color->second));
+        QuickPunterNodeColor* color_proto = proto_.add_node_color();
+        color_proto->set_site(target);
+        color_proto->set_mine(src_color->second);
+      } else if (src_color == node_color_.end() &&
+                 tgt_color != node_color_.end()) {
+        node_color_.insert(std::make_pair(source, tgt_color->second));
+        QuickPunterNodeColor* color_proto = proto_.add_node_color();
+        color_proto->set_site(source);
+        color_proto->set_mine(tgt_color->second);
+      }
+    }
+  }
+}
+
 framework::GameMove QuickPunter::Run(const std::vector<framework::GameMove>& moves) {
   // Mark the claimed rivers
-  framework::GameMapProto* game_map_proto = proto_.mutable_game_map();
   for (auto& move : moves) {
-    if (move.type != framework::GameMove::Type::CLAIM)
-      continue;
-    for (int i = 0; i < game_map_proto->rivers_size(); i++) {
-      framework::RiverProto* r = game_map_proto->mutable_rivers(i);
-      if ((r->source() == move.source && r->target() == move.target) ||
-          (r->source() == move.target && r->target() == move.source)) {
-        DCHECK(r->punter() == -1);
-        r->set_punter(move.punter_id);
-        if (move.punter_id != proto_.punter_id())
-          continue;
-        auto src_color = node_color_.find(move.source);
-        auto tgt_color = node_color_.find(move.target);
-        if (src_color != node_color_.end() &&
-            tgt_color == node_color_.end()) {
-          node_color_.insert(std::make_pair(move.target, src_color->second));
-          QuickPunterNodeColor* color_proto = proto_.add_node_color();
-          color_proto->set_site(move.target);
-          color_proto->set_mine(src_color->second);
-        } else if (src_color == node_color_.end() &&
-                   tgt_color != node_color_.end()) {
-          node_color_.insert(std::make_pair(move.source, tgt_color->second));
-          QuickPunterNodeColor* color_proto = proto_.add_node_color();
-          color_proto->set_site(move.source);
-          color_proto->set_mine(tgt_color->second);
-        }
+    switch (move.type) {
+    case framework::GameMove::Type::PASS:
+      break;
+    case framework::GameMove::Type::CLAIM:
+      ClaimRiver(move.punter_id, move.source, move.target);
+      break;
+    case framework::GameMove::Type::SPLURGE:
+      for (size_t i = 1; i < move.route.size(); i++) {
+        ClaimRiver(move.punter_id, move.route[i-1], move.route[i]);
       }
+      break;
     }
   }
 
   // Select a move
-  for (auto& r : game_map_proto->rivers()) {
+  for (auto& r : proto_.game_map().rivers()) {
     if (r.punter() != -1)
       continue;
     auto src_color = node_color_.find(r.source());

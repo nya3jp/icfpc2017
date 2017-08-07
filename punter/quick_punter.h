@@ -18,6 +18,8 @@ class QuickPunter : public framework::Punter {
   std::unique_ptr<base::Value> GetState() override;
 
  private:
+  void ClaimRiver(int punter_id, int source, int target);
+
   QuickPunterProto proto_;
   std::map<int,int> node_color_;  // site-id -> mine-id
   
