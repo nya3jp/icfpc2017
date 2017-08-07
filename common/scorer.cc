@@ -195,9 +195,7 @@ class UnionFindSet {
 
   ScoreCell* mutable_cells(size_t index) const {
     if (dry_run_) {
-      auto it = dry_run_.value().find(index);
-      if (it != dry_run_.value().end())
-        return &it->second;
+      return &dry_run_.value()[index];
     }
     return proto_->mutable_cells(index);
   }
