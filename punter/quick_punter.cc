@@ -37,7 +37,6 @@ void QuickPunter::ClaimRiver(int punter_id, int source, int target) {
     framework::RiverProto* r = game_map_proto->mutable_rivers(i);
     if ((r->source() == source && r->target() == target) ||
         (r->source() == target && r->target() == source)) {
-      DCHECK(r->punter() == -1);
       r->set_punter(punter_id);
       if (punter_id != proto_.punter_id())
         continue;
@@ -73,6 +72,11 @@ framework::GameMove QuickPunter::Run(const std::vector<framework::GameMove>& mov
       for (size_t i = 1; i < move.route.size(); i++) {
         ClaimRiver(move.punter_id, move.route[i-1], move.route[i]);
       }
+      break;
+    case framework::GameMove::Type::OPTION:
+      // Option moves by others are ignored.
+      if (move.punter_id == proto_.punter_id())
+        ClaimRiver(move.punter_id, move.source, move.target);
       break;
     }
   }
