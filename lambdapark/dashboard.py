@@ -124,6 +124,8 @@ def matrix_handler():
     if label:
         query['label'] = label
     num_all_jobs = db.jobs.count(query)
+    query['status'] = 'running'
+    num_running_jobs = db.jobs.count(query)
     query['status'] = 'finished'
     num_finished_jobs = db.jobs.count(query)
 
@@ -135,6 +137,7 @@ def matrix_handler():
         'labels': labels,
         'infos': infos,
         'num_all_jobs': num_all_jobs,
+        'num_running_jobs': num_running_jobs,
         'num_finished_jobs': num_finished_jobs,
         'error_configs': error_configs,
     }
