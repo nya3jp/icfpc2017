@@ -120,7 +120,7 @@ bool Game::RunImpl() {
       DLOG(INFO) << "score: " << punter_id << ", " << score;
     }
 #endif
-
+    punter_->OnFinish();
     return true;
   } else {
     // Play.
@@ -155,6 +155,7 @@ bool Game::RunImpl() {
     common::WriteMessage(stdout, *output);
   }
 
+  punter_->OnFinish();
   return false;
 }
 

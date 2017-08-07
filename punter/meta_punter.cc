@@ -130,6 +130,11 @@ common::GameMove MetaPunter::Run(
   return common::GameMove::FromJson(*primary_response);
 }
 
+void MetaPunter::OnFinish() {
+  primary_worker_.reset();
+  backup_worker_.reset();
+}
+
 void MetaPunter::SetState(std::unique_ptr<base::Value> state_in) {
   // TODO merge map data.
   auto state = base::DictionaryValue::From(std::move(state_in));

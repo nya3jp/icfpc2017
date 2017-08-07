@@ -48,10 +48,11 @@ Popen::Popen(const std::string& shell, bool kill_on_parent_death) {
       close(i);
 
     // Child.
+    std::string shell_command = "exec " + shell;
     char* const commands [] = {
-      const_cast<char*>("/bin/bash"),
+      const_cast<char*>("/bin/sh"),
       const_cast<char*>("-c"),
-      const_cast<char*>(shell.c_str()),
+      const_cast<char*>(shell_command.c_str()),
       nullptr,
     };
 

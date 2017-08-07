@@ -19,6 +19,7 @@ class MetaPunter : public framework::Punter {
   void SetUp(const common::SetUpData& args) override;
   std::vector<common::Future> GetFutures() override;
   common::GameMove Run(const std::vector<common::GameMove>& moves) override;
+  void OnFinish() override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 

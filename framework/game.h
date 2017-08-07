@@ -33,7 +33,7 @@ class Punter {
   virtual void EnableOptions() {}
 
   virtual GameMove Run(const std::vector<GameMove>& moves) = 0;
-
+  virtual void OnFinish() {}
   virtual void SetState(std::unique_ptr<base::Value> state) = 0;
   virtual std::unique_ptr<base::Value> GetState() = 0;
 
