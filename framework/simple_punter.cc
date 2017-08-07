@@ -208,8 +208,13 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   CHECK(state->GetString("proto", &b64_proto));
   std::string serialized;
   CHECK(base::Base64Decode(b64_proto, &serialized));
-  CHECK(proto_.ParseFromString(serialized));
+  auto proto_in = base::MakeUnique<GameStateProto>();
+  CHECK(proto_in->ParseFromString(serialized));
+  SetStateFromProto(std::move(proto_in));
+}
 
+void SimplePunter::SetStateFromProto(std::unique_ptr<GameStateProto> state_in) {
+  proto_ = *std::move(state_in);
   SetAliasesToProto();
 
   punter_id_ = proto_.punter_id();

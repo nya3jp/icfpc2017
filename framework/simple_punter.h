@@ -23,6 +23,7 @@ class SimplePunter : public Punter {
   GameMove Run(const std::vector<GameMove>& moves) override;
 
   void SetState(std::unique_ptr<base::Value> state) override;
+  virtual void SetStateFromProto(std::unique_ptr<GameStateProto> state);
   std::unique_ptr<base::Value> GetState() override;
 
   std::vector<Future> GetFutures() override final;
