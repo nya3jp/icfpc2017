@@ -124,7 +124,7 @@ def main(unused_argv):
     ensure_index(db)
 
     if FLAGS.cancel_pending_jobs:
-        db.jobs.delete_many({'status': 'pending'})
+        db.jobs.delete_many({'status': {'$in': ['pending', 'running']}})
 
     if not is_idle(db):
         logging.info('there are already pending jobs, process them first')
