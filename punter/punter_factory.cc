@@ -76,6 +76,10 @@ void SwitchingPunter::SetUp(const common::SetUpData& args) {
   core_->SetUp(args);
 }
 
+std::vector<common::Future> SwitchingPunter::GetFutures() {
+  return core_->GetFutures();
+}
+
 framework::GameMove SwitchingPunter::Run(
     const std::vector<framework::GameMove>& moves) {
   return core_->Run(moves);

@@ -17,6 +17,7 @@ public:
   ~SwitchingPunter() override;
 
   void SetUp(const common::SetUpData& args) override;
+  std::vector<common::Future> GetFutures() override;
   framework::GameMove Run(const std::vector<framework::GameMove>& moves) override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
