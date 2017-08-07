@@ -111,7 +111,7 @@ std::string SwitchingPunter::MiracOrJamOrFriendly(const common::SetUpData& args)
 }
 
 // static
-std::string SwitchingPunter::MiracOrJamOrFutureOrFriendly(const common::SetUpData& args) {
+std::string SwitchingPunter::MiracOrJamOrFriendlyOrFuture(const common::SetUpData& args) {
   if (args.game_map.sites.size() >= 800 &&
       args.game_map.mines.size() >= 8) { return "FriendlyPunter"; }
   if (args.num_punters == 2 &&
