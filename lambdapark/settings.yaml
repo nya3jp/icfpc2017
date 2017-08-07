@@ -32,9 +32,9 @@ punters:
   - name: release
     shell: release/punter
     continuous: true
-  - name: simulating
-    shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaSimulatingPunter --primary_worker_options="--logtostderr --punter=SimulatingPunter --name=SimulatingPunter" --backup_worker_options="--logtostderr --punter=QuickPunter --name=QuickPunter"
-    continuous: true
+#  - name: simulating
+#    shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaSimulatingPunter --primary_worker_options="--logtostderr --punter=SimulatingPunter --name=SimulatingPunter" --backup_worker_options="--logtostderr --punter=QuickPunter --name=QuickPunter"
+#    continuous: true
 #  - name: irori
 #    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
 #    continuous: true
