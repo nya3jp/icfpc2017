@@ -85,6 +85,13 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
   } else {
     // Nothing
   }
+
+  if (can_splurge_ && out_move.type == GameMove::Type::CLAIM) {
+    if (out_move.source % 2) {
+      std::vector<int> route = {out_move.source, out_move.target};
+      return CreateSplurge(&route);
+    }
+  }
   return out_move;
 }
 

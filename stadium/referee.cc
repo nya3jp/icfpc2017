@@ -199,11 +199,11 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
   }
 
   if (actual_move.type == Move::Type::SPLURGE) {
-    if (actual_move.route.size() > pass_count_[punter_id] + 1) {
+    if (actual_move.route.size() - 1 > pass_count_[punter_id] + 1) {
       LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
                  << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
                  << "tried to splurge after insufficient number of passes ("
-                 << actual_move.route.size() << " < "
+                 << actual_move.route.size() - 1 << " <= "
                  << (pass_count_[punter_id] + 1)
                  << "). Forcing to PASS.";
       actual_move = Move::Pass(punter_id);
