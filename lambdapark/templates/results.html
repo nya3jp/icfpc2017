@@ -10,6 +10,7 @@
       <th>Time</th>
       <th>Duration</th>
       <th>Map</th>
+      <th>Extensions</th>
       <th>Results</th>
     </tr>
   </thead>
@@ -24,6 +25,9 @@
       </td>
       <td>
         {{ report.job.map }}
+      </td>
+      <td>
+        {{ report.job.extensions or '-' }}
       </td>
       <td class="{{ report.error and 'danger' }}">
         {% if report.injected_sorted_punters %}

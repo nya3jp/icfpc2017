@@ -13,6 +13,12 @@
       </td>
     </tr>
     <tr>
+      <th>Extensions</th>
+      <td>
+        {{ report.job.extensions or '-' }}
+      </td>
+    </tr>
+    <tr>
       <th>Ranking</th>
       <td>
         {% if report.injected_sorted_punters %}
