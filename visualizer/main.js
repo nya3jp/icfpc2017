@@ -73,14 +73,14 @@ GameMap.prototype = {
       this.distance[i] = new Array(sites.length);
       for (let j = 0; j < sites.length; j++)
         this.distance[i][j] = INF;
-      
+
       const visited = new Array(sites.length);
       const S = mines[i];
       const queue = [];
       visited[S] = true;
       this.distance[i][S] = 0;
       queue.push({v: S, d: 0});
-      
+
       while (queue.length != 0) {
         const v = queue[0].v;
         const d = queue[0].d;
@@ -184,7 +184,7 @@ Scorer.prototype = {
 function computeScoreRec(v, mineIndex, adj, depth, visited, mines, precomputedData) {
   if (visited[v])
     return 0;
-  
+
   visited[v] = true;
   score = precomputedData.distance[mineIndex][v] * precomputedData.distance[mineIndex][v];
   for (let i = 0; i < adj[v].length; i++) {
@@ -390,7 +390,7 @@ Viewer.prototype = {
       }
     }
   },
-  
+
   convertX_: function(x, minX, maxX, canvasWidth) {
     return (x - minX) * (canvasWidth * 0.9) / (maxX - minX) + canvasWidth * 0.05;
   },
@@ -422,7 +422,7 @@ Viewer.prototype = {
   },
 };
 
-function Controller(prevButton, playButton, nextButton, slider, inputMap, inputMoves, viewer) {
+function Controller(prevButton, playButton, nextButton, slider, inputMap, inputMoves, viewer, mapUrl, movesUrl) {
   this.playing = false;
   this.prevButton_ = prevButton;
   this.playButton_ = playButton;
@@ -443,6 +443,10 @@ function Controller(prevButton, playButton, nextButton, slider, inputMap, inputM
   this.slider_.addEventListener('input', this.onSliderChange_.bind(this));
   this.inputMap_.addEventListener('change', this.onInputMapChange_.bind(this));
   this.inputMoves_.addEventListener('change', this.onInputMovesChange_.bind(this));
+
+  this.loadMapFromUrl_(mapUrl).then(() => {
+    return this.loadMovesFromUrl_(movesUrl);
+  });
 }
 
 Controller.prototype = {
@@ -509,33 +513,82 @@ Controller.prototype = {
   },
 
   onInputMapChange_: function(event) {
-    const reader = new FileReader();
-    reader.readAsText(event.target.files[0]);
-    reader.onload = function(event) {
-      const map = JSON.parse(event.target.result);
-      this.gameMap_.load(map);
-      this.history_.reset();
-      this.state_.reset();
-      this.updateView_();
-    }.bind(this);
+    this.loadMapFromFile_(event.target.files[0]);
+  },
+
+  loadMapFromUrl_: function(url) {
+    if (!url) {
+      return Promise.reject(new Error('&map not set'));
+    }
+    return fetch(url).then((response) => {
+      return response.blob();
+    }).then((blob) => {
+      return this.loadMapFromFile_(blob);
+    });
+  },
+
+  loadMapFromFile_: function(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsText(file);
+      reader.onload = function(event) {
+        const map = JSON.parse(event.target.result);
+        this.gameMap_.load(map);
+        this.history_.reset();
+        this.state_.reset();
+        this.updateView_();
+        resolve();
+      }.bind(this);
+      reader.onerror = reader.onabort = reject;
+    });
   },
 
   onInputMovesChange_: function(event) {
-    const reader = new FileReader();
-    reader.readAsText(event.target.files[0]);
-    reader.onload = function(event) {
-      const moves = JSON.parse(event.target.result);
-      this.history_.load(moves.moves, this.gameMap_);
-      this.state_.reset();
-      this.updateView_();
-    }.bind(this);
+    this.loadMovesFromFile_(event.target.files[0]);
+  },
+
+  loadMovesFromUrl_: function(url) {
+    if (!url) {
+      return Promise.reject(new Error('&moves not set'));
+    }
+    return fetch(url).then((response) => {
+      return response.blob();
+    }).then((blob) => {
+      return this.loadMovesFromFile_(blob);
+    });
+  },
+
+  loadMovesFromFile_: function(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsText(file);
+      reader.onload = function(event) {
+        const moves = JSON.parse(event.target.result);
+        this.history_.load(moves.moves, this.gameMap_);
+        this.state_.reset();
+        this.updateView_();
+        resolve();
+      }.bind(this);
+      reader.onerror = reader.onabort = reject;
+    });
   },
 };
 
+function parseQuery(search) {
+  const strippedSearch = search[0] === '?' ? search.substr(1) : search;
+  const query = {};
+  for (let part of strippedSearch.split('&')) {
+    const [key, value] = part.split('=', 2);
+    query[decodeURIComponent(key)] = decodeURIComponent(value);
+  }
+  return query;
+}
+
 document.addEventListener('DOMContentLoaded', function(event) {
   const $ = function( id ) { return document.getElementById( id ); };
+  const query = parseQuery(location.search);
   const viewer = new Viewer($('canvas'), $('scores'), $('prev'), $('next'),
       $('btn_play'), $('slider'), $('moves'));
-  const controller = new Controller($('prev'), $('btn_play'), $('next'), 
-      $('slider'), $('map'), $('moves'), viewer);
+  const controller = new Controller($('prev'), $('btn_play'), $('next'),
+      $('slider'), $('map'), $('moves'), viewer, query['map'], query['moves']);
 });
