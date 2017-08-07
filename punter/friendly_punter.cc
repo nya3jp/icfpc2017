@@ -65,6 +65,15 @@ framework::GameMove FriendlyPunter::Run() {
     adj[r.source()].push_back(r.target());
     adj[r.target()].push_back(r.source());
   }
+
+  // Constract adjacent list of reachabel (not-owned-by-others) edges.
+  std::vector<std::vector<int>> adj_available(S, std::vector<int>());
+  for (auto& r : *rivers_) {
+    if (!(r.punter() == punter_id_ || r.punter() == -1))
+      continue;
+    adj_available[r.source()].push_back(r.target());
+    adj_available[r.target()].push_back(r.source());
+  }
   
   // Compute score from each mine.
   std::vector<int> mine_effect(M, 0);
@@ -77,13 +86,25 @@ framework::GameMove FriendlyPunter::Run() {
       }
     }
   }
-
-  // Find the least effective mine.
-  std::vector<std::pair<int,int>> vp;
+  // Compute max score from each mine.
+  std::vector<int> max_score(M, 0);
   for (int i=0; i<M; i++) {
-    vp.push_back(std::make_pair(mine_effect[i], i));
+    std::vector<bool> visited(S, false);
+    dfs(mines_->Get(i).site(), adj_available, visited);
+    for (int j=0; j<S; j++) {
+      if (visited[j]) {
+        //max_score[i] += value[j][i];
+        max_score[i] += 1;
+      }
+    }
   }
-  sort(vp.begin(), vp.end());
+
+  // Find the least effective mine among the ones which have maximum max_score.
+  std::vector<std::pair<std::pair<int,int>, int>> vp;
+  for (int i=0; i<M; i++) {
+    vp.push_back(std::make_pair(std::make_pair(max_score[i], -mine_effect[i]), i));
+  }
+  sort(vp.rbegin(), vp.rend());
 
   for (size_t i=0; i<vp.size(); i++) {
     std::pair<int, int> result = FindForMine(vp[i].second, adj, value);
@@ -166,7 +187,7 @@ std::pair<int, int> FriendlyPunter::FindForMine(
       continue;
 
     if (covered[i])
-      site_values[i] += 1000000 - distance[i];
+      site_values[i] += 10000000 / distance[i];
 
     int available_otonari = 0;
     for (Edge& e : edges_[i]) {
