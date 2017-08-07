@@ -2,13 +2,13 @@
 
 #include "base/files/file_util.h"
 #include "base/memory/ptr_util.h"
+#include "base/process/process_handle.h"
 #include "base/time/time.h"
 #include "common/protocol.h"
 #include "gflags/gflags.h"
 
-
-DEFINE_string(primary_worker, "", "Commandline for primary worker.");
-DEFINE_string(backup_worker, "", "Commandline for backup worker");
+DEFINE_string(primary_worker_options, "", "Commandline for primary worker.");
+DEFINE_string(backup_worker_options, "", "Commandline for backup worker");
 DECLARE_bool(persistent);
 
 namespace punter {
@@ -25,6 +25,12 @@ void ExchangePingPong(common::Popen* subprocess) {
   common::WritePong(subprocess->stdin_write(), name.value());
 }
 
+std::string MakeShell(const std::string& options) {
+  std::string executable =
+      base::GetProcessExecutablePath(base::GetCurrentProcessHandle()).value();
+  return executable + " " + options;
+}
+
 }  // namespace
 
 MetaPunter::MetaPunter() = default;
@@ -33,9 +39,11 @@ MetaPunter::~MetaPunter() = default;
 
 void MetaPunter::OnInit() {
   primary_worker_ = base::MakeUnique<common::Popen>(
-      FLAGS_primary_worker, true /* kill on parent death */);
+      MakeShell(FLAGS_primary_worker_options),
+      true /* kill on parent death */);
   backup_worker_ = base::MakeUnique<common::Popen>(
-      FLAGS_backup_worker, true /* kill on parent death */);
+      MakeShell(FLAGS_backup_worker_options),
+      true /* kill on parent death */);
   base::SetNonBlocking(fileno(primary_worker_->stdout_read()));
   base::SetNonBlocking(fileno(backup_worker_->stdout_read()));
   ExchangePingPong(primary_worker_.get());
