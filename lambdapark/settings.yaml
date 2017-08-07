@@ -5,9 +5,6 @@ punters:
   - name: mirac
     shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac
     continuous: true
-  - name: mirac2
-    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac
-    continuous: true
   - name: mirac-opt
     shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunterMirac --name=GreedyPunterMirac --use_option
     continuous: true
