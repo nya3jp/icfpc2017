@@ -14,6 +14,7 @@ SimplePunter::~SimplePunter() = default;
 
 GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
   common::Scorer scorer(proto_.mutable_scorer());
+  recent_updated_.clear();
   for (const auto& move : moves) {
     switch (move.type) {
       case GameMove::Type::PASS: {
@@ -32,6 +33,7 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
           RiverProto* r = rivers_->Mutable(edge.river);
           DCHECK(r->punter() == -1);
           r->set_punter(move.punter_id);
+          recent_updated_.push_back(edge.river);
           break;
         }
         break;
@@ -51,6 +53,7 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
           DCHECK(r->punter() != -1);
           DCHECK(r->option_punter() == -1);
           r->set_option_punter(move.punter_id);
+          recent_updated_.push_back(edge.river);
           done = true;
           break;
         }
@@ -77,6 +80,7 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
               r->set_option_punter(move.punter_id);
             }
             done = true;
+            recent_updated_.push_back(edge.river);
             break;
           }
           DCHECK(done);

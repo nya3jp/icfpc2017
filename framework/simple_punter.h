@@ -77,6 +77,9 @@ class SimplePunter : public Punter {
   google::protobuf::RepeatedPtrField<RiverProto>* rivers_;
   google::protobuf::RepeatedPtrField<MineProto>* mines_;
 
+  // river ids that were recently claimed / optioned
+  std::vector<int> recent_updated_;
+
  private:
   void SetAliasesToProto();
 
