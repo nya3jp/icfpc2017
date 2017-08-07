@@ -14,76 +14,101 @@ SimplePunter::~SimplePunter() = default;
 
 GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
   common::Scorer scorer(proto_.mutable_scorer());
-  for (auto move : moves) {
-    if (move.type == GameMove::Type::CLAIM) {
-      // Must use original site ids.
-      scorer.Claim(move.punter_id, move.source, move.target);
-
-      move.source = FindSiteIdxFromSiteId(move.source);
-      move.target = FindSiteIdxFromSiteId(move.target);
-
-      for (Edge& edge : edges_[move.source]) {
-        if (edge.site != move.target)
-          continue;
-        RiverProto* r = rivers_->Mutable(edge.river);
-        DCHECK(r->punter() == -1);
-        r->set_punter(move.punter_id);
+  for (const auto& move : moves) {
+    switch (move.type) {
+      case GameMove::Type::PASS: {
+        break;
       }
-    }
-    if (move.type == GameMove::Type::OPTION) {
-      // Must use original site ids.
-      scorer.Option(move.punter_id, move.source, move.target);
+      case GameMove::Type::CLAIM: {
+        // Must use original site ids.
+        scorer.Claim(move.punter_id, move.source, move.target);
 
-      move.source = FindSiteIdxFromSiteId(move.source);
-      move.target = FindSiteIdxFromSiteId(move.target);
+        int source_idx = FindSiteIdxFromSiteId(move.source);
+        int target_idx = FindSiteIdxFromSiteId(move.target);
 
-      // TODO: This is slow!
-      for (int i = 0; i < rivers_->size(); ++i) {
-        RiverProto* r = rivers_->Mutable(i);
-        if ((r->source() == move.source && r->target() == move.target) ||
-            (r->source() == move.target && r->target() == move.source)) {
+        for (Edge& edge : edges_[source_idx]) {
+          if (edge.site != target_idx)
+            continue;
+          RiverProto* r = rivers_->Mutable(edge.river);
+          DCHECK(r->punter() == -1);
+          r->set_punter(move.punter_id);
+          break;
+        }
+        break;
+      }
+      case GameMove::Type::OPTION: {
+        // Must use original site ids.
+        scorer.Option(move.punter_id, move.source, move.target);
+
+        int source_idx = FindSiteIdxFromSiteId(move.source);
+        int target_idx = FindSiteIdxFromSiteId(move.target);
+
+        bool done = false;
+        for (Edge& edge : edges_[source_idx]) {
+          if (edge.site != target_idx)
+            continue;
+          RiverProto* r = rivers_->Mutable(edge.river);
           DCHECK(r->punter() != -1);
           DCHECK(r->option_punter() == -1);
           r->set_option_punter(move.punter_id);
+          done = true;
+          break;
         }
+        DCHECK(done);
+        break;
       }
-    }
-    if (move.type == GameMove::Type::SPLURGE) {
-      // Must use original site ids.
-      scorer.Splurge(move.punter_id, move.route);
+      case GameMove::Type::SPLURGE: {
+        // Must use original site ids.
+        scorer.Splurge(move.punter_id, move.route);
 
-      for (size_t i = 0; i + 1U < move.route.size(); ++i) {
-        int source = FindSiteIdxFromSiteId(move.route[i]);
-        int target = FindSiteIdxFromSiteId(move.route[i + 1]);
+        for (size_t i = 0; i + 1U < move.route.size(); ++i) {
+          int source_idx = FindSiteIdxFromSiteId(move.route[i]);
+          int target_idx = FindSiteIdxFromSiteId(move.route[i + 1]);
 
-        for (Edge& edge : edges_[source]) {
-          if (edge.site != target)
-            continue;
-          RiverProto* r = rivers_->Mutable(edge.river);
-          if (r->punter() == -1) {
-            r->set_punter(move.punter_id);
-          } else {
-            DCHECK(r->option_punter() == -1);
-            r->set_option_punter(move.punter_id);
+          bool done = false;
+          for (Edge& edge : edges_[source_idx]) {
+            if (edge.site != target_idx)
+              continue;
+            RiverProto* r = rivers_->Mutable(edge.river);
+            if (r->punter() == -1) {
+              r->set_punter(move.punter_id);
+            } else {
+              DCHECK(r->option_punter() == -1);
+              r->set_option_punter(move.punter_id);
+            }
+            done = true;
+            break;
           }
+          DCHECK(done);
         }
+        break;
       }
     }
   }
 
   GameMove out_move = Run();
-  if (out_move.type == GameMove::Type::CLAIM) {
-    out_move.source = sites_->Get(out_move.source).id();
-    out_move.target = sites_->Get(out_move.target).id();
-  } else if (out_move.type == GameMove::Type::OPTION) {
-    out_move.source = sites_->Get(out_move.source).id();
-    out_move.target = sites_->Get(out_move.target).id();
-  } else if (out_move.type != GameMove::Type::SPLURGE) {
-    for (size_t i = 0; i < out_move.route.size(); ++i) {
-      out_move.route[i] = sites_->Get(out_move.route[i]).id();
+
+  // Translate site indexes to the original id.
+  switch (out_move.type) {
+    case GameMove::Type::CLAIM: {
+      out_move.source = sites_->Get(out_move.source).id();
+      out_move.target = sites_->Get(out_move.target).id();
+      break;
     }
-  } else {
-    // Nothing
+    case GameMove::Type::OPTION: {
+      out_move.source = sites_->Get(out_move.source).id();
+      out_move.target = sites_->Get(out_move.target).id();
+      break;
+    }
+    case GameMove::Type::SPLURGE: {
+      for (size_t i = 0; i < out_move.route.size(); ++i) {
+        out_move.route[i] = sites_->Get(out_move.route[i]).id();
+      }
+      break;
+    }
+    case GameMove::Type::PASS: {
+      break;
+    }
   }
 
   if (can_splurge_ && out_move.type == GameMove::Type::CLAIM) {
@@ -92,6 +117,7 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
       return CreateSplurge(&route);
     }
   }
+
   return out_move;
 }
 

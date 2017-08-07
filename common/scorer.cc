@@ -252,8 +252,7 @@ void Scorer::Splurge(size_t punter_id, const std::vector<int>& route) {
 }
 
 void Scorer::Option(size_t punter_id, int site_id1, int site_id2) {
-  // TODO
-  CHECK(false);
+  Claim(punter_id, site_id1, site_id2);
 }
 
 int Scorer::TryClaim(size_t punter_id, int site_id1, int site_id2) const {
@@ -336,8 +335,9 @@ std::vector<int> Scorer::Simulate(const std::vector<GameMove>& moves) const {
         break;
       }
       case GameMove::Type::OPTION: {
-        // TODO
-        CHECK(false);
+        int site_index1 = GetIndex(data_->site_ids(), m.source);
+        int site_index2 = GetIndex(data_->site_ids(), m.target);
+        ufset.Merge(site_index1, site_index2);
       }
       case GameMove::Type::PASS: {
         // Do nothing.

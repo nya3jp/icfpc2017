@@ -36,7 +36,7 @@ class SimplePunter : public Punter {
  protected:
   struct Edge {
     int site;  // site_index
-    int river;  // Index to RiverProto.
+    int river;  // This Edge's index in RiverProto.
   };
 
   bool CanSplurge() const {
@@ -48,6 +48,7 @@ class SimplePunter : public Punter {
 
   GameMove CreatePass() const;
   GameMove CreateClaim(int source, int target) const;
+  // Note that this method empties route.
   GameMove CreateSplurge(std::vector<int>* route) const;
   GameMove CreateOption(int source, int target) const;
 
