@@ -21,6 +21,7 @@ class FriendlyPunter : public framework::SimplePunter {
       const std::vector<std::vector<int>>& adj_available,
       const std::vector<std::vector<int>>& value,
       const std::vector<std::vector<bool>>& covered);
+  framework::GameMove TryReplace();
 };
   
 

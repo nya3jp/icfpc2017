@@ -49,6 +49,11 @@ framework::GameMove FriendlyPunter::Run() {
   const int S = edges_.size();
   const int M = mines_->size();
 
+  int remaining_moves = (num_remaining_turns() - 1) / num_punters_;
+  if (GetOptionsRemaining() >= remaining_moves) {
+    return TryReplace();
+  }
+
   // value[site][mine]: value of site from mine.
   std::vector<std::vector<int>> value(S, std::vector<int>(M, 0));
   for (int i=0; i<S; i++) {
@@ -217,7 +222,7 @@ std::pair<int, int> FriendlyPunter::FindForMine(
         continue;
       available_otonari++;
     }
-    site_values[i] += accumulate(value[i].begin(), value[i].end(), 0) * (1 + available_otonari / 2);
+    site_values[i] += accumulate(value[i].begin(), value[i].end(), 0) * (1 + available_otonari);
   }
 
   // Determine the target site.
@@ -259,6 +264,31 @@ std::pair<int, int> FriendlyPunter::FindForMine(
   int tgt = path.back().second;
   // Claim the river of the last river in the constructed path.
   return std::make_pair(src, tgt);
+}
+
+framework::GameMove FriendlyPunter::TryReplace() {
+  int best_score = -1;
+  int best_river_index = -1;
+  for (int i = 0; i < rivers_->size(); i++) {
+    if (rivers_->Get(i).punter() != punter_id_ && rivers_->Get(i).punter() != -1 &&
+        rivers_->Get(i).option_punter() != punter_id_ && rivers_->Get(i).option_punter() != -1) {
+      continue;
+    }
+    
+    int score = TryClaim(punter_id_, rivers_->Get(i).source(), rivers_->Get(i).target());
+    if (score > best_score) {
+      best_score = score;
+      best_river_index = i;
+    }
+  }
+
+  if (best_river_index == -1)
+    return CreatePass();
+
+  if (rivers_->Get(best_river_index).punter() == -1)
+    return CreateClaim(rivers_->Get(best_river_index).source(), rivers_->Get(best_river_index).target());
+  else
+    return CreateOption(rivers_->Get(best_river_index).source(), rivers_->Get(best_river_index).target());
 }
 
 }  // namespace punter
