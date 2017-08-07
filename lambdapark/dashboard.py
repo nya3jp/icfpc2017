@@ -110,7 +110,7 @@ def matrix_handler():
                 best_avg = avg
         for punter in punters:
             cell = matrix[(config, punter)]
-            cell['best'] = (cell['avg'] == best_avg)
+            cell['best'] = (cell['avg'] >= best_avg - 0.1) if best_avg else False
 
     settings = load_settings()
     info_map = {
