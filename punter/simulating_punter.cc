@@ -27,7 +27,9 @@ public:
   Shadow() = default;
   ~Shadow() override = default;
   void Init(const framework::GameStateProto& proto) {
-    SetStateFromProto(base::MakeUnique<framework::GameStateProto>(proto));
+    auto next = base::MakeUnique<framework::GameStateProto>();
+    next->CopyFrom(proto);
+    SetStateFromProto(std::move(next));
   }
 
   std::unique_ptr<Shadow> Clone() const {
@@ -131,9 +133,6 @@ framework::GameMove SimulatingPunter::Run() {
   const int kMaxStep = 3;
   std::vector<Snapshot> old_snapshot{GenerateSnapshot({})};
   for (int step = 0; step < kMaxStep; ++step) {
-    for (int i = 0; i < num_punters_; i++ ) {
-      LOG(INFO) << "score(" << i << "):" << GetScore(i);
-    }
     LOG(INFO) << "step:" << step << " Score:" << old_snapshot.front().total_score << "-" << old_snapshot.back().total_score << " (top:" << SnapshotScoreStr(old_snapshot.front()) << ") count: " << old_snapshot.size();
     std::vector<Snapshot> new_snapshots;
     for (const auto& state : old_snapshot) {
