@@ -237,6 +237,21 @@ cc_library(
 )
 
 cc_library(
+  name = "future_punter",
+  srcs = [
+    "future_punter.cc",
+  ],
+  hdrs = [
+    "future_punter.h",
+  ],
+
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+)
+
+cc_library(
   name = "simulating_punter",
   srcs = [ "simulating_punter.cc" ],
   hdrs = [ "simulating_punter.h" ],
@@ -267,6 +282,7 @@ cc_library(
     ":benkei",
     ":extension_example_punter",
     ":friendly_punter",
+    ":future_punter",
     ":greedy_punter",
     ":greedy_punter_chun",
     ":greedy_punter_mirac",
