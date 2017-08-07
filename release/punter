@@ -2,4 +2,10 @@
 
 cd "$(dirname "$0")"
 
-exec prebuilts/v3 --name=GennAI --punter=GreedyPunter --logtostderr
+exec prebuilts/punter-0807-1924 \
+  --logtostderr \
+  --name=GennAI \
+  --punter=MetaPunter \
+  --primary_worker_options="--logtostderr --name=mjf --punter=MiracOrJamOrFriendly" \
+  --backup_worker_options="--logtostderr --name=quick --punter=QuickPunter" \
+  "$@"
