@@ -18,9 +18,14 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
   for (const auto& move : moves) {
     switch (move.type) {
       case GameMove::Type::PASS: {
+        if (move.punter_id == punter_id_)
+          proto_.set_pass_count(proto_.pass_count() + 1);
         break;
       }
       case GameMove::Type::CLAIM: {
+        if (move.punter_id == punter_id_)
+          proto_.set_pass_count(0);
+
         // Must use original site ids.
         scorer.Claim(move.punter_id, move.source, move.target);
 
@@ -39,6 +44,11 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
         break;
       }
       case GameMove::Type::OPTION: {
+        if (move.punter_id == punter_id_) {
+          proto_.set_pass_count(0);
+          proto_.set_options_remaining(proto_.options_remaining() - 1);
+        }
+
         // Must use original site ids.
         scorer.Option(move.punter_id, move.source, move.target);
 
@@ -61,6 +71,9 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
         break;
       }
       case GameMove::Type::SPLURGE: {
+        if (move.punter_id == punter_id_)
+          proto_.set_pass_count(0);
+
         // Must use original site ids.
         scorer.Splurge(move.punter_id, move.route);
 
@@ -90,6 +103,8 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
     }
   }
 
+  //LOG(INFO) << "GetOptionsRemaining(): " << GetOptionsRemaining();
+  //LOG(INFO) << "GetNumSplurgableEdges(): " << GetNumSplurgableEdges();
   GameMove out_move = Run();
 
   // Translate site indexes to the original id.
@@ -156,6 +171,11 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
 
   proto_.set_punter_id(punter_id_);
   proto_.set_num_punters(num_punters_);
+
+  // -1 since the initial play contains fake pass.
+  proto_.set_pass_count(-1);
+
+  proto_.set_options_remaining(game_map.mines.size());
 
   common::Scorer(proto_.mutable_scorer()).Initialize(
       num_punters_, args.game_map);
@@ -235,6 +255,14 @@ std::vector<Future> SimplePunter::GetFutures() {
   common::Scorer(proto_.mutable_scorer()).AddFuture(punter_id_, result);
 
   return std::move(result);
+}
+
+int SimplePunter::GetOptionsRemaining() const {
+  return proto_.options_remaining();
+}
+
+int SimplePunter::GetNumSplurgableEdges() const {
+  return proto_.pass_count() + 1;
 }
 
 GameMove SimplePunter::CreatePass() const {

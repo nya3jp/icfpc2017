@@ -46,6 +46,9 @@ class SimplePunter : public Punter {
     return can_option_;
   }
 
+  int GetOptionsRemaining() const;
+  int GetNumSplurgableEdges() const ;
+
   // Creates GameMove to return from Run(). Note that the arguments must be
   // site indexes.
   GameMove CreatePass() const;

@@ -38,5 +38,8 @@ message GameStateProto {
   optional bool can_splurge = 5;
   optional bool can_option = 6;
 
+  optional int32 pass_count = 7;
+  optional int32 options_remaining = 8;
+
   extensions 100 to 199;
 }
