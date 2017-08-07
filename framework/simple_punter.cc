@@ -113,6 +113,7 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
     river_proto->set_source(r.source);
     river_proto->set_target(r.target);
     river_proto->set_punter(-1);
+    river_proto->set_option_punter(-1);
   }
   rivers_ = proto_.mutable_game_map()->mutable_rivers();
 
