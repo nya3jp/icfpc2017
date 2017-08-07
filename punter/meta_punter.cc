@@ -1,9 +1,11 @@
 #include "punter/meta_punter.h"
 
+#include "base/files/file_util.h"
 #include "base/memory/ptr_util.h"
-#include "gflags/gflags.h"
-#include "common/protocol.h"
 #include "base/time/time.h"
+#include "common/protocol.h"
+#include "gflags/gflags.h"
+
 
 DEFINE_string(primary_worker, "", "Commandline for primary worker.");
 DEFINE_string(backup_worker, "", "Commandline for backup worker");
@@ -33,6 +35,9 @@ MetaPunter::MetaPunter() {
   backup_worker_ = base::MakeUnique<common::Popen>(
       FLAGS_backup_worker + (FLAGS_persistent ? " --persistent" : ""),
       true /* kill on parent death */);
+
+  base::SetNonBlocking(fileno(primary_worker_->stdout_read()));
+  base::SetNonBlocking(fileno(backup_worker_->stdout_read()));
 }
 
 MetaPunter::~MetaPunter() = default;

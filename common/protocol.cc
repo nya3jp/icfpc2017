@@ -4,60 +4,88 @@
 
 #include <sys/epoll.h>
 
-#include "base/logging.h"
+#include "base/files/scoped_file.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
+#include "base/logging.h"
+#include "base/posix/eintr_wrapper.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_piece.h"
 #include "base/time/time.h"
+
+DEFINE_bool(logprotocol, false, "Output message for debugging.");
+DEFINE_bool(logreadprotocol, false, "Output message for debugging.");
+DEFINE_bool(logwriteprotocol, false, "Output message for debugging.");
 
 namespace common {
 
 namespace {
 
-bool WaitForFdReadable(
-    int fd,
-    const base::TimeDelta& timeout,
-    const base::TimeTicks& start_time) {
-  int timeout_ms = -1;
+class FdWaiter {
+ public:
+  FdWaiter() = default;
+  ~FdWaiter() = default;
 
-  if (!timeout.is_zero()) {
-    base::TimeDelta elapsed = start_time - base::TimeTicks::Now();
-    if (elapsed > timeout)
-      return false;
-    timeout_ms = (timeout - elapsed).InMilliseconds();
+  void Initialize(
+      int fd, const base::TimeDelta& timeout,
+      const base::TimeTicks& start_time) {
+    if (!timeout.is_zero()) {
+      CHECK(!start_time.is_null());
+      end_time_ = start_time + timeout;
+    }
+    fd_ = fd;
+
+    epoll_fd_.reset(epoll_create1(0));
+    PCHECK(epoll_fd_.is_valid());
+
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = fd;
+    PCHECK(epoll_ctl(epoll_fd_.get(), EPOLL_CTL_ADD, fd, &ev) == 0);
   }
 
-  int epoll_fd = epoll_create1(0);
-  CHECK_NE(epoll_fd, -1);
+  bool Wait() {
+    const int kMaxEvents = 1;
+    struct epoll_event events[kMaxEvents];
 
-  struct epoll_event ev;
-  ev.events = EPOLLIN;
-  ev.data.fd = fd;
-  epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev);
+    while (true) {
+      int timeout_ms;
+      if (end_time_.is_null()) {
+        timeout_ms = -1;
+      } else {
+        timeout_ms = (end_time_ - base::TimeTicks::Now()).InMilliseconds();
+        if (timeout_ms <= 0) {
+          // Timed out.
+          return false;
+        }
+      }
 
-  const int kMaxEvents = 1;
-  struct epoll_event events[kMaxEvents];
-
-  for (;;) {
-    int num_fds = epoll_wait(epoll_fd, events, kMaxEvents, timeout_ms);
-    if (num_fds == -1) {
-      if (errno == EINTR)
+      int num_fds =
+          epoll_wait(epoll_fd_.get(), events, kMaxEvents, timeout_ms);
+      if (num_fds == -1) {
+        if (errno == EINTR)
+          continue;
+        NOTREACHED();
+        return false;
+      }
+      if (num_fds == 0) {
+        // EPOLL Timeout. Will return false in the above check in the next
+        // iteration.
         continue;
-      NOTREACHED();
+      }
+
+      CHECK_EQ(num_fds, 1);
+      CHECK_EQ(events[0].data.fd, fd_);
+      return true;
     }
-    if (num_fds == 0 ||
-        (!timeout.is_zero() && base::TimeTicks::Now() > start_time + timeout)) {
-      // timeout
-      close(epoll_fd);
-      return false;
-    }
-    CHECK_EQ(num_fds, 1);
-    CHECK_EQ(events[0].data.fd, fd);
-    close(epoll_fd);
-    return true;
   }
-}
+
+ private:
+  base::ScopedFD epoll_fd_;
+  base::TimeTicks end_time_;
+  int fd_ = -1;
+  DISALLOW_COPY_AND_ASSIGN(FdWaiter);
+};
 
 void WritePingInternal(
     FILE* fp, base::StringPiece field_name, const std::string& name) {
@@ -83,61 +111,52 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp,
                                          const base::TimeDelta& timeout,
                                          const base::TimeTicks& start_time) {
   int fd = fileno(fp);
+  FdWaiter waiter;
+  waiter.Initialize(fd, timeout, start_time);
 
   size_t size;
   {
     char buf[16];
-    int pos = 0;
-    for (;;) {
-      ssize_t result = read(fd, &buf[pos], 1);
-
-      if (result == -1) {
-        if (errno == EINTR)
-          continue;
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-          if (!WaitForFdReadable(fd, timeout, start_time)) {
-            LOG(INFO) << "Timeout during reading the size of the message";
-            return nullptr;
-          }
-          continue;
-        }
+    for (int pos = 0;; ++pos) {
+      if (!waiter.Wait()) {
+        DLOG(INFO) << "Timeout during reading the size of the message";
         return nullptr;
       }
-
-      PCHECK(result == 1) << "read";
+      ssize_t result = HANDLE_EINTR(read(fd, &buf[pos], 1));
+      if (result == 0) {
+        DLOG(ERROR) << "Unexpected EOF";
+        return nullptr;
+      }
       if (buf[pos] == ':') {
         buf[pos] = '\0';
         CHECK(base::StringToSizeT(buf, &size));
         break;
       }
-
-      if (pos >= 16)
+      if (pos >= 10) {
+        DLOG(ERROR) << "Unexpected message format.";
         return nullptr;
-      ++pos;
+      }
     }
   }
   CHECK(size >= 0) << "Invalid JSON message header";
 
   std::vector<char> buf(size, 'x');
-  size_t filled = 0;
-  while (filled < size) {
-    ssize_t result = read(fd, buf.data() + filled, size - filled);
-
-    if (result == -1) {
-      if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        if (!WaitForFdReadable(fd, timeout, start_time)) {
-          LOG(INFO) << "Timeout during reading the body of the message";
-          return nullptr;
-        }
-        continue;
-      }
-      if (errno == EINTR)
-        continue;
+  for (size_t filled = 0; filled < size; ) {
+    if (!waiter.Wait()) {
+      DLOG(INFO) << "Timeout during reading the body of the message";
       return nullptr;
     }
-
+    ssize_t result =
+        HANDLE_EINTR(read(fd, buf.data() + filled, size - filled));
+    PCHECK(result >= 0);
+    if (result == 0) {
+      DLOG(ERROR) << "Unexpected EOF";
+      return nullptr;
+    }
     filled += result;
   }
+  if (FLAGS_logprotocol || FLAGS_logreadprotocol)
+    LOG(INFO) << "read: " << std::string(buf.data(), buf.size());
   return base::JSONReader::Read(base::StringPiece(buf.data(), buf.size()));
 }
 
@@ -148,6 +167,8 @@ std::unique_ptr<base::Value> ReadMessage(FILE* fp) {
 void WriteMessage(FILE* fp, const base::Value& value) {
   std::string text;
   CHECK(base::JSONWriter::Write(value, &text));
+  if (FLAGS_logprotocol || FLAGS_logwriteprotocol)
+    LOG(INFO) << "write: " << text;
   fprintf(fp, "%d:", static_cast<int>(text.size()));
   CHECK_EQ(text.size(), fwrite(text.c_str(), 1, text.size(), fp));
   fflush(fp);
