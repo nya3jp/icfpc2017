@@ -60,9 +60,6 @@ continuous_configs:
   - map: gen1
     num_punters: 2
     num_rounds: 10
-  - map: gen2
-    num_punters: 2
-    num_rounds: 10
   - map: gen3
     num_punters: 2
     num_rounds: 10
@@ -190,9 +187,6 @@ continuous_configs:
   - map: oxford2-sparse-2
     num_punters: 3
     num_rounds: 10
-  - map: oxford2-sparse
-    num_punters: 2
-    num_rounds: 10
   - map: oxford-center-sparse
     num_punters: 2
     num_rounds: 10
@@ -215,10 +209,6 @@ maps:
   - name: gen1
     num_sites: 27
     num_rivers: 39
-    num_mines: 1
-  - name: gen2
-    num_sites: 26
-    num_rivers: 52
     num_mines: 1
   - name: gen3
     num_sites: 27
@@ -288,10 +278,6 @@ maps:
     num_sites: 2389
     num_rivers: 3632
     num_mines: 16
-  - name: oxford2-sparse
-    num_sites: 3209
-    num_rivers: 6631
-    num_mines: 1
   - name: oxford-center-sparse
     num_sites: 1425
     num_rivers: 2020
