@@ -77,7 +77,7 @@ common::GameMove MetaPunter::Run(
   const base::TimeDelta timeout =
       kPrimaryTimeout
       - base::TimeDelta::FromMilliseconds((max_count - 1) * 100);
-  LOG(INFO) << "Timeout: " << timeout;
+  DLOG(INFO) << "Timeout: " << timeout;
 
   // Run two workers in parallel.
   {
