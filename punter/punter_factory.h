@@ -6,8 +6,10 @@
 #include "framework/game.h"
 
 namespace punter {
+// The factory function to create Punter entity from the name.
 std::unique_ptr<framework::Punter> PunterByName(const std::string& name);
 
+// Meta punter to switch punters based on the game state.
 class SwitchingPunter : public framework::Punter {
 public:
   using ChooserType = std::function<std::string(const common::SetUpData&)>;
@@ -22,7 +24,8 @@ public:
   static std::string BenkeiOrJam(const common::SetUpData& args);
  private:
   ChooserType f_;
-  std::unique_ptr<framework::Punter> chosen_;
+  std::string name_;
+  std::unique_ptr<framework::Punter> core_;
 
   DISALLOW_COPY_AND_ASSIGN(SwitchingPunter);
 };

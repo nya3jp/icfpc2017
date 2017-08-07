@@ -58,21 +58,27 @@ SwitchingPunter::SwitchingPunter(SwitchingPunter::ChooserType f)
 SwitchingPunter::~SwitchingPunter() = default;
 
 void SwitchingPunter::SetUp(const common::SetUpData& args) {
-  chosen_ = PunterByName(f_(args));
-  chosen_->SetUp(args);
+  name_ = f_(args);
+  core_ = PunterByName(name_);
+  core_->SetUp(args);
 }
 
 framework::GameMove SwitchingPunter::Run(
     const std::vector<framework::GameMove>& moves) {
-  return chosen_->Run(moves);
+  return core_->Run(moves);
 }
 
 void SwitchingPunter::SetState(std::unique_ptr<base::Value> state_in) {
-  chosen_->SetState(std::move(state_in));
+  auto state = base::DictionaryValue::From(std::move(state_in));
+  CHECK(state->GetString("core", &name_));
+  core_ = PunterByName(name_);
+  core_->SetState(std::move(state));
 }
 
 std::unique_ptr<base::Value> SwitchingPunter::GetState() {
-  return chosen_->GetState();
+  auto value = base::DictionaryValue::From(core_->GetState());
+  value->SetString("core", name_);
+  return value;
 }
 
 // static
