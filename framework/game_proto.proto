@@ -44,7 +44,7 @@ message GameStateProto {
   optional bool can_option = 6;
 
   optional int32 pass_count = 7;
-  optional int32 options_remaining = 8;
+  repeated int32 options_remaining = 8;
   optional int32 num_remaining_turns = 9;
 
   repeated FutureProto futures = 10;

@@ -48,8 +48,8 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
       case GameMove::Type::OPTION: {
         if (move.punter_id == punter_id_) {
           proto_.set_pass_count(0);
-          proto_.set_options_remaining(proto_.options_remaining() - 1);
         }
+        proto_.set_options_remaining(punter_id_, proto_.options_remaining(punter_id_) - 1);
 
         // Must use original site ids.
         scorer.Option(move.punter_id, move.source, move.target);
@@ -177,7 +177,9 @@ void SimplePunter::SetUp(const common::SetUpData& args) {
   // -1 since the initial play contains fake pass.
   proto_.set_pass_count(-1);
 
-  proto_.set_options_remaining(game_map.mines.size());
+  for(int i = 0; i < num_punters_; ++i) {
+    proto_.add_options_remaining(args.settings.options ? game_map.mines.size() : 0);
+  }
 
   proto_.set_num_remaining_turns(rivers_->size());
 
@@ -269,7 +271,18 @@ std::vector<Future> SimplePunter::GetFutures() {
 int SimplePunter::GetOptionsRemaining() const {
   if (!can_option_)
     return 0;
-  return proto_.options_remaining();
+  return proto_.options_remaining(punter_id_);
+}
+
+std::vector<int> SimplePunter::GetOptionsRemainingAll() const {
+  std::vector<int> ret;
+  for(int i = 0; i < num_punters_; ++i) {
+    if (!can_option_)
+      ret.push_back(0);
+    else
+      ret.push_back(proto_.options_remaining(punter_id_));
+  }
+  return std::move(ret);
 }
 
 int SimplePunter::GetNumSplurgableEdges() const {

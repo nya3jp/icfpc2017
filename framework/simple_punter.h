@@ -50,6 +50,7 @@ class SimplePunter : public Punter {
   }
 
   int GetOptionsRemaining() const;
+  std::vector<int> GetOptionsRemainingAll() const;
   int GetNumSplurgableEdges() const ;
 
   // Creates GameMove to return from Run(). Note that the arguments must be
