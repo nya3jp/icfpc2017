@@ -12,8 +12,6 @@
 #include "glog/logging.h"
 #include "stadium/game_data.h"
 #include "stadium/local_punter.h"
-#include "stadium/remote_punter.h"
-#include "stadium/stub_punter.h"
 
 DEFINE_string(map, "", "Path to a map JSON file.");
 DEFINE_bool(futures, false, "Enable Futures feature.");
@@ -24,14 +22,6 @@ namespace stadium {
 namespace {
 
 std::unique_ptr<Punter> MakePunterFromCommandLine(const std::string& arg) {
-  if (arg == "stub") {
-    return base::MakeUnique<StubPunter>();
-  }
-  if (base::StartsWith(arg, ":", base::CompareCase::SENSITIVE)) {
-    int port;
-    CHECK(base::StringToInt(arg.substr(1), &port));
-    return base::MakeUnique<RemotePunter>(port);
-  }
   return base::MakeUnique<LocalPunter>(arg);
 }
 
