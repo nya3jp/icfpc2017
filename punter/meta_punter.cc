@@ -79,8 +79,6 @@ common::GameMove MetaPunter::Run(
       - base::TimeDelta::FromMilliseconds((max_count - 1) * 100);
   LOG(INFO) << "Timeout: " << timeout;
 
-  sleep(2);
-
   // Run two workers in parallel.
   {
     base::DictionaryValue request;
