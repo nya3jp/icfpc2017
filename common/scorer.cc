@@ -180,7 +180,7 @@ class UnionFindSet {
     int root_index = FindIndex(cells(site_index).parent_index());
 
     // Use mutable value.
-    proto_->mutable_cells(site_index)->set_parent_index(root_index);
+    mutable_cells(site_index)->set_parent_index(root_index);
     return root_index;
   }
 
