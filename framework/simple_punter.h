@@ -46,11 +46,13 @@ class SimplePunter : public Punter {
     return can_option_;
   }
 
+  // Creates GameMove to return from Run(). Note that the arguments must be
+  // site indexes.
   GameMove CreatePass() const;
-  GameMove CreateClaim(int source, int target) const;
+  GameMove CreateClaim(int source_index, int target_index) const;
   // Note that this method empties route.
-  GameMove CreateSplurge(std::vector<int>* route) const;
-  GameMove CreateOption(int source, int target) const;
+  GameMove CreateSplurge(std::vector<int>* route_in_index) const;
+  GameMove CreateOption(int source_index, int target_index) const;
 
   int GetScore(int punter_id) const;
   int TryClaim(int punter_id, int site_index1, int site_index2) const;

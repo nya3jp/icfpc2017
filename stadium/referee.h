@@ -34,6 +34,10 @@ class Referee {
 
   std::vector<int> ComputeScores() const;
 
+  bool ValidateClaim(const Move& move, int turn_id, int punter_id);
+  bool ValidateSplurge(const Move& move, int turn_id, int punter_id);
+  bool ValidateOption(const Move& move, int turn_id, int punter_id);
+
   std::vector<PunterInfo> punter_info_list_;
   std::vector<int> pass_count_;
   std::vector<int> options_remaining_;

@@ -262,16 +262,16 @@ GameMove SimplePunter::CreatePass() const {
   return std::move(GameMove::Pass(punter_id_));
 }
 
-GameMove SimplePunter::CreateClaim(int source, int target) const {
-  return std::move(GameMove::Claim(punter_id_, source, target));
+GameMove SimplePunter::CreateClaim(int source_index, int target_index) const {
+  return std::move(GameMove::Claim(punter_id_, source_index, target_index));
 }
 
-GameMove SimplePunter::CreateSplurge(std::vector<int>* route) const {
-  return std::move(GameMove::Splurge(punter_id_, route));
+GameMove SimplePunter::CreateSplurge(std::vector<int>* route_in_index) const {
+  return std::move(GameMove::Splurge(punter_id_, route_in_index));
 }
 
-GameMove SimplePunter::CreateOption(int source, int target) const {
-  return std::move(GameMove::Option(punter_id_, source, target));
+GameMove SimplePunter::CreateOption(int source_index, int target_index) const {
+  return std::move(GameMove::Option(punter_id_, source_index, target_index));
 }
 
 int SimplePunter::GetScore(int punter_id) const {
