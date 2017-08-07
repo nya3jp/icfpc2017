@@ -17,8 +17,11 @@ class Scorer {
   void AddFuture(size_t punter_id, const std::vector<Future>& futures);
 
   int GetScore(size_t punter_id) const;
+
   void Claim(size_t punter_id, int site_id1, int site_id2);
   void Splurge(size_t punter_id, const std::vector<int>& route);
+  void Option(size_t punter_id, int site_id1, int site_id2);
+
   int TryClaim(size_t punter_id, int site_id1, int site_id2) const;
   bool IsConnected(size_t punter_id, int site_id1, int site_id2) const;
 

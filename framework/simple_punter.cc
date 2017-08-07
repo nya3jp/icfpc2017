@@ -30,6 +30,24 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
         r->set_punter(move.punter_id);
       }
     }
+    if (move.type == GameMove::Type::OPTION) {
+      // Must use original site ids.
+      scorer.Option(move.punter_id, move.source, move.target);
+
+      move.source = FindSiteIdxFromSiteId(move.source);
+      move.target = FindSiteIdxFromSiteId(move.target);
+
+      // TODO: This is slow!
+      for (int i = 0; i < rivers_->size(); ++i) {
+        RiverProto* r = rivers_->Mutable(i);
+        if ((r->source() == move.source && r->target() == move.target) ||
+            (r->source() == move.target && r->target() == move.source)) {
+          DCHECK(r->punter() != -1);
+          DCHECK(r->option_punter() == -1);
+          r->set_option_punter(move.punter_id);
+        }
+      }
+    }
     if (move.type == GameMove::Type::SPLURGE) {
       // Must use original site ids.
       scorer.Splurge(move.punter_id, move.route);
@@ -42,8 +60,12 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
           if (edge.site != target)
             continue;
           RiverProto* r = rivers_->Mutable(edge.river);
-          DCHECK(r->punter() == -1);
-          r->set_punter(move.punter_id);
+          if (r->punter() == -1) {
+            r->set_punter(move.punter_id);
+          } else {
+            DCHECK(r->option_punter() == -1);
+            r->set_option_punter(move.punter_id);
+          }
         }
       }
     }
@@ -51,6 +73,9 @@ GameMove SimplePunter::Run(const std::vector<GameMove>& moves) {
 
   GameMove out_move = Run();
   if (out_move.type == GameMove::Type::CLAIM) {
+    out_move.source = sites_->Get(out_move.source).id();
+    out_move.target = sites_->Get(out_move.target).id();
+  } else if (out_move.type == GameMove::Type::OPTION) {
     out_move.source = sites_->Get(out_move.source).id();
     out_move.target = sites_->Get(out_move.target).id();
   } else if (out_move.type != GameMove::Type::SPLURGE) {
@@ -151,6 +176,7 @@ void SimplePunter::SetState(std::unique_ptr<base::Value> state_in) {
   num_punters_ = proto_.num_punters();
 
   can_splurge_ = proto_.has_can_splurge() && proto_.can_splurge();
+  can_option_ = proto_.has_can_option() && proto_.can_option();
 
   GenerateAdjacencyList();
 }
@@ -169,6 +195,12 @@ void SimplePunter::EnableSplurges() {
   can_splurge_ = true;
 
   proto_.set_can_splurge(can_splurge_);
+}
+
+void SimplePunter::EnableOptions() {
+  can_option_ = true;
+
+  proto_.set_can_option(can_option_);
 }
 
 std::vector<Future> SimplePunter::GetFutures() {
@@ -195,6 +227,10 @@ GameMove SimplePunter::CreateClaim(int source, int target) const {
 
 GameMove SimplePunter::CreateSplurge(std::vector<int>* route) const {
   return std::move(GameMove::Splurge(punter_id_, route));
+}
+
+GameMove SimplePunter::CreateOption(int source, int target) const {
+  return std::move(GameMove::Option(punter_id_, source, target));
 }
 
 int SimplePunter::GetScore(int punter_id) const {
@@ -288,6 +324,15 @@ int SimplePunter::GetClaimingPunter(int site_index1, int site_index2) const {
   for (const auto& edge : edges_[site_index1]) {
     if (edge.site == site_index2) {
       return rivers_->Get(edge.river).punter();
+    }
+  }
+  return -2;
+}
+
+int SimplePunter::GetOptioningPunter(int site_index1, int site_index2) const {
+  for (const auto& edge : edges_[site_index1]) {
+    if (edge.site == site_index2) {
+      return rivers_->Get(edge.river).option_punter();
     }
   }
   return -2;

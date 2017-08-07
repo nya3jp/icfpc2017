@@ -187,6 +187,7 @@ class UnionFindSet {
   }
 
   mutable ScorerUnionFindSetProto* proto_;
+
   DISALLOW_COPY_AND_ASSIGN(UnionFindSet);
 };
 
@@ -248,6 +249,11 @@ void Scorer::Claim(size_t punter_id, int site_id1, int site_id2) {
 void Scorer::Splurge(size_t punter_id, const std::vector<int>& route) {
   for (int i = 0; i + 1U < route.size(); ++i)
     Claim(punter_id, route[i], route[i + 1]);
+}
+
+void Scorer::Option(size_t punter_id, int site_id1, int site_id2) {
+  // TODO
+  CHECK(false);
 }
 
 int Scorer::TryClaim(size_t punter_id, int site_id1, int site_id2) const {
@@ -328,6 +334,10 @@ std::vector<int> Scorer::Simulate(const std::vector<GameMove>& moves) const {
           ufset.Merge(site_index1, site_index2);
         }
         break;
+      }
+      case GameMove::Type::OPTION: {
+        // TODO
+        CHECK(false);
       }
       case GameMove::Type::PASS: {
         // Do nothing.

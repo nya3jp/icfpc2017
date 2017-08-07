@@ -27,6 +27,7 @@ class SimplePunter : public Punter {
 
   std::vector<Future> GetFutures() override final;
   void EnableSplurges() override final;
+  void EnableOptions() override final;
 
   // API for sub classes.
   int num_sites() const { return sites_->size(); }
@@ -41,10 +42,14 @@ class SimplePunter : public Punter {
   bool CanSplurge() const {
     return can_splurge_;
   }
+  bool CanOption() const {
+    return can_option_;
+  }
 
   GameMove CreatePass() const;
   GameMove CreateClaim(int source, int target) const;
   GameMove CreateSplurge(std::vector<int>* route) const;
+  GameMove CreateOption(int source, int target) const;
 
   int GetScore(int punter_id) const;
   int TryClaim(int punter_id, int site_index1, int site_index2) const;
@@ -58,6 +63,7 @@ class SimplePunter : public Punter {
   // Returns: punter_id who claims the river between site_index1 and
   // site_index2, or -1 if not claimed, or -2 if not directly connected.
   int GetClaimingPunter(int site_index1, int site_index2) const;
+  int GetOptioningPunter(int site_index1, int site_index2) const;
 
   int num_punters_ = -1;
   int punter_id_ = -1;
@@ -74,6 +80,7 @@ class SimplePunter : public Punter {
   void GenerateAdjacencyList();
 
   bool can_splurge_ = false;
+  bool can_option_ = false;
 
   google::protobuf::RepeatedPtrField<SiteProto>* sites_;
 

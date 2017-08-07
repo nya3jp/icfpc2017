@@ -29,6 +29,7 @@ class Punter {
     return {};
   }
   virtual void EnableSplurges() {}
+  virtual void EnableOptions() {}
 
   virtual GameMove Run(const std::vector<GameMove>& moves) = 0;
 

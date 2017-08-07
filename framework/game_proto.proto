@@ -17,6 +17,7 @@ message RiverProto {
   optional int32 source = 1;
   optional int32 target = 2;
   optional int32 punter = 3;
+  optional int32 option_punter = 4;
 }
 
 message MineProto {
@@ -35,6 +36,7 @@ message GameStateProto {
   optional GameMapProto game_map = 3;
   optional common.ScorerProto scorer = 4;
   optional bool can_splurge = 5;
+  optional bool can_option = 6;
 
   extensions 100 to 199;
 }

@@ -62,6 +62,11 @@ bool Game::RunImpl() {
       punter_->EnableSplurges();
     }
 
+    if (args.settings.options) {
+      // Signal the punter that the options feature is enabled.
+      punter_->EnableOptions();
+    }
+
     base::DictionaryValue output;
 
     output.SetInteger("ready", args.punter_id);
@@ -95,6 +100,10 @@ bool Game::RunImpl() {
           break;
         case GameMove::Type::SPLURGE:
           DLOG(INFO) << "move(splurge): " << m.punter_id;
+          break;
+        case GameMove::Type::OPTION:
+          DLOG(INFO) << "move(option): " << m.punter_id << ", "
+                     << m.source << ", " << m.target;
           break;
       }
     }

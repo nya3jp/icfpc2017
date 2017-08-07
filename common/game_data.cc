@@ -119,10 +119,12 @@ SetUpData SetUpData::FromJson(const base::Value& value_in) {
 
   result.settings.futures = false;
   result.settings.splurges = false;
+  result.settings.options = false;
   const base::DictionaryValue* settings_value;
   if (value->GetDictionary("settings", &settings_value)) {
     settings_value->GetBoolean("futures", &result.settings.futures);
     settings_value->GetBoolean("splurges", &result.settings.splurges);
+    settings_value->GetBoolean("options", &result.settings.options);
   }
   return result;
 }
@@ -133,13 +135,16 @@ std::unique_ptr<base::Value> SetUpData::ToJson(const SetUpData& args) {
   result->SetInteger("punters", args.num_punters);
   result->Set("map", GameMap::ToJson(args.game_map));
 
-  if (args.settings.futures || args.settings.splurges) {
+  if (args.settings.futures || args.settings.splurges || args.settings.options) {
     auto settings_value = base::MakeUnique<base::DictionaryValue>();
     if (args.settings.futures) {
       settings_value->SetBoolean("futures", true);
     }
     if (args.settings.splurges) {
       settings_value->SetBoolean("splurges", true);
+    }
+    if (args.settings.options) {
+      settings_value->SetBoolean("options", true);
     }
     result->Set("settings", std::move(settings_value));
   }
@@ -159,6 +164,10 @@ GameMove GameMove::Splurge(int punter_id, std::vector<int>* route) {
   GameMove move{GameMove::Type::SPLURGE, punter_id};
   std::swap(move.route, *route);
   return std::move(move);
+}
+
+GameMove GameMove::Option(int punter_id, int source, int target) {
+  return {GameMove::Type::OPTION, punter_id, source, target};
 }
 
 GameMove GameMove::FromJson(const base::Value& value_in) {
@@ -184,6 +193,13 @@ GameMove GameMove::FromJson(const base::Value& value_in) {
     const base::ListValue* route = nullptr;
     CHECK(value->GetList("splurge.route", &route));
     common::FromJson(*route, &result.route);
+    return result;
+  }
+  if (value->HasKey("option")) {
+    result.type = GameMove::Type::OPTION;
+    CHECK(value->GetInteger("option.punter", &result.punter_id));
+    CHECK(value->GetInteger("option.source", &result.source));
+    CHECK(value->GetInteger("option.target", &result.target));
     return result;
   }
 
@@ -213,6 +229,14 @@ std::unique_ptr<base::DictionaryValue> GameMove::ToJson(const GameMove& game_mov
       content->SetInteger("punter", game_move.punter_id);
       content->Set("route", common::ToJson(game_move.route));
       result->Set("splurge", std::move(content));
+      return result;
+    }
+    case GameMove::Type::OPTION: {
+      auto content = base::MakeUnique<base::DictionaryValue>();
+      content->SetInteger("punter", game_move.punter_id);
+      content->SetInteger("source", game_move.source);
+      content->SetInteger("target", game_move.target);
+      result->Set("option", std::move(content));
       return result;
     }
   }

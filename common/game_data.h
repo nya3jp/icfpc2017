@@ -36,6 +36,7 @@ struct GameMap {
 struct Settings {
   bool futures;
   bool splurges;
+  bool options;
 };
 
 struct SetUpData {
@@ -50,20 +51,25 @@ struct SetUpData {
 
 struct GameMove {
   enum class Type {
-    CLAIM, PASS, SPLURGE,
+    CLAIM,
+    PASS,
+    SPLURGE,
+    OPTION,
   };
 
   Type type;
   int punter_id;
 
-  int source;  // Available only when type is CLAIM.
-  int target;  // Available only when type is CLAIM.
+  // Available only when type is CLAIM and OPTIONS.
+  int source;
+  int target;
 
   std::vector<int> route;  // Avilable only when type is SPLURGE
 
   static GameMove Pass(int punter_id);
   static GameMove Claim(int punter_id, int source, int target);
   static GameMove Splurge(int punter_id, std::vector<int>* route);
+  static GameMove Option(int punter_id, int source, int target);
 
   static GameMove FromJson(const base::Value& value);
   static std::unique_ptr<base::DictionaryValue> ToJson(const GameMove& game_move);

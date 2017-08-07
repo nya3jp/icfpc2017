@@ -72,6 +72,14 @@ void WriteResults(const std::string& path,
         move_value->Set("splurge", std::move(splurge_value));
         break;
       }
+      case Move::Type::OPTION: {
+        auto option_value = base::MakeUnique<base::DictionaryValue>();
+        option_value->SetInteger("punter", move.punter_id);
+        option_value->SetInteger("source", move.source);
+        option_value->SetInteger("target", move.target);
+        move_value->Set("option", std::move(option_value));
+        break;
+      }
     }
     moves_value->Append(std::move(move_value));
   }
@@ -105,11 +113,13 @@ struct Referee::RiverState {
   int source;
   int target;
   int punter_id;
+  int option_punter_id;
 
   RiverState(int source, int target)
       : source(std::min(source, target)),
         target(std::max(source, target)),
-        punter_id(-1) {}
+        punter_id(-1),
+        option_punter_id(-1) {}
 };
 
 // static
@@ -141,6 +151,7 @@ void Referee::Setup(const std::vector<PunterInfo>& punter_info_list,
   }
 
   pass_count_.resize(punter_info_list.size());
+  options_remaining_.resize(punter_info_list.size(), map->mines.size());
 
   map_state_ = MapState::FromMap(*map);
   common::Scorer scorer(&scorer_);
@@ -205,6 +216,7 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
       actual_move = Move::Pass(punter_id);
     } else {
       bool ok = true;
+      int options_remaining = options_remaining_[punter_id];
       for (int i = 0; i + 1 < actual_move.route.size(); ++i) {
         int s = actual_move.route[i];
         int t = actual_move.route[i + 1];
@@ -230,6 +242,28 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
           actual_move = Move::Pass(punter_id);
           ok = false;
           break;
+        } else {
+          if (river.option_punter_id >= 0) {
+            LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                       << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
+                       << "tried to splurge over a already-used (option) river "
+                       << s << "-" << t
+                       << ". Forcing to PASS.";
+            actual_move = Move::Pass(punter_id);
+            ok = false;
+            break;
+          } else if (options_remaining <= 0) {
+            LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                       << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
+                       << "tried to splurge over a river with optioning with no remaining options"
+                       << s << "-" << t
+                       << ". Forcing to PASS.";
+            actual_move = Move::Pass(punter_id);
+            ok = false;
+            break;
+          } else {
+            --options_remaining;
+          }
         }
       }
       if (ok) {
@@ -238,7 +272,52 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
           int t = actual_move.route[i + 1];
           auto iter = map_state_.rivers.find(RiverKey(s, t));
           RiverState& river = iter->second;
-          river.punter_id = punter_id;
+          if (river.punter_id == -1) {
+            river.punter_id = punter_id;
+          } else {
+            river.option_punter_id = punter_id;
+            --options_remaining_[punter_id];
+          }
+        }
+      }
+    }
+  }
+
+  if (actual_move.type == Move::Type::OPTION) {
+    if (options_remaining_[punter_id] <= 0) {
+      LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                 << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
+                 << "tried to option with no remaining options"
+                 << ". Forcing to PASS.";
+      actual_move = Move::Pass(punter_id);
+    } else {
+      auto iter = map_state_.rivers.find(RiverKey(move.source, move.target));
+      if (iter == map_state_.rivers.end()) {
+        LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                   << ": Punter \"" << punter_info_list_[punter_id].name << "\" "
+                   << "tried to option a non-existence river "
+                   << move.source << "-" << move.target
+                   << ". Forcing to PASS.";
+        actual_move = Move::Pass(punter_id);
+      } else {
+        RiverState& river = iter->second;
+        if (river.punter_id == -1) {
+          LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                     << ": Punter \"" << punter_info_list_[punter_id].name
+                     << "\" tried to option a not-yet-used river "
+                     << move.source << "-" << move.target
+                     << ". Forcing to PASS.";
+          actual_move = Move::Pass(punter_id);
+        } else if (river.option_punter_id >= 0) {
+          LOG(ERROR) << "BUG: [" << turn_id << "] P" << punter_id
+                     << ": Punter \"" << punter_info_list_[punter_id].name
+                     << "\" tried to option a already-used (option) river "
+                     << move.source << "-" << move.target
+                     << ". Forcing to PASS.";
+          actual_move = Move::Pass(punter_id);
+        } else {
+          river.option_punter_id = punter_id;
+          --options_remaining_[punter_id];
         }
       }
     }
@@ -253,10 +332,15 @@ Move Referee::HandleMove(int turn_id, int punter_id, const Move& move) {
               << ": CLAIM " << move.source << "-" << move.target;
     common::Scorer(&scorer_).Claim(punter_id, move.source, move.target);
     pass_count_[punter_id] = 0;
-  } else {
+  } else if (actual_move.type == Move::Type::SPLURGE) {
     LOG(INFO) << "LOG: [" << turn_id << "] P" << punter_id
               << ": SPLURGE " << PrintVectorInt(move.route);
     common::Scorer(&scorer_).Splurge(punter_id, move.route);
+    pass_count_[punter_id] = 0;
+  } else {
+    LOG(INFO) << "LOG: [" << turn_id << "] P" << punter_id
+              << ": OPTION " << move.source << "-" << move.target;
+    common::Scorer(&scorer_).Option(punter_id, move.source, move.target);
     pass_count_[punter_id] = 0;
   }
 
