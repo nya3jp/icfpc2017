@@ -26,6 +26,9 @@ punters:
   - name: future
     shell: bazel-bin/punter/punter --logtostderr --punter=FuturePunter --name=FuturePunter
     continuous: true
+  - name: release
+    shell: release/punter
+    continuous: true
 #  - name: irori
 #    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
 #    continuous: true
