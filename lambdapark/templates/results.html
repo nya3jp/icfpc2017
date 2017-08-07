@@ -35,8 +35,9 @@
         {% for punter in report.injected_sorted_punters %}
         {{ punter.name }}({{ punter.score }}){% if not loop.last %},{% endif %}
         {% endfor %}
-        {% else %}
-        {{ report.error }}
+        {% endif %}
+        {% if report.error %}
+        [{{ report.error }}]
         {% endif %}
       </td>
       <td>

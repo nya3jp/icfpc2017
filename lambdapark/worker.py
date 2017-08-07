@@ -90,7 +90,10 @@ def process_job(job, all_punters):
     start_time = time.time()
     try:
         result = run_stadium(map_name, punter_shells, extensions, log_path)
-        result['error'] = None
+        if subprocess.call(['grep', '-q', 'BUG:', log_path]) == 0:
+            result['error'] = 'BUG line found. See logs.'
+        else:
+            result['error'] = None
     except Exception:
         result = {
             'error': 'Stadium crashed!',
