@@ -17,11 +17,15 @@ class MetaPunter : public framework::Punter {
 
   void OnInit() override;
   void SetUp(const common::SetUpData& args) override;
+  std::vector<common::Future> GetFutures() override;
   common::GameMove Run(const std::vector<common::GameMove>& moves) override;
   void SetState(std::unique_ptr<base::Value> state) override;
   std::unique_ptr<base::Value> GetState() override;
 
  private:
+  // Tmp futures.
+  std::vector<common::Future> futures_;
+
   std::unique_ptr<common::Popen> primary_worker_;
   std::unique_ptr<common::Popen> backup_worker_;
 

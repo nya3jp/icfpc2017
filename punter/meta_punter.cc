@@ -15,7 +15,6 @@ namespace punter {
 
 namespace {
 
-// TODO back off.
 constexpr base::TimeDelta kPrimaryTimeout =
     base::TimeDelta::FromMilliseconds(800);
 
@@ -28,8 +27,7 @@ void ExchangePingPong(common::Popen* subprocess) {
 
 }  // namespace
 
-MetaPunter::MetaPunter() {
-}
+MetaPunter::MetaPunter() = default;
 
 MetaPunter::~MetaPunter() = default;
 
@@ -45,8 +43,6 @@ void MetaPunter::OnInit() {
 }
 
 void MetaPunter::SetUp(const common::SetUpData& args) {
-  // TODO: futures?
-
   auto request = common::SetUpData::ToJson(args);
   common::WriteMessage(primary_worker_->stdin_write(), *request);
   common::WriteMessage(backup_worker_->stdin_write(), *request);
@@ -59,6 +55,16 @@ void MetaPunter::SetUp(const common::SetUpData& args) {
 
   CHECK(response1->Remove("state", &primary_state_));
   CHECK(response2->Remove("state", &backup_state_));
+
+  // If futures is returned by primary, then use it.
+  base::ListValue* futures_value;
+  if (response1->GetList("futures", &futures_value)) {
+    futures_ = common::Futures::FromJson(*futures_value);
+  }
+}
+
+std::vector<common::Future> MetaPunter::GetFutures() {
+  return futures_;
 }
 
 common::GameMove MetaPunter::Run(
