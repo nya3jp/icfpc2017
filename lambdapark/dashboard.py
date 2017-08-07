@@ -120,6 +120,12 @@ def matrix_handler():
         info_map.get(c.split()[0], {}).get('num_sites', 0), c))
     infos = [info_map.get(config.split()[0], {}) for config in configs]
 
+    total_map = collections.defaultdict(float)
+    for (_, punter), cell in matrix.iteritems():
+        if cell['avg']:
+            total_map[punter] += cell['avg']
+    max_total = max(total_map.values()) if total_map else 0
+
     query = {}
     if label:
         query['label'] = label
@@ -140,6 +146,8 @@ def matrix_handler():
         'num_running_jobs': num_running_jobs,
         'num_finished_jobs': num_finished_jobs,
         'error_configs': error_configs,
+        'total_map': total_map,
+        'max_total': max_total,
     }
     return render_template('matrix.html', template_dict)
 

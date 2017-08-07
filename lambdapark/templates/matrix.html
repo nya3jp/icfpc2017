@@ -21,6 +21,7 @@
 }
 .cell {
   text-align: center;
+  vertical-align: middle !important;
 }
 .cell.value {
   font-size: 12px;
@@ -42,7 +43,7 @@ a.textlike {
 <table class="table table-bordered table-condensed">
   <thead>
     <tr>
-      <th class="punter">Map</th>
+      <th class="punter" colspan="2">Map</th>
       {% for config in configs %}
       <th class="config {{ (config in error_configs) and 'danger' }}">
         <div>
@@ -52,7 +53,7 @@ a.textlike {
       {% endfor %}
     </tr>
     <tr>
-      <th class="punter">#Punters</th>
+      <th class="punter" colspan="2">#Punters</th>
       {% for config in configs %}
       <th class="cell">
         {{ config.split()[1] }}
@@ -60,15 +61,15 @@ a.textlike {
       {% endfor %}
     </tr>
     <tr>
-      <th class="punter">Extensions</th>
+      <th class="punter" colspan="2">Extensions</th>
       {% for config in configs %}
-      <td class="cell" style="font-size: 8px; vertical-align: middle">
+      <td class="cell" style="font-size: 8px">
         {{ config.split()[2] }}
       </td>
       {% endfor %}
     </tr>
     <tr>
-      <th class="punter">Map Stats</th>
+      <th class="punter" colspan="2">Map Stats</th>
       {% for info in infos %}
       <td class="cell" style="font-size: 10px">
         {{ info.num_sites }}<br>
@@ -81,7 +82,12 @@ a.textlike {
   <tbody>
     {% for punter in punters %}
     <tr>
-      <th class="punter">{{ punter }}</th>
+      <th class="punter {{ total_map[punter] == max_total and 'success' }}">
+        <a class="textlike" href="/results/?label={{ label }}&amp;punter={{ punter }}">{{ punter }}</a>
+      </th>
+      <td class="cell {{ total_map[punter] == max_total and 'success' }}">
+        {{ '{:.1f}'.format(total_map[punter]) }}
+      </td>
       {% for config in configs %}
       {% set cell = matrix[(config, punter)] %}
       <td class="cell value {{ cell.best and 'info' }}">
