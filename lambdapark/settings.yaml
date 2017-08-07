@@ -26,6 +26,9 @@ punters:
   - name: future
     shell: bazel-bin/punter/punter --logtostderr --punter=FuturePunter --name=FuturePunter
     continuous: true
+  - name: future-aggressive
+    shell: bazel-bin/punter/punter --logtostderr --punter=FuturePunter --name=AggressiveFuturePunter --future_aggressive
+    continuous: true
   - name: release
     shell: release/punter
     continuous: true
