@@ -11,7 +11,7 @@
 .config > div {
   display: inline-block;
   transform: rotate(-90deg);
-  width: 30px;
+  width: 20px;
 }
 .config > div > span {
   padding: 0 8px;
@@ -21,6 +21,9 @@
 }
 .cell {
   text-align: center;
+}
+.cell.value {
+  font-size: 12px;
 }
 a.textlike {
   color: inherit;
@@ -60,7 +63,7 @@ a.textlike {
       <th class="punter">Extensions</th>
       {% for config in configs %}
       <td class="cell" style="font-size: 8px; vertical-align: middle">
-        {{ config.split()[2].replace(',', ', ') }}
+        {{ config.split()[2] }}
       </td>
       {% endfor %}
     </tr>
@@ -81,7 +84,7 @@ a.textlike {
       <th class="punter">{{ punter }}</th>
       {% for config in configs %}
       {% set cell = matrix[(config, punter)] %}
-      <td class="cell {{ cell.best and 'info' }}">
+      <td class="cell value {{ cell.best and 'info' }}">
         <a class="textlike" href="/results/?label={{ label }}&amp;map={{ config.split()[0] }}&amp;num_punters={{ config.split()[1] }}&amp;extensions={{ config.split()[3] if config.split()[3] != '-' else '' }}&amp;punter={{ punter }}">{% if cell.avg %}{{ '{:.1f}'.format(cell.avg) }}{% else %}-{% endif %}<br>({{ cell.count }})</a>
       </td>
       {% endfor %}

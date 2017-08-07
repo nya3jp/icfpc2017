@@ -66,7 +66,7 @@ def matrix_handler():
         config = '%s %d %s %s' % (
             report['job']['map'],
             len(punters),
-            ','.join([s[0].upper() for s in filter(None, report['job'].get('extensions', '').split(','))]) or '-',
+            ''.join([s[0].upper() for s in filter(None, report['job'].get('extensions', '').split(','))]) or '-',
             report['job'].get('extensions', '') or '-',
         )
         if report['error']:
