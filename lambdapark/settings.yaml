@@ -26,6 +26,9 @@ punters:
   - name: benkeiorjam
     shell: bazel-bin/punter/punter --logtostderr --punter=BenkeiOrJam --name=BenkeiOrJam
     continuous: true
+  - name: jammer
+    shell: bazel-bin/punter/punter --logtostderr --punter=Jammer --name=Jammer
+    continuous: true
 #  - name: irori
 #    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
 #    continuous: true
