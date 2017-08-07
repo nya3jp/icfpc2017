@@ -22,6 +22,8 @@ public:
   std::unique_ptr<base::Value> GetState() override;
 
   static std::string BenkeiOrJam(const common::SetUpData& args);
+  static std::string BenkeiOrJamOrFriendly(const common::SetUpData& args);
+
  private:
   ChooserType f_;
   std::string name_;

@@ -15,7 +15,7 @@ punters:
     shell: bazel-bin/punter/punter --logtostderr --punter=QuickPunter --name=QuickPunter
     continuous: true
   - name: meta
-    shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaPunter --primary_worker_options="--logtostderr --punter=BenkeiOrJam --name=BenkeiOrJam" --backup_worker_options="--logtostderr --punter=QuickPunter --name=QuickPunter"
+    shell: bazel-bin/punter/punter --logtostderr --punter=MetaPunter --name=MetaPunter --primary_worker_options="--logtostderr --punter=BenkeiOrJamOrFriendly --name=BenkeiOrJamOrFriendly" --backup_worker_options="--logtostderr --punter=QuickPunter --name=QuickPunter"
     continuous: true
   - name: friendly
     shell: bazel-bin/punter/punter --logtostderr --punter=FriendlyPunter --name=FriendlyPunter
@@ -25,6 +25,9 @@ punters:
     continuous: true
   - name: jammer
     shell: bazel-bin/punter/punter --logtostderr --punter=Jammer --name=Jammer
+    continuous: true
+  - name: bjf
+    shell: bazel-bin/punter/punter --logtostderr --punter=BenkeiOrJamOrFriendly --name=BenkeiOrJamOrFriendly
     continuous: true
 #  - name: irori
 #    shell: bazel-bin/punter/punter --logtostderr --punter=GreedyPunter --name=GreedyPunter
