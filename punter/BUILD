@@ -267,4 +267,13 @@ cc_library(
   ],
 )
 
-    
+cc_library(
+  name = "switching_punter",
+  srcs = [ "switching_punter.cc" ],
+  hdrs = [ "switching_punter.h" ],
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:game",
+    ":punter_factory",
+  ],
+)
