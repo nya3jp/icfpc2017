@@ -6,6 +6,7 @@ cc_binary(
 
   deps = [
     ":extension_example_punter",
+	":friendly_punter",
     ":greedy_punter",
     ":greedy_punter_chun",
     ":greedy_punter_mirac",
@@ -183,6 +184,21 @@ cc_library(
   ],
   hdrs = [
     "lazy_punter.h",
+  ],
+
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:simple_punter",
+  ],
+)
+
+cc_library(
+  name = "friendly_punter",
+  srcs = [
+    "friendly_punter.cc",
+  ],
+  hdrs = [
+    "friendly_punter.h",
   ],
 
   deps = [

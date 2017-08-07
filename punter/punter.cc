@@ -7,6 +7,7 @@
 #include "gflags/gflags.h"
 #include "punter/benkei.h"
 #include "punter/extension_example_punter.h"
+#include "punter/friendly_punter.h"
 #include "punter/greedy_punter.h"
 #include "punter/greedy_punter_chun.h"
 #include "punter/greedy_punter_mirac.h"
@@ -68,6 +69,8 @@ int main(int argc, char* argv[]) {
     punter = base::MakeUnique<SimulatingPunter>();
   else if (FLAGS_punter == "MetaPunter")
     punter = base::MakeUnique<MetaPunter>();
+  else if (FLAGS_punter == "FriendlyPunter")
+    punter = base::MakeUnique<FriendlyPunter>();
   else
     LOG(FATAL) << "invalid punter name: " << FLAGS_punter;
   Game game(std::move(punter));
