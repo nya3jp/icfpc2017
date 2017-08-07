@@ -55,7 +55,7 @@ a.textlike {
     <tr>
       <th class="punter" colspan="2">#Punters</th>
       {% for config in configs %}
-      <th class="cell">
+      <th class="cell {{ config.split()[1] != '2' and 'warning' }}">
         {{ config.split()[1] }}
       </th>
       {% endfor %}
