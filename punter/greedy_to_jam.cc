@@ -1,6 +1,7 @@
 #include "punter/gamemapforai.h"
 #include "punter/greedy_to_jam.h"
 
+#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 
 #include <vector>
@@ -26,11 +27,13 @@ framework::GameMove GreedyToJam::Run() {
   return {framework::GameMove::Type::PASS };
 }
 framework::GameMove GreedyToJam::Run(const std::vector<framework::GameMove>& moves) {
-  LOG(INFO) << "Me: " << punter_id_;
-  LOG(INFO) << "Scores: ";
+#if DCHECK_IS_ON()
+  DLOG(INFO) << "Me: " << punter_id_;
+  DLOG(INFO) << "Scores: ";
   for(const auto& s: themap.getScores()) {
-    LOG(INFO) << s;
+    DLOG(INFO) << s;
   }
+#endif
   for(auto& move: moves) {
     if(move.type == framework::GameMove::Type::CLAIM) {
       int source = move.source;
@@ -38,10 +41,10 @@ framework::GameMove GreedyToJam::Run(const std::vector<framework::GameMove>& mov
       gameutil::GameMapForAI::node_index srcix = themap.id2ix.at(source);
       gameutil::GameMapForAI::node_index trgix = themap.id2ix.at(target);
       int color = move.punter_id;
-      LOG(INFO) << "Moves:" << source << " " << target << " " << color;
-      
+      DLOG(INFO) << "Moves:" << source << " " << target << " " << color;
+
       int plusscore = themap.claim(srcix, trgix, color);
-      LOG(INFO) << "Plusscore" << plusscore;
+      DLOG(INFO) << "Plusscore" << plusscore;
     }else if(move.type == framework::GameMove::Type::SPLURGE) {
       int pid = move.route[0];
       int p_ix = themap.id2ix.at(pid);
@@ -53,10 +56,12 @@ framework::GameMove GreedyToJam::Run(const std::vector<framework::GameMove>& mov
       }
     }
   }
-  LOG(INFO) << "Scores after update: ";
+#if DCHECK_IS_ON()
+  DLOG(INFO) << "Scores after update: ";
   for(const auto& s: themap.getScores()) {
-    LOG(INFO) << s;
+    DLOG(INFO) << s;
   }
+#endif
 
   int rival = -1;
   vector<pair<int, int> > rivals;
@@ -75,7 +80,7 @@ framework::GameMove GreedyToJam::Run(const std::vector<framework::GameMove>& mov
     }
   }
 
-  LOG(INFO) << "Rival is " << rival;
+  DLOG(INFO) << "Rival is " << rival;
 
   movecandidate attackmove = {};
   int attackdamage = 0;
@@ -84,15 +89,15 @@ framework::GameMove GreedyToJam::Run(const std::vector<framework::GameMove>& mov
     if(candidates.size() >= 2) {
       auto rivalbest = candidates[0];
       auto rivalsecondbest = candidates[1];
-      LOG(INFO) << "Rival best gain = " << rivalbest.score;
-      LOG(INFO) << "Rival 2nd best gain = " << rivalsecondbest.score;
+      DLOG(INFO) << "Rival best gain = " << rivalbest.score;
+      DLOG(INFO) << "Rival 2nd best gain = " << rivalsecondbest.score;
       attackdamage = rivalbest.score - rivalsecondbest.score;
       attackmove = rivalbest;
       attackdamage += themap.delta_score(rivalbest.sourceix, rivalbest.targetix, punter_id_);
     }
   }
-  LOG(INFO) << "Attack damage = " << attackdamage;
-  LOG(INFO) << "Candidate edge = " << attackmove.sourceix << "->" << attackmove.targetix;
+  DLOG(INFO) << "Attack damage = " << attackdamage;
+  DLOG(INFO) << "Candidate edge = " << attackmove.sourceix << "->" << attackmove.targetix;
 
   auto mycandidates = list_candidates(punter_id_);
   if(mycandidates.empty()) {
@@ -100,11 +105,11 @@ framework::GameMove GreedyToJam::Run(const std::vector<framework::GameMove>& mov
   }
   int sourceix;
   int targetix;
-  LOG(INFO) << "Candidate score " << mycandidates[0].score;
+  DLOG(INFO) << "Candidate score " << mycandidates[0].score;
   if(attackdamage > mycandidates[0].score) {
     sourceix = attackmove.sourceix;
     targetix = attackmove.targetix;
-    LOG(INFO) << "Attack better!";
+    DLOG(INFO) << "Attack better!";
   }else{
     movecandidate mybest = mycandidates[0];
     sourceix = mybest.sourceix;
@@ -113,7 +118,7 @@ framework::GameMove GreedyToJam::Run(const std::vector<framework::GameMove>& mov
   int source = themap.getNodeInfo()[sourceix].id;
   int target = themap.getNodeInfo()[targetix].id;
 
-  
+
   return {framework::GameMove::Type::CLAIM, punter_id_, source, target };
 }
 
@@ -127,12 +132,12 @@ vector<GreedyToJam::movecandidate> GreedyToJam::list_candidates(int color)
       deltas.emplace_back(movecandidate({ sc, (int)ix, e.source, e.dest }));
     }
   }
-  
+
   std::sort(deltas.begin(), deltas.end(),
             [](const GreedyToJam::movecandidate& a,
                const GreedyToJam::movecandidate& b)
             { return (a.score > b.score); });
-    
+
   return std::move(deltas);
 }
 
