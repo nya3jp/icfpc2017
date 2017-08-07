@@ -92,6 +92,14 @@ framework::GameMove QuickPunter::Run(const std::vector<framework::GameMove>& mov
           r.source(), r.target()};
     }
   }
+
+  // We cannot gain more points, but claim a edge to disturb other punters.
+  for (auto& r : proto_.game_map().rivers()) {
+    if (r.punter() == -1) {
+      return {framework::GameMove::Type::CLAIM, proto_.punter_id(),
+          r.source(), r.target()};
+    }
+  }
   return {framework::GameMove::Type::PASS, proto_.punter_id()};
 }
 
