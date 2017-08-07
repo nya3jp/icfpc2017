@@ -44,7 +44,7 @@ bool Game::RunImpl() {
 
   auto input = base::DictionaryValue::From(
       common::ReadMessage(stdin, base::TimeDelta(), base::TimeTicks()));
-
+  const base::TimeTicks start_time = base::TimeTicks::Now();
   if (input->HasKey("punter")) {
     // Set up.
     common::SetUpData args = common::SetUpData::FromJson(*input);
@@ -125,6 +125,13 @@ bool Game::RunImpl() {
   } else {
     // Play.
 
+    int timeout_ms;
+    if (!input->GetInteger("timeout_ms", &timeout_ms)) {
+      timeout_ms = 1000;
+    }
+
+    punter_->SetEndTime(
+        base::TimeDelta::FromMilliseconds(timeout_ms) + start_time);
     const base::ListValue* moves_value;
     CHECK(input->GetList("move.moves", &moves_value));
     std::vector<GameMove> moves = common::GameMoves::FromJson(*moves_value);

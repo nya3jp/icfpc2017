@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "base/macros.h"
+#include "base/time/time.h"
 #include "base/values.h"
 #include "common/game_data.h"
 
@@ -36,10 +37,20 @@ class Punter {
   virtual void SetState(std::unique_ptr<base::Value> state) = 0;
   virtual std::unique_ptr<base::Value> GetState() = 0;
 
+  void SetEndTime(const base::TimeTicks& end_time) {
+    end_time_ = end_time;
+  }
+
+  // Maybe non-positive, in case of timeout.
+  base::TimeDelta approxy_remaining_time() {
+    return end_time_ - base::TimeTicks::Now();
+  }
+
  protected:
   Punter() = default;
 
  private:
+  base::TimeTicks end_time_;
   DISALLOW_COPY_AND_ASSIGN(Punter);
 };
 
