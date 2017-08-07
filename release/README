@@ -21,7 +21,32 @@ Overview
 Solution
 --------
 
-TODO(all): Explain our solution.
+Our punter consists of 5 layers of components:
+
+- Punter Framework (//framework): A framework to write punters in C++.
+- Punter Shared Library (//common): Common libraries used by punter implementations and some part of local match server.
+- Timeout Manager (//punter:meta_punter): Transparently manages timeouts to avoid becoming a zombie.
+- Punter Switcher (//punter:punter_factory): Selects a punter implementation according to map characteristics.
+- Punter Implementations (//punter): Individual punter implementations.
+
+We have created many punter implementations (see `punter/punter_factory.cc` for the complete list). Among them, we used three implementations for the final solution:
+
+- Jammer Punter: TODO(chunjp): Explain this punter.
+- Greedy Punter: TODO(miracjp): Explain this punter.
+- Friendly Punter: TODO(fuqinho): Explain this punter.
+
+For each map, one of these implementations is selected by inspecting map characteristics.
+
+How to build
+------------
+
+An executable with a prebuilt binary is at `release/punter`.
+
+If you bother to build it by yourself:
+
+```
+$ bazel build -c opt //punter
+```
 
 Write-ups
 ---------
