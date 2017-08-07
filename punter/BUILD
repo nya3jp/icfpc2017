@@ -5,19 +5,7 @@ cc_binary(
   ],
 
   deps = [
-    ":extension_example_punter",
-	":friendly_punter",
-    ":greedy_punter",
-    ":greedy_punter_chun",
-    ":greedy_punter_mirac",
-    ":greedy_to_jam",
-    ":meta_punter",
-    ":simulating_punter",
-    ":lazy_punter",
-    ":pass_punter",
-    ":quick_punter",
-    ":random_punter",
-    ":benkei",
+    ":punter_factory",
     "//framework:game",
     "//framework:simple_punter",
     "//third_party/chromiumbase",
@@ -255,3 +243,28 @@ cc_library(
     "//framework:game",
   ],
 )
+
+cc_library(
+  name = "punter_factory",
+  srcs = [ "punter_factory.cc" ] ,
+  hdrs = [ "punter_factory.h" ],
+  deps = [
+    "//third_party/chromiumbase",
+    "//framework:game",
+    ":benkei",
+    ":extension_example_punter",
+    ":friendly_punter",
+    ":greedy_punter",
+    ":greedy_punter_chun",
+    ":greedy_punter_mirac",
+    ":greedy_to_jam",
+    ":meta_punter",
+    ":simulating_punter",
+    ":lazy_punter",
+    ":pass_punter",
+    ":quick_punter",
+    ":random_punter",
+  ],
+)
+
+    
