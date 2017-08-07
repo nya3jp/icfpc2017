@@ -117,6 +117,12 @@ History.prototype = {
         this.moves[i].claim.target =
             gameMap.getSiteIndex(this.moves[i].claim.target);
       }
+      if (this.moves[i].option) {
+        this.moves[i].option.source =
+            gameMap.getSiteIndex(this.moves[i].option.source);
+        this.moves[i].option.target =
+            gameMap.getSiteIndex(this.moves[i].option.target);
+      }
     }
   },
 };
@@ -273,8 +279,11 @@ Viewer.prototype = {
         let punterId;
         if (history.moves[i].claim)
           punterId = history.moves[i].claim.punter;
+        if (history.moves[i].option)
+          punterId = history.moves[i].option.punter;
         else if (history.moves[i].pass)
           punterId = history.moves[i].pass.punter;
+
         if (punterId != undefined)
           players.add(punterId);
       }
@@ -307,10 +316,34 @@ Viewer.prototype = {
         continue;
 
       ctx.beginPath();
-
       ctx.strokeStyle = colors[claim.punter];
       ctx.moveTo(sitePX[claim.source], sitePY[claim.source]);
       ctx.lineTo(sitePX[claim.target], sitePY[claim.target]);
+      ctx.lineWidth = i == state.step - 1 ? 5 : 2;
+      ctx.stroke();
+    }
+
+    // Draw option rivers.
+    for (let i = 0; i < state.step; i++) {
+      const option = history.moves[i].option;
+      if (!option)
+        continue;
+
+      const x1 = sitePX[option.source];
+      const y1 = sitePY[option.source];
+      const x2 = sitePX[option.target];
+      const y2 = sitePX[option.target];
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.sqrt(dx*dx + dy*dy);
+      if (len == 0)
+        continue;
+      const dx2 = (dy / len) * 3;
+      const dy2 = (-dx / len) * 3;
+      ctx.beginPath();
+      ctx.strokeStyle = colors[option.punter];
+      ctx.moveTo(x1 + dx2, y1 + dy2);
+      ctx.lineTo(x2 + dx2, y2 + dy2);
       ctx.lineWidth = i == state.step - 1 ? 5 : 2;
       ctx.stroke();
     }
@@ -330,12 +363,18 @@ Viewer.prototype = {
       for (let i = 0; i < edges.length; i++)
         edges[i] = [];
       for (let i = 0; i < state.step; i++) {
-        if (!history.moves[i].claim)
-          continue;
-        const punter = history.moves[i].claim.punter;
-        const src = history.moves[i].claim.source;
-        const dst = history.moves[i].claim.target;
-        edges[punter].push({src: src, dst: dst});
+        if (history.moves[i].claim) {
+          const punter = history.moves[i].claim.punter;
+          const src = history.moves[i].claim.source;
+          const dst = history.moves[i].claim.target;
+          edges[punter].push({src: src, dst: dst});
+        }
+        if (history.moves[i].option) {
+          const punter = history.moves[i].option.punter;
+          const src = history.moves[i].option.source;
+          const dst = history.moves[i].option.target;
+          edges[punter].push({src: src, dst: dst});
+        }
       }
 
       const scores = new Array(edges.length);
