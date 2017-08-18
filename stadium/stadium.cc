@@ -26,11 +26,12 @@ std::unique_ptr<Punter> MakePunterFromCommandLine(const std::string& arg) {
 }
 
 void Main(int argc, char** argv) {
-  Map map = ReadMapFromFileOrDie(FLAGS_map);
-
-  if (argc == 1) {
-    LOG(FATAL) << "No punter argument specified!";
+  if (FLAGS_map.empty() || argc == 1) {
+    LOG(INFO) << "Usage: " << argv[0] << " --map=<mapfile>"
+              << " '<punter 1 command line>' '<punter 2 command line>' ...";
+    return;
   }
+  Map map = ReadMapFromFileOrDie(FLAGS_map);
 
   common::Settings settings;
   settings.futures = FLAGS_futures;
@@ -50,6 +51,7 @@ void Main(int argc, char** argv) {
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
+  google::LogToStderr();
   google::InstallFailureSignalHandler();
 
   stadium::Main(argc, argv);
